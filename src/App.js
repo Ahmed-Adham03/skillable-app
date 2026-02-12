@@ -126,6 +126,276 @@ export default function App() {
   };
 
   const theme = getTheme();
+  const API_BASE = process.env.REACT_APP_API_BASE || 'http://127.0.0.1:8000';
+  const [currentUser, setCurrentUser] = useState(null);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const profileRef = useRef(null);
+
+  useEffect(() => {
+    const token = localStorage.getItem('skillable_token');
+    if (!token) return;
+    fetch(`${API_BASE}/auth/me`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data) setCurrentUser(data);
+      })
+      .catch(() => {});
+  }, [API_BASE]);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (profileRef.current && !profileRef.current.contains(event.target)) {
+        setIsProfileOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleSignOut = () => {
+    localStorage.removeItem('skillable_token');
+    setCurrentUser(null);
+    setIsProfileOpen(false);
+    setActiveTab('home');
+  };
+
+  const AuthPage = ({ variant }) => {
+    const isLogin = variant === 'login';
+    const title = isLogin ? 'Welcome back' : 'Create your account';
+    const subtitle = isLogin
+      ? 'Sign in to keep building a career path that fits you.'
+      : 'Join Skillable to get personalized, accessible guidance.';
+
+    const [fullName, setFullName] = useState('');
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [formError, setFormError] = useState('');
+    const [formSuccess, setFormSuccess] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+    const initials = (name, emailValue) => {
+      if (name) {
+        const parts = name.trim().split(/\s+/).filter(Boolean);
+        if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+        return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+      }
+      if (emailValue) return emailValue.slice(0, 2).toUpperCase();
+      return 'SK';
+    };
+
+    const handleSubmit = async (e) => {
+      e.preventDefault();
+      setFormError('');
+      setFormSuccess('');
+
+      if (!email || !password || (!isLogin && !fullName)) {
+        setFormError('Please complete all required fields.');
+        return;
+      }
+      if (!isLogin && password.length < 8) {
+        setFormError('Password must be at least 8 characters.');
+        return;
+      }
+      if (!isLogin && password !== confirmPassword) {
+        setFormError('Passwords do not match.');
+        return;
+      }
+
+      setIsSubmitting(true);
+      try {
+        const endpoint = isLogin ? '/auth/login' : '/auth/register';
+        const payload = isLogin
+          ? { email, password }
+          : { full_name: fullName, email, password };
+
+        const res = await fetch(`${API_BASE}${endpoint}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data.detail || 'Request failed. Please try again.');
+        }
+
+        const data = await res.json();
+        if (isLogin) {
+          localStorage.setItem('skillable_token', data.access_token);
+          const meRes = await fetch(`${API_BASE}/auth/me`, {
+            headers: { Authorization: `Bearer ${data.access_token}` }
+          });
+          const me = await meRes.json().catch(() => null);
+          if (me) {
+            setCurrentUser(me);
+            setFormSuccess('Signed in successfully.');
+            setActiveTab('home');
+          }
+        } else {
+          setFormSuccess('Account created. You can sign in now.');
+          setActiveTab('login');
+        }
+      } catch (err) {
+        setFormError(err.message || 'Something went wrong.');
+      } finally {
+        setIsSubmitting(false);
+      }
+    };
+
+    return (
+      <div className="animate-fade-in">
+        <section className="relative py-20 lg:py-28 overflow-hidden">
+          <div className="container mx-auto px-6 grid lg:grid-cols-2 gap-14 items-center">
+            <div className={`p-10 lg:p-12 rounded-[2.5rem] ${theme.glass}`}>
+              <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold mb-6 border ${themeMode === 'contrast' ? 'border-[#FFFF00]' : 'bg-indigo-500/10 text-indigo-300'}`}>
+                <User size={14} />
+                <span>{isLogin ? 'Member Access' : 'New to Skillable'}</span>
+              </div>
+              <h1 className="text-4xl lg:text-5xl font-black mb-4">{title}</h1>
+              <p className={`mb-8 ${theme.textSecondary}`}>{subtitle}</p>
+
+              <form className="space-y-5" onSubmit={handleSubmit}>
+                {!isLogin && (
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold">Full name</label>
+                    <input
+                      className={`w-full p-4 rounded-xl border ${theme.input}`}
+                      placeholder="Alex Morgan"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                    />
+                  </div>
+                )}
+                <div className="space-y-2">
+                  <label className="text-sm font-bold">Email address</label>
+                  <input
+                    className={`w-full p-4 rounded-xl border ${theme.input}`}
+                    type="email"
+                    placeholder="alex@skillable.ai"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-bold">Password</label>
+                  <div className="relative">
+                    <input
+                      className={`w-full p-4 pr-24 rounded-xl border ${theme.input}`}
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="••••••••"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((prev) => !prev)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold opacity-70"
+                    >
+                      {showPassword ? 'Hide' : 'Show'}
+                    </button>
+                  </div>
+                </div>
+                {!isLogin && (
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold">Confirm password</label>
+                    <div className="relative">
+                      <input
+                        className={`w-full p-4 pr-24 rounded-xl border ${theme.input}`}
+                        type={showConfirmPassword ? 'text' : 'password'}
+                        placeholder="••••••••"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword((prev) => !prev)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold opacity-70"
+                      >
+                        {showConfirmPassword ? 'Hide' : 'Show'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between text-sm">
+                  <label className="flex items-center gap-2 font-semibold">
+                    <input type="checkbox" className="w-4 h-4 accent-indigo-500" />
+                    Keep me signed in
+                  </label>
+                  <button type="button" className={`font-bold ${theme.accent}`}>Forgot password?</button>
+                </div>
+
+                {formError && <div className="text-sm text-red-500 font-semibold">{formError}</div>}
+                {formSuccess && <div className="text-sm text-green-600 font-semibold">{formSuccess}</div>}
+
+                <button type="submit" className={`w-full py-4 rounded-xl font-bold ${theme.primaryBtn}`}>
+                  {isSubmitting ? 'Please wait...' : (isLogin ? 'Sign In' : 'Create Account')}
+                </button>
+              </form>
+
+              <div className="mt-8 text-sm text-center">
+                {isLogin ? "Don't have an account?" : 'Already have an account?'}
+                <button
+                  onClick={() => setActiveTab(isLogin ? 'register' : 'login')}
+                  className={`ml-2 font-bold ${theme.accent}`}
+                >
+                  {isLogin ? 'Create one' : 'Sign in'}
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              <div className={`p-8 rounded-3xl ${theme.card}`}>
+                <div className="flex items-center gap-3 mb-4">
+                  <div className={`p-3 rounded-xl ${themeMode === 'contrast' ? 'bg-[#FFFF00] text-black' : 'bg-indigo-600 text-white'}`}>
+                    <Sparkles size={20} />
+                  </div>
+                  <h3 className="text-xl font-black">Why Skillable?</h3>
+                </div>
+                <p className={theme.textSecondary}>
+                  We blend AI guidance with accessibility-first design so you can explore careers with confidence.
+                </p>
+              </div>
+
+              <div className="grid gap-4">
+                {[
+                  { icon: <CheckCircle size={18} />, text: 'Personalized pathways that update with your progress.' },
+                  { icon: <Users size={18} />, text: 'Community insights from inclusive employers.' },
+                  { icon: <Award size={18} />, text: 'Verified accessibility tips for interviews and onboarding.' }
+                ].map((item, idx) => (
+                  <div key={idx} className={`flex items-center gap-3 p-5 rounded-2xl ${theme.card}`}>
+                    <div className={`p-2 rounded-lg ${themeMode === 'contrast' ? 'bg-[#FFFF00] text-black' : 'bg-indigo-600/10 text-indigo-500'}`}>
+                      {item.icon}
+                    </div>
+                    <p className="font-semibold">{item.text}</p>
+                  </div>
+                ))}
+              </div>
+
+              <div className={`p-6 rounded-2xl ${theme.glass}`}>
+                <div className="flex items-center gap-2 font-bold mb-2">
+                  <Bot size={16} />
+                  <span>Need a quick tour?</span>
+                </div>
+                <p className={theme.textSecondary}>Jump into the AI tools to see how Skillable simplifies career decisions.</p>
+                <button
+                  onClick={() => setActiveTab('home')}
+                  className={`mt-4 px-5 py-2.5 rounded-xl font-bold border ${themeMode === 'contrast' ? 'border-white' : 'border-slate-700'}`}
+                >
+                  Explore the AI tools
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    );
+  };
 
   return (
     <div className={`min-h-screen transition-colors duration-500 font-sans ${theme.appBg} ${theme.textPrimary}`} style={{ fontSize: `${fontSize}%` }}>
@@ -164,7 +434,57 @@ export default function App() {
             {themeMode !== 'contrast' && (
                <button onClick={toggleTheme} className="p-2.5 rounded-full">{themeMode === 'dark' ? <Sun size={20} /> : <Moon size={20} />}</button>
             )}
-            <button className={`px-6 py-2.5 rounded-xl font-bold ${theme.primaryBtn}`}>Get Started</button>
+            {currentUser ? (
+              <div className="relative" ref={profileRef}>
+                <button
+                  onClick={() => setIsProfileOpen((prev) => !prev)}
+                  className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${themeMode === 'contrast' ? 'bg-[#FFFF00] text-black' : 'bg-indigo-600 text-white'}`}
+                >
+                  {(() => {
+                    const name = currentUser?.full_name || '';
+                    const email = currentUser?.email || '';
+                    const parts = name.trim().split(/\s+/).filter(Boolean);
+                    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+                    if (parts.length > 1) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+                    return email ? email.slice(0, 2).toUpperCase() : 'SK';
+                  })()}
+                </button>
+
+                {isProfileOpen && (
+                  <div className={`absolute right-0 mt-3 w-64 rounded-2xl p-4 shadow-xl ${theme.glass}`}>
+                    <div className="flex items-center gap-3">
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${themeMode === 'contrast' ? 'bg-[#FFFF00] text-black' : 'bg-indigo-600 text-white'}`}>
+                        {(() => {
+                          const name = currentUser?.full_name || '';
+                          const email = currentUser?.email || '';
+                          const parts = name.trim().split(/\s+/).filter(Boolean);
+                          if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+                          if (parts.length > 1) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+                          return email ? email.slice(0, 2).toUpperCase() : 'SK';
+                        })()}
+                      </div>
+                      <div>
+                        <div className="text-sm font-bold">{currentUser?.full_name || 'Skillable Member'}</div>
+                        <div className={`text-xs ${theme.textSecondary}`}>{currentUser?.email}</div>
+                      </div>
+                    </div>
+                    <div className="mt-4">
+                      <button
+                        onClick={handleSignOut}
+                        className={`w-full py-2.5 rounded-xl font-bold ${themeMode === 'contrast' ? 'bg-white text-black' : 'bg-slate-900 text-white'} `}
+                      >
+                        Sign out
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <>
+                <button onClick={() => setActiveTab('login')} className={`px-5 py-2.5 rounded-xl font-bold border ${themeMode === 'contrast' ? 'border-white' : 'border-slate-700'}`}>Sign In</button>
+                <button onClick={() => setActiveTab('register')} className={`px-6 py-2.5 rounded-xl font-bold ${theme.primaryBtn}`}>Get Started</button>
+              </>
+            )}
           </div>
         </div>
       </nav>
@@ -247,8 +567,12 @@ export default function App() {
              </div>
           </section>
         </div>
-      ) : (
+      ) : activeTab === 'careers' ? (
         <CareersPage theme={theme} themeMode={themeMode} />
+      ) : activeTab === 'login' ? (
+        <AuthPage variant="login" />
+      ) : (
+        <AuthPage variant="register" />
       )}
 
       <footer className={`py-12 border-t text-center opacity-50 ${themeMode === 'contrast' ? 'border-[#FFFF00]' : 'border-slate-200'}`}>© 2026 Skillable - Empowering Abilities</footer>
