@@ -18,7 +18,8 @@ import {
   Zap,
   Globe,
   Award,
-  Users
+  Users,
+  Volume2
 } from 'lucide-react';
 
 export default function App() {
@@ -28,6 +29,24 @@ export default function App() {
   const [fontSize, setFontSize] = useState(100);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [speakOnFocus, setSpeakOnFocus] = useState(() => {
+    const saved = localStorage.getItem('skillable_speak_focus');
+    return saved === 'true';
+  });
+  const [speechEnabled, setSpeechEnabled] = useState(() => {
+    const saved = localStorage.getItem('skillable_speech_enabled');
+    return saved === 'true';
+  });
+  const [voicesReady, setVoicesReady] = useState(false);
+  const [speechStatus, setSpeechStatus] = useState('');
+
+  useEffect(() => {
+    localStorage.setItem('skillable_speak_focus', String(speakOnFocus));
+  }, [speakOnFocus]);
+
+  useEffect(() => {
+    localStorage.setItem('skillable_speech_enabled', String(speechEnabled));
+  }, [speechEnabled]);
 
   // Chat & AI Logic
   const [chatMessages, setChatMessages] = useState([
@@ -48,6 +67,63 @@ export default function App() {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  const speakText = (text) => {
+    if (!text || !('speechSynthesis' in window)) return;
+    const synth = window.speechSynthesis;
+    try {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'en-US';
+      utterance.rate = 1;
+      utterance.volume = 1;
+      if (synth.speaking) synth.cancel();
+      synth.resume();
+      setTimeout(() => synth.speak(utterance), 50);
+    } catch (err) {
+      // Ignore speech failures to avoid breaking UI
+    }
+  };
+
+  useEffect(() => {
+    if (!('speechSynthesis' in window)) return;
+    const synth = window.speechSynthesis;
+    const handleVoices = () => {
+      setVoicesReady(synth.getVoices().length > 0);
+    };
+    synth.onvoiceschanged = handleVoices;
+    handleVoices();
+    return () => {
+      synth.onvoiceschanged = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!speakOnFocus || !speechEnabled) return;
+
+    const getLabel = (el) => {
+      if (!el) return '';
+      const aria = el.getAttribute?.('aria-label');
+      if (aria) return aria.trim();
+      const ariaLabelledBy = el.getAttribute?.('aria-labelledby');
+      if (ariaLabelledBy) {
+        const labelEl = document.getElementById(ariaLabelledBy);
+        if (labelEl?.textContent) return labelEl.textContent.trim();
+      }
+      if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+        return (el.placeholder || el.value || '').trim();
+      }
+      return (el.textContent || '').trim();
+    };
+
+    const handleFocus = (event) => {
+      const label = getLabel(event.target);
+      if (!label) return;
+      speakText(label);
+    };
+
+    document.addEventListener('focusin', handleFocus);
+    return () => document.removeEventListener('focusin', handleFocus);
+  }, [speakOnFocus]);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -234,6 +310,9 @@ export default function App() {
           if (me) {
             setCurrentUser(me);
             setFormSuccess('Signed in successfully.');
+            if (speakOnFocus && speechEnabled) {
+              speakText('Signed in successfully');
+            }
             setActiveTab('home');
           }
         } else {
@@ -277,6 +356,7 @@ export default function App() {
                     className={`w-full p-4 rounded-xl border ${theme.input}`}
                     type="email"
                     placeholder="alex@skillable.ai"
+                    aria-label="Email address"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                   />
@@ -288,6 +368,7 @@ export default function App() {
                       className={`w-full p-4 pr-24 rounded-xl border ${theme.input}`}
                       type={showPassword ? 'text' : 'password'}
                       placeholder="••••••••"
+                      aria-label="Password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                     />
@@ -412,6 +493,61 @@ export default function App() {
         <div className="flex items-center gap-2"><Accessibility size={14} /><span>Quick accessibility tools</span></div>
         <div className="flex items-center gap-4">
           <button onClick={activateHighContrast} className="hover:text-indigo-500 flex items-center gap-1"><Eye size={14} /> Contrast</button>
+          <button
+            onClick={() => {
+              const next = !speakOnFocus;
+              if (next) speakText('Speech on');
+              else speakText('Speech off');
+              setSpeakOnFocus(next);
+            }}
+            className="hover:text-indigo-500 flex items-center gap-1"
+            aria-pressed={speakOnFocus}
+          >
+            <Volume2 size={14} /> Speak Focus {speakOnFocus ? 'On' : 'Off'}
+          </button>
+          {!speechEnabled && (
+            <button
+              onClick={() => {
+                setSpeechEnabled(true);
+                speakText('Speech enabled');
+              }}
+              className="hover:text-indigo-500 flex items-center gap-1"
+            >
+              Enable Speech
+            </button>
+          )}
+          <button
+            onClick={() => {
+              if (!('speechSynthesis' in window)) {
+                setSpeechStatus('Speech not supported in this browser.');
+                return;
+              }
+              const synth = window.speechSynthesis;
+              const voices = synth.getVoices();
+              setSpeechStatus(`Voices loaded: ${voices.length} — speaking...`);
+              const utterance = new SpeechSynthesisUtterance('This is a test voice');
+              utterance.lang = 'en-US';
+              utterance.rate = 1;
+              utterance.volume = 1;
+              utterance.onstart = () => setSpeechStatus(`Voices loaded: ${voices.length} — speaking...`);
+              utterance.onend = () => setSpeechStatus(`Voices loaded: ${voices.length} — done`);
+              utterance.onerror = (event) => {
+                const errorMsg = event?.error || 'unknown error';
+                if (errorMsg === 'canceled') {
+                  setSpeechStatus(`Voices loaded: ${voices.length} — interrupted`);
+                  return;
+                }
+                setSpeechStatus(`Voices loaded: ${voices.length} — error: ${errorMsg}`);
+              };
+              if (synth.speaking) synth.cancel();
+              synth.resume();
+              setTimeout(() => synth.speak(utterance), 50);
+            }}
+            className="hover:text-indigo-500 flex items-center gap-1"
+          >
+            Test Voice
+          </button>
+          {speechStatus && <span className="text-[10px] opacity-70">{speechStatus}</span>}
           <div className="flex gap-1"><button onClick={decreaseFont} className="px-2">A-</button><button onClick={increaseFont} className="px-2">A+</button></div>
         </div>
       </div>
@@ -432,7 +568,7 @@ export default function App() {
 
           <div className="flex items-center gap-4">
             {themeMode !== 'contrast' && (
-               <button onClick={toggleTheme} className="p-2.5 rounded-full">{themeMode === 'dark' ? <Sun size={20} /> : <Moon size={20} />}</button>
+               <button onClick={toggleTheme} className="p-2.5 rounded-full" aria-label="Darkmode">{themeMode === 'dark' ? <Sun size={20} /> : <Moon size={20} />}</button>
             )}
             {currentUser ? (
               <div className="relative" ref={profileRef}>
