@@ -320,6 +320,109 @@ function AuthPage({
   );
 }
 
+function AccessibilityFeaturesPage({ theme, themeMode }) {
+  return (
+    <div className="animate-fade-in">
+      <section className="relative py-20 lg:py-28 overflow-hidden">
+        <div className="container mx-auto px-6">
+          <div className={`p-10 lg:p-12 rounded-[2.5rem] ${theme.glass}`}>
+            <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold mb-6 border ${themeMode === 'contrast' ? 'border-[#FFFF00]' : 'bg-indigo-500/10 text-indigo-300'}`}>
+              <Accessibility size={14} aria-hidden="true" />
+              <span>Accessibility Features</span>
+            </div>
+            <h1 className="text-4xl lg:text-5xl font-black mb-4">Built for every ability</h1>
+            <p className={`mb-10 max-w-3xl ${theme.textSecondary}`}>
+              Skillable is designed to be operable, perceivable, and comfortable for people with diverse needs. These features are available today.
+            </p>
+
+            <div className="grid md:grid-cols-2 gap-6">
+              {[
+                {
+                  title: 'Keyboard-first navigation',
+                  body: 'Everything is reachable with Tab and usable with Enter/Space.'
+                },
+                {
+                  title: 'Contrast controls',
+                  body: 'High-contrast mode for improved readability in bright or low-vision settings.'
+                },
+                {
+                  title: 'Text scaling',
+                  body: 'Adjust text size from the accessibility bar without breaking layouts.'
+                },
+                {
+                  title: 'Reduced motion support',
+                  body: 'Respects system preferences to reduce animation and motion.'
+                },
+                {
+                  title: 'Screen reader readiness',
+                  body: 'Landmarks, labels, and ARIA attributes for consistent narration.'
+                },
+                {
+                  title: 'Speech guidance (optional)',
+                  body: 'Speak focused elements and important feedback when enabled.'
+                }
+              ].map((item, idx) => (
+                <div key={idx} className={`p-6 rounded-2xl ${theme.card}`}>
+                  <h2 className="text-xl font-black mb-2">{item.title}</h2>
+                  <p className={theme.textSecondary}>{item.body}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function AccessibilityStatementPage({ theme, themeMode }) {
+  return (
+    <div className="animate-fade-in">
+      <section className="relative py-20 lg:py-28 overflow-hidden">
+        <div className="container mx-auto px-6">
+          <div className={`p-10 lg:p-12 rounded-[2.5rem] ${theme.glass}`}>
+            <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold mb-6 border ${themeMode === 'contrast' ? 'border-[#FFFF00]' : 'bg-indigo-500/10 text-indigo-300'}`}>
+              <Eye size={14} aria-hidden="true" />
+              <span>Accessibility Statement</span>
+            </div>
+            <h1 className="text-4xl lg:text-5xl font-black mb-4">Our commitment to accessibility</h1>
+            <p className={`mb-6 max-w-3xl ${theme.textSecondary}`}>
+              Skillable is committed to providing an inclusive experience. We aim to align with WCAG 2.1 Level A/AA where possible and continuously improve.
+            </p>
+
+            <div className="grid lg:grid-cols-2 gap-6">
+              <div className={`p-6 rounded-2xl ${theme.card}`}>
+                <h2 className="text-xl font-black mb-2">Standards we follow</h2>
+                <p className={theme.textSecondary}>
+                  We design and test for WCAG 2.1 A/AA success criteria, including keyboard access, text alternatives, and predictable navigation.
+                </p>
+              </div>
+              <div className={`p-6 rounded-2xl ${theme.card}`}>
+                <h2 className="text-xl font-black mb-2">Feedback & support</h2>
+                <p className={theme.textSecondary}>
+                  If you encounter barriers, we want to know. Share feedback and we will prioritize fixes that improve access.
+                </p>
+              </div>
+              <div className={`p-6 rounded-2xl ${theme.card}`}>
+                <h2 className="text-xl font-black mb-2">Ongoing improvements</h2>
+                <p className={theme.textSecondary}>
+                  Accessibility is a continuous effort. We test with assistive technologies and include accessible defaults by design.
+                </p>
+              </div>
+              <div className={`p-6 rounded-2xl ${theme.card}`}>
+                <h2 className="text-xl font-black mb-2">Contact</h2>
+                <p className={theme.textSecondary}>
+                  Email us at support@skillable.ai for accessibility support or alternative formats.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
+
 export default function App() {
   // --- State Management ---
   const [activeTab, setActiveTab] = useState('home'); // Logic to switch pages
@@ -633,6 +736,8 @@ export default function App() {
              <button onClick={() => setActiveTab('home')} className={`relative transition-colors ${activeTab === 'home' ? theme.accent : theme.textSecondary}`}>Home</button>
              <button onClick={() => setActiveTab('careers')} className={`relative transition-colors ${activeTab === 'careers' ? theme.accent : theme.textSecondary}`}>Career Paths</button>
              <button onClick={() => document.getElementById('ai')?.scrollIntoView({behavior:'smooth'})} className={theme.textSecondary}>AI Tools</button>
+             <button onClick={() => setActiveTab('accessibility-features')} className={`relative transition-colors ${activeTab === 'accessibility-features' ? theme.accent : theme.textSecondary}`}>Accessibility Features</button>
+             <button onClick={() => setActiveTab('accessibility-statement')} className={`relative transition-colors ${activeTab === 'accessibility-statement' ? theme.accent : theme.textSecondary}`}>Accessibility Statement</button>
           </div>
 
           <div className="flex items-center gap-4">
@@ -803,6 +908,10 @@ export default function App() {
         </div>
       ) : activeTab === 'careers' ? (
         <CareersPage theme={theme} themeMode={themeMode} />
+      ) : activeTab === 'accessibility-features' ? (
+        <AccessibilityFeaturesPage theme={theme} themeMode={themeMode} />
+      ) : activeTab === 'accessibility-statement' ? (
+        <AccessibilityStatementPage theme={theme} themeMode={themeMode} />
       ) : activeTab === 'login' ? (
         <AuthPage
           variant="login"
