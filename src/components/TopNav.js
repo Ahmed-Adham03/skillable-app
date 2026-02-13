@@ -1,9 +1,5 @@
 import React from 'react';
-import {
-  Bot,
-  Moon,
-  Sun
-} from 'lucide-react';
+import { Moon, Sun } from 'lucide-react';
 
 export default function TopNav({
   theme,
@@ -22,8 +18,10 @@ export default function TopNav({
   return (
     <nav className={`sticky top-0 z-40 transition-all duration-300 ${theme.navBg}`} aria-label="Main">
       <div className="container mx-auto px-6 h-20 flex justify-between items-center">
-        <button onClick={() => setActiveTab('home')} className="flex items-center gap-3 cursor-pointer group" aria-label="Go to home">
-          <div className={`p-2.5 rounded-xl transition-all ${themeMode === 'contrast' ? 'bg-[#FFFF00] text-black' : 'bg-gradient-to-br from-indigo-600 to-purple-600 text-white'}`}><Bot size={24} aria-hidden="true" /></div>
+        <button onClick={() => setActiveTab('home')} className="flex items-center gap-2 cursor-pointer group" aria-label="Go to home">
+          <div className="p-1 rounded-xl transition-all">
+            <img src="/SkillableLogo3BG0.png" alt="Skillable logo" className="w-11 h-11 object-contain" />
+          </div>
           <span className="text-2xl font-black">Skillable</span>
         </button>
 
@@ -70,10 +68,10 @@ export default function TopNav({
                 })()}
               </button>
 
-                {isProfileOpen && (
-                  <div
-                    className={`absolute right-0 mt-3 w-64 rounded-2xl p-4 shadow-xl ${theme.glass}`}
-                    role="menu"
+              {isProfileOpen && (
+                <div
+                  className={`absolute right-0 mt-3 w-64 rounded-2xl p-4 shadow-xl ${theme.glass}`}
+                  role="menu"
                   onKeyDown={(e) => {
                     if (e.key === 'Escape') {
                       setIsProfileOpen(false);
@@ -81,7 +79,7 @@ export default function TopNav({
                     }
                   }}
                 >
-                    <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3">
                     <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${themeMode === 'contrast' ? 'bg-[#FFFF00] text-black' : 'bg-indigo-600 text-white'}`}>
                       {(() => {
                         const name = currentUser?.full_name || '';
@@ -96,26 +94,26 @@ export default function TopNav({
                       <div className="text-sm font-bold">{currentUser?.full_name || 'Skillable Member'}</div>
                       <div className={`text-xs ${theme.textSecondary}`}>{currentUser?.email}</div>
                     </div>
-                    </div>
-                    <div className="mt-4 space-y-2">
-                      <button
-                        onClick={() => {
-                          setActiveTab('profile');
-                          setIsProfileOpen(false);
-                        }}
-                        role="menuitem"
-                        className={`w-full py-2.5 rounded-xl font-bold ${themeMode === 'contrast' ? 'border border-white' : 'border border-slate-700'}`}
-                      >
-                        Personalize your experience
-                      </button>
-                      <button
-                        onClick={handleSignOut}
-                        ref={signOutButtonRef}
-                        role="menuitem"
-                        className={`w-full py-2.5 rounded-xl font-bold ${themeMode === 'contrast' ? 'bg-white text-black' : 'bg-slate-900 text-white'} `}
-                      >
-                        Sign out
-                      </button>
+                  </div>
+                  <div className="mt-4 space-y-2">
+                    <button
+                      onClick={() => {
+                        setActiveTab('profile');
+                        setIsProfileOpen(false);
+                      }}
+                      role="menuitem"
+                      className={`w-full py-2.5 rounded-xl font-bold ${themeMode === 'contrast' ? 'border border-white' : 'border border-slate-700'}`}
+                    >
+                      Personalize your experience
+                    </button>
+                    <button
+                      onClick={handleSignOut}
+                      ref={signOutButtonRef}
+                      role="menuitem"
+                      className={`w-full py-2.5 rounded-xl font-bold ${themeMode === 'contrast' ? 'bg-white text-black' : 'bg-slate-900 text-white'} `}
+                    >
+                      Sign out
+                    </button>
                   </div>
                 </div>
               )}
