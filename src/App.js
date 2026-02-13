@@ -343,7 +343,7 @@ export default function App() {
           setActiveTab={setActiveTab}
         />
       ) : activeTab === 'careers' ? (
-        <CareersPage theme={theme} themeMode={themeMode} />
+        <CareersPage theme={theme} themeMode={themeMode} currentUser={currentUser} />
       ) : activeTab === 'accessibility-features' ? (
         <AccessibilityFeaturesPage theme={theme} themeMode={themeMode} />
       ) : activeTab === 'accessibility-statement' ? (
