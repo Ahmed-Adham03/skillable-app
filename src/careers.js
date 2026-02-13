@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Briefcase, ArrowRight, Map, Search } from 'lucide-react';
 
-export default function CareerPage({ theme, themeMode, currentUser }) {
+export default function CareerPage({ theme, themeMode, currentUser, onSelectJob }) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
   const [status, setStatus] = useState('');
@@ -82,12 +82,49 @@ export default function CareerPage({ theme, themeMode, currentUser }) {
         <div className={`mb-8 text-sm font-semibold ${theme.textSecondary}`}>{status}</div>
       )}
       {!currentUser && (
-        <div className={`mb-8 text-sm font-semibold ${theme.textSecondary}`}>
-          Sign in and personalize your experience to get the most accurate matches.
+        <div className={`mb-8 p-4 rounded-2xl ${theme.glass}`}>
+          <h3 className="text-lg font-black mb-2">Join to get your best matches</h3>
+          <p className={theme.textSecondary}>
+            Sign in or create an account to personalize your experience. We match careers by comparing your needs profile
+            (mobility, vision, hearing, cognitive) against job requirements, then rank results by fit and explain why.
+          </p>
         </div>
       )}
 
       {/* Career Cards Grid */}
+
+      {!currentUser && (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 opacity-60 blur-[2px]">
+        {[1, 2, 3].map((id) => (
+          <div key={id} className={`group p-8 rounded-[2rem] flex flex-col h-full ${theme.card}`}>
+            <div className="flex justify-between items-start mb-6">
+              <div className="w-14 h-14 rounded-2xl flex items-center justify-center bg-white shadow-lg text-2xl">
+                <Briefcase className="text-indigo-600" aria-hidden="true" />
+              </div>
+              <div className={`px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest ${themeMode === 'contrast' ? 'bg-[#FFFF00] text-black' : 'bg-indigo-100 text-indigo-700'}`}>
+                --% Match
+              </div>
+            </div>
+            <h3 className="text-2xl font-bold mb-2">Career Path Preview</h3>
+            <p className="text-sm font-semibold mb-6 opacity-60">Sign in to see full details</p>
+            <div className="flex flex-wrap gap-2 mb-6">
+              {['Skill A', 'Skill B', 'Skill C'].map((skill, i) => (
+                <span key={i} className={`text-xs px-3 py-1 rounded-lg border ${themeMode === 'contrast' ? 'border-[#FFFF00]' : 'border-slate-200 dark:border-slate-700'}`}>
+                  {skill}
+                </span>
+              ))}
+            </div>
+            <div className="mt-auto pt-6 border-t border-dashed border-slate-200 dark:border-slate-700">
+              <button className="flex items-center gap-2 font-bold text-sm group/btn">
+                Explore this path
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+      )}
+
+      {currentUser && (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {filtered.map((path, idx) => (
           <div key={`${path.jobtitle}-${idx}`} className={`group p-8 rounded-[2rem] flex flex-col h-full ${theme.card}`}>
@@ -122,7 +159,7 @@ export default function CareerPage({ theme, themeMode, currentUser }) {
             </div>
 
             <div className="mt-auto pt-6 border-t border-dashed border-slate-200 dark:border-slate-700">
-              <button className="flex items-center gap-2 font-bold text-sm group/btn">
+              <button className="flex items-center gap-2 font-bold text-sm group/btn" onClick={() => onSelectJob(path)}>
                 Explore this path 
                 <ArrowRight size={16} className="group-hover/btn:translate-x-2 transition-transform" />
               </button>
@@ -130,6 +167,7 @@ export default function CareerPage({ theme, themeMode, currentUser }) {
           </div>
         ))}
       </div>
+      )}
     </div>
   );
 }

@@ -102,6 +102,9 @@ def match_jobs(payload: MatchRequest):
         results.append({
             "jobtitle": job.get("jobtitle"),
             "summary": job.get("summary"),
+            "details": job.get("details"),
+            "location": job.get("location"),
+            "learning_resource": job.get("learning_resource"),
             "skills": [s.strip() for s in (job.get("skills") or "").split(";") if s.strip()],
             "needs": {
                 "mobility": job.get("mobility"),

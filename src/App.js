@@ -7,6 +7,7 @@ import AuthPage from './pages/AuthPage';
 import AccessibilityFeaturesPage from './pages/AccessibilityFeaturesPage';
 import AccessibilityStatementPage from './pages/AccessibilityStatementPage';
 import ProfilePage from './pages/ProfilePage';
+import JobDetailsPage from './pages/JobDetailsPage';
 import { Eye, Accessibility, Volume2 } from 'lucide-react';
 
 export default function App() {
@@ -24,6 +25,7 @@ export default function App() {
     return saved === 'true';
   });
   const [speechStatus, setSpeechStatus] = useState('');
+  const [selectedJob, setSelectedJob] = useState(null);
 
   useEffect(() => {
     localStorage.setItem('skillable_speak_focus', String(speakOnFocus));
@@ -343,7 +345,22 @@ export default function App() {
           setActiveTab={setActiveTab}
         />
       ) : activeTab === 'careers' ? (
-        <CareersPage theme={theme} themeMode={themeMode} currentUser={currentUser} />
+        <CareersPage
+          theme={theme}
+          themeMode={themeMode}
+          currentUser={currentUser}
+          onSelectJob={(job) => {
+            setSelectedJob(job);
+            setActiveTab('job-details');
+          }}
+        />
+      ) : activeTab === 'job-details' ? (
+        <JobDetailsPage
+          theme={theme}
+          themeMode={themeMode}
+          job={selectedJob}
+          setActiveTab={setActiveTab}
+        />
       ) : activeTab === 'accessibility-features' ? (
         <AccessibilityFeaturesPage theme={theme} themeMode={themeMode} />
       ) : activeTab === 'accessibility-statement' ? (
