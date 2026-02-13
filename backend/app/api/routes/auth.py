@@ -5,6 +5,7 @@ from app.core.security import get_password_hash, verify_password, create_access_
 from app.models.user import User
 from app.schemas.auth import UserCreate, UserLogin, Token
 from app.schemas.user import UserOut
+from app.schemas.profile import ProfileUpdate
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -19,6 +20,12 @@ def register(payload: UserCreate, db: Session = Depends(get_db)):
         full_name=payload.full_name,
         email=payload.email,
         password_hash=get_password_hash(payload.password),
+        phone_number="N/A",
+        address="N/A",
+        mobility="N/A",
+        vision="N/A",
+        hearing="N/A",
+        cognitive="N/A"
     )
     db.add(user)
     db.commit()
@@ -38,4 +45,29 @@ def login(payload: UserLogin, db: Session = Depends(get_db)):
 
 @router.get("/me", response_model=UserOut)
 def me(current_user: User = Depends(get_current_user)):
+    return current_user
+
+
+@router.put("/profile", response_model=UserOut)
+def update_profile(
+    payload: ProfileUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    def normalize(value: str | None) -> str:
+        if value is None:
+            return "N/A"
+        value = value.strip()
+        return value if value else "N/A"
+
+    current_user.full_name = normalize(payload.full_name)
+    current_user.phone_number = normalize(payload.phone_number)
+    current_user.address = normalize(payload.address)
+    current_user.mobility = normalize(payload.mobility)
+    current_user.vision = normalize(payload.vision)
+    current_user.hearing = normalize(payload.hearing)
+    current_user.cognitive = normalize(payload.cognitive)
+
+    db.commit()
+    db.refresh(current_user)
     return current_user

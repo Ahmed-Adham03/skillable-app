@@ -6,6 +6,7 @@ import HomePage from './pages/HomePage';
 import AuthPage from './pages/AuthPage';
 import AccessibilityFeaturesPage from './pages/AccessibilityFeaturesPage';
 import AccessibilityStatementPage from './pages/AccessibilityStatementPage';
+import ProfilePage from './pages/ProfilePage';
 import { Eye, Accessibility, Volume2 } from 'lucide-react';
 
 export default function App() {
@@ -347,6 +348,17 @@ export default function App() {
         <AccessibilityFeaturesPage theme={theme} themeMode={themeMode} />
       ) : activeTab === 'accessibility-statement' ? (
         <AccessibilityStatementPage theme={theme} themeMode={themeMode} />
+      ) : activeTab === 'profile' ? (
+        <ProfilePage
+          theme={theme}
+          themeMode={themeMode}
+          API_BASE={API_BASE}
+          currentUser={currentUser}
+          setCurrentUser={setCurrentUser}
+          speakOnFocus={speakOnFocus}
+          speechEnabled={speechEnabled}
+          speakText={speakText}
+        />
       ) : activeTab === 'login' ? (
         <AuthPage
           variant="login"

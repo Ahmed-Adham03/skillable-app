@@ -70,10 +70,10 @@ export default function TopNav({
                 })()}
               </button>
 
-              {isProfileOpen && (
-                <div
-                  className={`absolute right-0 mt-3 w-64 rounded-2xl p-4 shadow-xl ${theme.glass}`}
-                  role="menu"
+                {isProfileOpen && (
+                  <div
+                    className={`absolute right-0 mt-3 w-64 rounded-2xl p-4 shadow-xl ${theme.glass}`}
+                    role="menu"
                   onKeyDown={(e) => {
                     if (e.key === 'Escape') {
                       setIsProfileOpen(false);
@@ -81,7 +81,7 @@ export default function TopNav({
                     }
                   }}
                 >
-                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3">
                     <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${themeMode === 'contrast' ? 'bg-[#FFFF00] text-black' : 'bg-indigo-600 text-white'}`}>
                       {(() => {
                         const name = currentUser?.full_name || '';
@@ -96,16 +96,26 @@ export default function TopNav({
                       <div className="text-sm font-bold">{currentUser?.full_name || 'Skillable Member'}</div>
                       <div className={`text-xs ${theme.textSecondary}`}>{currentUser?.email}</div>
                     </div>
-                  </div>
-                  <div className="mt-4">
-                    <button
-                      onClick={handleSignOut}
-                      ref={signOutButtonRef}
-                      role="menuitem"
-                      className={`w-full py-2.5 rounded-xl font-bold ${themeMode === 'contrast' ? 'bg-white text-black' : 'bg-slate-900 text-white'} `}
-                    >
-                      Sign out
-                    </button>
+                    </div>
+                    <div className="mt-4 space-y-2">
+                      <button
+                        onClick={() => {
+                          setActiveTab('profile');
+                          setIsProfileOpen(false);
+                        }}
+                        role="menuitem"
+                        className={`w-full py-2.5 rounded-xl font-bold ${themeMode === 'contrast' ? 'border border-white' : 'border border-slate-700'}`}
+                      >
+                        Personalize your experience
+                      </button>
+                      <button
+                        onClick={handleSignOut}
+                        ref={signOutButtonRef}
+                        role="menuitem"
+                        className={`w-full py-2.5 rounded-xl font-bold ${themeMode === 'contrast' ? 'bg-white text-black' : 'bg-slate-900 text-white'} `}
+                      >
+                        Sign out
+                      </button>
                   </div>
                 </div>
               )}
