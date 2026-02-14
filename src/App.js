@@ -13,6 +13,7 @@ import { Eye, Accessibility, Volume2 } from 'lucide-react';
 
 export default function App() {
   const API_BASE = process.env.REACT_APP_API_BASE || 'http://127.0.0.1:8000';
+  const CODE_API = process.env.REACT_APP_CODE_API || 'http://127.0.0.1:9100';
   // --- State Management ---
   const [activeTab, setActiveTab] = useState('home'); // Logic to switch pages
   const [themeMode, setThemeMode] = useState('light');
@@ -485,8 +486,10 @@ export default function App() {
           theme={theme}
           themeMode={themeMode}
           API_BASE={API_BASE}
+          CODE_API={CODE_API}
           setActiveTab={setActiveTab}
           setCurrentUser={setCurrentUser}
+          setLearningPlans={setLearningPlans}
           speakOnFocus={speakOnFocus}
           speechEnabled={speechEnabled}
           speakText={speakText}
@@ -497,8 +500,10 @@ export default function App() {
           theme={theme}
           themeMode={themeMode}
           API_BASE={API_BASE}
+          CODE_API={CODE_API}
           setActiveTab={setActiveTab}
           setCurrentUser={setCurrentUser}
+          setLearningPlans={setLearningPlans}
           speakOnFocus={speakOnFocus}
           speechEnabled={speechEnabled}
           speakText={speakText}

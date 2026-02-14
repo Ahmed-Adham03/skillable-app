@@ -8,6 +8,8 @@ export default function AuthPage({
   API_BASE,
   setActiveTab,
   setCurrentUser,
+  setLearningPlans,
+  CODE_API,
   speakOnFocus,
   speechEnabled,
   speakText
@@ -29,6 +31,9 @@ export default function AuthPage({
   const [fieldErrors, setFieldErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [step, setStep] = useState('credentials');
+  const [codeInput, setCodeInput] = useState('');
+  const [pendingToken, setPendingToken] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -82,9 +87,9 @@ export default function AuthPage({
     setIsSubmitting(true);
     try {
       const endpoint = isLogin ? '/auth/login' : '/auth/register';
-    const payload = isLogin
-      ? { email, password }
-      : { full_name: `${firstName} ${lastName}`.trim(), email, password };
+      const payload = isLogin
+        ? { email, password }
+        : { full_name: `${firstName} ${lastName}`.trim(), email, password };
 
       const res = await fetch(`${API_BASE}${endpoint}`, {
         method: 'POST',
@@ -100,19 +105,10 @@ export default function AuthPage({
 
       const data = await res.json();
       if (isLogin) {
-        localStorage.setItem('skillable_token', data.access_token);
-        const meRes = await fetch(`${API_BASE}/auth/me`, {
-          headers: { Authorization: `Bearer ${data.access_token}` }
-        });
-        const me = await meRes.json().catch(() => null);
-        if (me) {
-          setCurrentUser(me);
-          setFormSuccess('Signed in successfully.');
-          if (speakOnFocus && speechEnabled) {
-            speakText('Signed in successfully');
-          }
-          setActiveTab('home');
-        }
+        setPendingToken(data.access_token);
+        setStep('code');
+        setFormSuccess('Enter the 6-digit code to finish sign in.');
+        return;
       } else {
         setFormSuccess('Account created. You can sign in now.');
         setActiveTab('login');
@@ -128,6 +124,51 @@ export default function AuthPage({
     }
   };
 
+  const handleCodeSubmit = async (e) => {
+    e.preventDefault();
+    setFormError('');
+    setFormSuccess('');
+    if (!codeInput.trim() || codeInput.trim().length !== 6) {
+      setFormError('Enter the 6-digit code.');
+      return;
+    }
+    try {
+      const res = await fetch(`${CODE_API}/validate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: codeInput.trim() })
+      });
+      const data = await res.json();
+      if (!data.valid) {
+        setFormError('Invalid or expired code.');
+        return;
+      }
+      localStorage.setItem('skillable_token', pendingToken);
+      const meRes = await fetch(`${API_BASE}/auth/me`, {
+        headers: { Authorization: `Bearer ${pendingToken}` }
+      });
+      const me = await meRes.json().catch(() => null);
+      if (me) {
+        setCurrentUser(me);
+        if (setLearningPlans) {
+          fetch(`${API_BASE}/auth/learning-plans`, {
+            headers: { Authorization: `Bearer ${pendingToken}` }
+          })
+            .then((res) => (res.ok ? res.json() : []))
+            .then((plans) => setLearningPlans(Array.isArray(plans) ? plans : []))
+            .catch(() => {});
+        }
+        setFormSuccess('Signed in successfully.');
+        if (speakOnFocus && speechEnabled) {
+          speakText('Signed in successfully');
+        }
+        setActiveTab('home');
+      }
+    } catch (err) {
+      setFormError('Unable to validate code.');
+    }
+  };
+
   return (
     <div className="animate-fade-in">
       <section className="relative py-20 lg:py-28 overflow-hidden">
@@ -140,7 +181,28 @@ export default function AuthPage({
             <h1 className="text-4xl lg:text-5xl font-black mb-4">{title}</h1>
             <p className={`mb-8 ${theme.textSecondary}`}>{subtitle}</p>
 
-            <form className="space-y-5" onSubmit={handleSubmit}>
+            {isLogin && step === 'code' ? (
+              <form className="space-y-5" onSubmit={handleCodeSubmit}>
+                <div className="space-y-2">
+                  <label className="text-sm font-bold" htmlFor="login-code">Authenticator code</label>
+                  <input
+                    id="login-code"
+                    className={`w-full p-4 rounded-xl border ${theme.input}`}
+                    placeholder="6-digit code"
+                    value={codeInput}
+                    onChange={(e) => setCodeInput(e.target.value.replace(/\D+/g, '').slice(0, 6))}
+                    inputMode="numeric"
+                    maxLength={6}
+                  />
+                </div>
+                {formError && <div role="alert" className="text-sm text-red-500 font-semibold">Error: {formError}</div>}
+                {formSuccess && <div role="status" className="text-sm text-green-600 font-semibold">{formSuccess}</div>}
+                <button type="submit" className={`w-full py-4 rounded-xl font-bold ${theme.primaryBtn}`}>
+                  Verify code
+                </button>
+              </form>
+            ) : (
+              <form className="space-y-5" onSubmit={handleSubmit}>
               {!isLogin && (
                 <div className="grid md:grid-cols-2 gap-6">
                   <div className="space-y-2">
@@ -152,7 +214,7 @@ export default function AuthPage({
                       className={`w-full p-4 rounded-xl border ${theme.input}`}
                       placeholder="Alex"
                       value={firstName}
-                      onChange={(e) => setFirstName(e.target.value.replace(/\\s+/g, ''))}
+                      onChange={(e) => setFirstName(e.target.value.replace(/\s+/g, ''))}
                     />
                     {fieldErrors.firstName && (
                       <div id={`${variant}-first-name-error`} className="text-xs text-red-500 font-semibold">
@@ -169,7 +231,7 @@ export default function AuthPage({
                       className={`w-full p-4 rounded-xl border ${theme.input}`}
                       placeholder="Morgan"
                       value={lastName}
-                      onChange={(e) => setLastName(e.target.value.replace(/\\s+/g, ''))}
+                      onChange={(e) => setLastName(e.target.value.replace(/\s+/g, ''))}
                     />
                     {fieldErrors.lastName && (
                       <div id={`${variant}-last-name-error`} className="text-xs text-red-500 font-semibold">
@@ -273,6 +335,7 @@ export default function AuthPage({
                 {isSubmitting ? 'Please wait...' : (isLogin ? 'Sign In' : 'Create Account')}
               </button>
             </form>
+            )}
 
             <div className="mt-8 text-sm text-center">
               {isLogin ? "Don't have an account?" : 'Already have an account?'}
