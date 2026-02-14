@@ -54,15 +54,57 @@ def update_profile(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
+    GOVERNORATES = {
+        "N/A",
+        "Cairo",
+        "Giza",
+        "Alexandria",
+        "Dakahlia",
+        "Red Sea",
+        "Beheira",
+        "Fayoum",
+        "Gharbia",
+        "Ismailia",
+        "Menoufia",
+        "Minya",
+        "Qalyubia",
+        "New Valley",
+        "Suez",
+        "Aswan",
+        "Assiut",
+        "Beni Suef",
+        "Port Said",
+        "Damietta",
+        "Sharkia",
+        "South Sinai",
+        "Kafr El Sheikh",
+        "Matrouh",
+        "Luxor",
+        "Qena",
+        "North Sinai",
+        "Sohag"
+    }
+
     def normalize(value: str | None) -> str:
         if value is None:
             return "N/A"
         value = value.strip()
         return value if value else "N/A"
 
-    current_user.full_name = normalize(payload.full_name)
-    current_user.phone_number = normalize(payload.phone_number)
-    current_user.address = normalize(payload.address)
+    full_name = normalize(payload.full_name)
+    phone_number = normalize(payload.phone_number)
+    address = normalize(payload.address)
+
+    if phone_number != "N/A":
+        if not phone_number.isdigit() or len(phone_number) != 11:
+            raise HTTPException(status_code=400, detail="Phone number must be exactly 11 digits.")
+
+    if address != "N/A" and address not in GOVERNORATES:
+        raise HTTPException(status_code=400, detail="Address must be a valid Egyptian governorate.")
+
+    current_user.full_name = full_name
+    current_user.phone_number = phone_number
+    current_user.address = address
     current_user.mobility = normalize(payload.mobility)
     current_user.vision = normalize(payload.vision)
     current_user.hearing = normalize(payload.hearing)

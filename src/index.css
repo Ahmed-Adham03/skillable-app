@@ -26,3 +26,26 @@ body {
     scroll-behavior: auto !important;
   }
 }
+
+html.reduce-motion * {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  scroll-behavior: auto !important;
+}
+
+html:not(.reduce-motion) * {
+  transition-duration: 250ms;
+  transition-timing-function: ease;
+}
+
+/* Smoothen default animations when motion is enabled */
+html:not(.reduce-motion) .animate-pulse {
+  animation-duration: 6s;
+  animation-timing-function: ease-in-out;
+}
+
+html:not(.reduce-motion) .animate-bounce {
+  animation-duration: 2.6s;
+  animation-timing-function: ease-in-out;
+}

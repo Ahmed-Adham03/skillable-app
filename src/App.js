@@ -24,6 +24,10 @@ export default function App() {
     const saved = localStorage.getItem('skillable_speech_enabled');
     return saved === 'true';
   });
+  const [reducedMotion, setReducedMotion] = useState(() => {
+    const saved = localStorage.getItem('skillable_reduced_motion');
+    return saved === 'true';
+  });
   const [speechStatus, setSpeechStatus] = useState('');
   const [selectedJob, setSelectedJob] = useState(null);
 
@@ -34,6 +38,10 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('skillable_speech_enabled', String(speechEnabled));
   }, [speechEnabled]);
+
+  useEffect(() => {
+    localStorage.setItem('skillable_reduced_motion', String(reducedMotion));
+  }, [reducedMotion]);
 
   // Chat & AI Logic
   const [chatMessages, setChatMessages] = useState([
@@ -113,6 +121,11 @@ export default function App() {
   }, [speakOnFocus, speechEnabled]);
 
   useEffect(() => {
+    document.documentElement.classList.toggle('reduce-motion', reducedMotion);
+  }, [reducedMotion]);
+
+  useEffect(() => {
+    if (chatMessages.length <= 1) return;
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatMessages]);
 
@@ -275,37 +288,12 @@ export default function App() {
             </button>
           )}
           <button
-            onClick={() => {
-              if (!('speechSynthesis' in window)) {
-                setSpeechStatus('Speech not supported in this browser.');
-                return;
-              }
-              const synth = window.speechSynthesis;
-              const voices = synth.getVoices();
-              setSpeechStatus(`Voices loaded: ${voices.length} — speaking...`);
-              const utterance = new SpeechSynthesisUtterance('This is a test voice');
-              utterance.lang = 'en-US';
-              utterance.rate = 1;
-              utterance.volume = 1;
-              utterance.onstart = () => setSpeechStatus(`Voices loaded: ${voices.length} — speaking...`);
-              utterance.onend = () => setSpeechStatus(`Voices loaded: ${voices.length} — done`);
-              utterance.onerror = (event) => {
-                const errorMsg = event?.error || 'unknown error';
-                if (errorMsg === 'canceled') {
-                  setSpeechStatus(`Voices loaded: ${voices.length} — interrupted`);
-                  return;
-                }
-                setSpeechStatus(`Voices loaded: ${voices.length} — error: ${errorMsg}`);
-              };
-              if (synth.speaking) synth.cancel();
-              synth.resume();
-              setTimeout(() => synth.speak(utterance), 50);
-            }}
+            onClick={() => setReducedMotion((prev) => !prev)}
             className="hover:text-indigo-500 flex items-center gap-1"
+            aria-pressed={reducedMotion}
           >
-            Test Voice
+            {reducedMotion ? 'Reduce Motion On' : 'Reduce Motion Off'}
           </button>
-          {speechStatus && <span className="text-[10px] opacity-70">{speechStatus}</span>}
           <div className="flex gap-1"><button onClick={decreaseFont} className="px-2">A-</button><button onClick={increaseFont} className="px-2">A+</button></div>
         </div>
       </div>

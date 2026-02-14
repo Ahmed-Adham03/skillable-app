@@ -18,7 +18,8 @@ export default function AuthPage({
     ? 'Sign in to keep building a career path that fits you.'
     : 'Join Skillable to get personalized, accessible guidance.';
 
-  const [fullName, setFullName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -35,10 +36,11 @@ export default function AuthPage({
     setFormSuccess('');
     setFieldErrors({});
 
-    if (!email || !password || (!isLogin && !fullName)) {
+    if (!email || !password || (!isLogin && (!firstName || !lastName))) {
       setFormError('Please complete all required fields.');
       setFieldErrors({
-        fullName: !isLogin && !fullName ? 'Full name is required.' : '',
+        firstName: !isLogin && !firstName ? 'First name is required.' : '',
+        lastName: !isLogin && !lastName ? 'Last name is required.' : '',
         email: !email ? 'Email address is required.' : '',
         password: !password ? 'Password is required.' : ''
       });
@@ -47,13 +49,26 @@ export default function AuthPage({
       }
       return;
     }
-    if (!isLogin && password.length < 8) {
-      setFormError('Password must be at least 8 characters.');
-      setFieldErrors({ password: 'Password must be at least 8 characters.' });
-      if (speakOnFocus && speechEnabled) {
-        speakText('Password must be at least 8 characters.');
+    if (!isLogin) {
+      const hasMin = password.length >= 8;
+      const hasSpecial = /[^A-Za-z0-9]/.test(password);
+      const emailLower = (email || '').toLowerCase();
+      const passwordLower = password.toLowerCase();
+      const containsEmail = emailLower && passwordLower.includes(emailLower);
+
+      if (!hasMin || !hasSpecial || containsEmail) {
+        const messages = [];
+        if (!hasMin) messages.push('at least 8 characters');
+        if (!hasSpecial) messages.push('a special character');
+        if (containsEmail) messages.push('not include your email');
+        const message = `Password must contain ${messages.join(', ')}.`;
+        setFormError(message);
+        setFieldErrors({ password: message });
+        if (speakOnFocus && speechEnabled) {
+          speakText(message);
+        }
+        return;
       }
-      return;
     }
     if (!isLogin && password !== confirmPassword) {
       setFormError('Passwords do not match.');
@@ -67,9 +82,9 @@ export default function AuthPage({
     setIsSubmitting(true);
     try {
       const endpoint = isLogin ? '/auth/login' : '/auth/register';
-      const payload = isLogin
-        ? { email, password }
-        : { full_name: fullName, email, password };
+    const payload = isLogin
+      ? { email, password }
+      : { full_name: `${firstName} ${lastName}`.trim(), email, password };
 
       const res = await fetch(`${API_BASE}${endpoint}`, {
         method: 'POST',
@@ -127,22 +142,41 @@ export default function AuthPage({
 
             <form className="space-y-5" onSubmit={handleSubmit}>
               {!isLogin && (
-                <div className="space-y-2">
-                  <label className="text-sm font-bold" htmlFor={`${variant}-full-name`}>Full name</label>
-                  <input
-                    id={`${variant}-full-name`}
-                    aria-invalid={Boolean(fieldErrors.fullName)}
-                    aria-describedby={fieldErrors.fullName ? `${variant}-full-name-error` : undefined}
-                    className={`w-full p-4 rounded-xl border ${theme.input}`}
-                    placeholder="Alex Morgan"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                  />
-                  {fieldErrors.fullName && (
-                    <div id={`${variant}-full-name-error`} className="text-xs text-red-500 font-semibold">
-                      {fieldErrors.fullName}
-                    </div>
-                  )}
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold" htmlFor={`${variant}-first-name`}>First name</label>
+                    <input
+                      id={`${variant}-first-name`}
+                      aria-invalid={Boolean(fieldErrors.firstName)}
+                      aria-describedby={fieldErrors.firstName ? `${variant}-first-name-error` : undefined}
+                      className={`w-full p-4 rounded-xl border ${theme.input}`}
+                      placeholder="Alex"
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value.replace(/\\s+/g, ''))}
+                    />
+                    {fieldErrors.firstName && (
+                      <div id={`${variant}-first-name-error`} className="text-xs text-red-500 font-semibold">
+                        {fieldErrors.firstName}
+                      </div>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold" htmlFor={`${variant}-last-name`}>Last name</label>
+                    <input
+                      id={`${variant}-last-name`}
+                      aria-invalid={Boolean(fieldErrors.lastName)}
+                      aria-describedby={fieldErrors.lastName ? `${variant}-last-name-error` : undefined}
+                      className={`w-full p-4 rounded-xl border ${theme.input}`}
+                      placeholder="Morgan"
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value.replace(/\\s+/g, ''))}
+                    />
+                    {fieldErrors.lastName && (
+                      <div id={`${variant}-last-name-error`} className="text-xs text-red-500 font-semibold">
+                        {fieldErrors.lastName}
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
               <div className="space-y-2">

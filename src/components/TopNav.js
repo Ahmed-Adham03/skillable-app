@@ -26,10 +26,10 @@ export default function TopNav({
         </button>
 
         <div className="hidden md:flex items-center gap-8 font-bold text-sm">
-          <button onClick={() => setActiveTab('home')} className={`relative transition-colors ${activeTab === 'home' ? theme.accent : theme.textSecondary}`}>Home</button>
-          <button onClick={() => setActiveTab('careers')} className={`relative transition-colors ${activeTab === 'careers' ? theme.accent : theme.textSecondary}`}>Career Paths</button>
-          <button onClick={() => document.getElementById('ai')?.scrollIntoView({ behavior: 'smooth' })} className={theme.textSecondary}>AI Tools</button>
-          <button onClick={() => setActiveTab('accessibility-features')} className={`relative transition-colors ${activeTab === 'accessibility-features' ? theme.accent : theme.textSecondary}`}>Accessibility Features</button>
+          <button onClick={() => setActiveTab('home')} className={`relative transition-colors hover:text-indigo-500 ${activeTab === 'home' ? theme.accent : theme.textSecondary}`}>Home</button>
+          <button onClick={() => setActiveTab('careers')} className={`relative transition-colors hover:text-indigo-500 ${activeTab === 'careers' ? theme.accent : theme.textSecondary}`}>Career Paths</button>
+          <button onClick={() => document.getElementById('ai')?.scrollIntoView({ behavior: 'smooth' })} className={`transition-colors hover:text-indigo-500 ${theme.textSecondary}`}>AI Tools</button>
+          <button onClick={() => setActiveTab('accessibility-features')} className={`relative transition-colors hover:text-indigo-500 ${activeTab === 'accessibility-features' ? theme.accent : theme.textSecondary}`}>Accessibility Features</button>
         </div>
 
         <div className="flex items-center gap-4">

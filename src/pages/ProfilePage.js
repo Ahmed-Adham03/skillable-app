@@ -8,6 +8,37 @@ const NEED_OPTIONS = [
   { value: 'Requires support', label: 'Requires support' }
 ];
 
+const GOVERNORATES = [
+  'N/A',
+  'Cairo',
+  'Giza',
+  'Alexandria',
+  'Dakahlia',
+  'Red Sea',
+  'Beheira',
+  'Fayoum',
+  'Gharbia',
+  'Ismailia',
+  'Menoufia',
+  'Minya',
+  'Qalyubia',
+  'New Valley',
+  'Suez',
+  'Aswan',
+  'Assiut',
+  'Beni Suef',
+  'Port Said',
+  'Damietta',
+  'Sharkia',
+  'South Sinai',
+  'Kafr El Sheikh',
+  'Matrouh',
+  'Luxor',
+  'Qena',
+  'North Sinai',
+  'Sohag'
+];
+
 export default function ProfilePage({
   theme,
   themeMode,
@@ -19,7 +50,7 @@ export default function ProfilePage({
   speakText
 }) {
   const [fullName, setFullName] = useState('N/A');
-  const [phoneNumber, setPhoneNumber] = useState('N/A');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [address, setAddress] = useState('N/A');
   const [mobility, setMobility] = useState('N/A');
   const [vision, setVision] = useState('N/A');
@@ -28,11 +59,12 @@ export default function ProfilePage({
   const [status, setStatus] = useState('');
   const [error, setError] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [isEditingName, setIsEditingName] = useState(false);
 
   useEffect(() => {
     if (!currentUser) return;
     setFullName(currentUser.full_name || 'N/A');
-    setPhoneNumber(currentUser.phone_number || 'N/A');
+    setPhoneNumber(currentUser.phone_number === 'N/A' ? '' : (currentUser.phone_number || ''));
     setAddress(currentUser.address || 'N/A');
     setMobility(currentUser.mobility || 'N/A');
     setVision(currentUser.vision || 'N/A');
@@ -56,6 +88,16 @@ export default function ProfilePage({
       return;
     }
 
+    if (phoneNumber && phoneNumber.length !== 11) {
+      const message = 'Phone number must be exactly 11 digits.';
+      setError(message);
+      if (speakOnFocus && speechEnabled) {
+        speakText(message);
+      }
+      setIsSaving(false);
+      return;
+    }
+
     try {
       const res = await fetch(`${API_BASE}/auth/profile`, {
         method: 'PUT',
@@ -65,7 +107,7 @@ export default function ProfilePage({
         },
         body: JSON.stringify({
           full_name: fullName,
-          phone_number: phoneNumber,
+          phone_number: phoneNumber || 'N/A',
           address,
           mobility,
           vision,
@@ -108,12 +150,23 @@ export default function ProfilePage({
               <div className="grid md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <label className="text-sm font-bold" htmlFor="profile-full-name">Full name</label>
-                  <input
-                    id="profile-full-name"
-                    className={`w-full p-4 rounded-xl border ${theme.input}`}
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                  />
+                  <div className="flex items-center gap-3">
+                    <input
+                      id="profile-full-name"
+                      className={`w-full p-4 rounded-xl border ${isEditingName ? theme.input : 'bg-slate-100 text-slate-500 border-slate-200'}`}
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      readOnly={!isEditingName}
+                      aria-readonly={!isEditingName}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setIsEditingName((prev) => !prev)}
+                      className={`px-4 py-2 rounded-xl font-bold border ${themeMode === 'contrast' ? 'border-white' : 'border-slate-700'}`}
+                    >
+                      {isEditingName ? 'Lock' : 'Edit'}
+                    </button>
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-bold" htmlFor="profile-phone">Phone number</label>
@@ -121,19 +174,32 @@ export default function ProfilePage({
                     id="profile-phone"
                     className={`w-full p-4 rounded-xl border ${theme.input}`}
                     value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    onChange={(e) => {
+                      const digits = e.target.value.replace(/\D+/g, '').slice(0, 11);
+                      setPhoneNumber(digits);
+                    }}
+                    inputMode="numeric"
+                    pattern="\d{11}"
+                    aria-describedby="profile-phone-help"
                   />
+                  <div id="profile-phone-help" className="text-xs opacity-70">
+                    11 digits only.
+                  </div>
                 </div>
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-bold" htmlFor="profile-address">Address</label>
-                <input
+                <label className="text-sm font-bold" htmlFor="profile-address">Address (Governorate)</label>
+                <select
                   id="profile-address"
                   className={`w-full p-4 rounded-xl border ${theme.input}`}
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
-                />
+                >
+                  {GOVERNORATES.map((gov) => (
+                    <option key={gov} value={gov}>{gov}</option>
+                  ))}
+                </select>
               </div>
 
               <fieldset className="space-y-4">
