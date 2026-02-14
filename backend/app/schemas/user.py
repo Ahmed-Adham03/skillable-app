@@ -11,6 +11,7 @@ class UserOut(BaseModel):
     vision: str
     hearing: str
     cognitive: str
+    learning_plans: list
 
     class Config:
         from_attributes = True

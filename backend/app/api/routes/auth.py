@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Body
 from sqlalchemy.orm import Session
 from app.api.deps import get_db, get_current_user
 from app.core.security import get_password_hash, verify_password, create_access_token
@@ -25,7 +25,8 @@ def register(payload: UserCreate, db: Session = Depends(get_db)):
         mobility="N/A",
         vision="N/A",
         hearing="N/A",
-        cognitive="N/A"
+        cognitive="N/A",
+        learning_plans=[]
     )
     db.add(user)
     db.commit()
@@ -45,7 +46,26 @@ def login(payload: UserLogin, db: Session = Depends(get_db)):
 
 @router.get("/me", response_model=UserOut)
 def me(current_user: User = Depends(get_current_user)):
+    if current_user.learning_plans is None:
+        current_user.learning_plans = []
     return current_user
+
+
+@router.get("/learning-plans", response_model=list)
+def get_learning_plans(current_user: User = Depends(get_current_user)):
+    return current_user.learning_plans or []
+
+
+@router.put("/learning-plans", response_model=list)
+def update_learning_plans(
+    payload: list = Body(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    current_user.learning_plans = payload
+    db.commit()
+    db.refresh(current_user)
+    return current_user.learning_plans or []
 
 
 @router.put("/profile", response_model=UserOut)

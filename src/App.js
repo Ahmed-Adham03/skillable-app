@@ -8,9 +8,11 @@ import AccessibilityFeaturesPage from './pages/AccessibilityFeaturesPage';
 import AccessibilityStatementPage from './pages/AccessibilityStatementPage';
 import ProfilePage from './pages/ProfilePage';
 import JobDetailsPage from './pages/JobDetailsPage';
+import SkillDetailPage from './pages/SkillDetailPage';
 import { Eye, Accessibility, Volume2 } from 'lucide-react';
 
 export default function App() {
+  const API_BASE = process.env.REACT_APP_API_BASE || 'http://127.0.0.1:8000';
   // --- State Management ---
   const [activeTab, setActiveTab] = useState('home'); // Logic to switch pages
   const [themeMode, setThemeMode] = useState('light');
@@ -30,6 +32,8 @@ export default function App() {
   });
   const [speechStatus, setSpeechStatus] = useState('');
   const [selectedJob, setSelectedJob] = useState(null);
+  const [selectedPlanIndex, setSelectedPlanIndex] = useState(null);
+  const [learningPlans, setLearningPlans] = useState([]);
 
   useEffect(() => {
     localStorage.setItem('skillable_speak_focus', String(speakOnFocus));
@@ -125,6 +129,30 @@ export default function App() {
   }, [reducedMotion]);
 
   useEffect(() => {
+    const token = localStorage.getItem('skillable_token');
+    if (!token) return;
+    fetch(`${API_BASE}/auth/learning-plans`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data) => setLearningPlans(Array.isArray(data) ? data : []))
+      .catch(() => {});
+  }, [API_BASE]);
+
+  const persistLearningPlans = (plans) => {
+    const token = localStorage.getItem('skillable_token');
+    if (!token) return;
+    fetch(`${API_BASE}/auth/learning-plans`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify(plans)
+    }).catch(() => {});
+  };
+
+  useEffect(() => {
     if (chatMessages.length <= 1) return;
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatMessages]);
@@ -202,7 +230,6 @@ export default function App() {
   };
 
   const theme = getTheme();
-  const API_BASE = process.env.REACT_APP_API_BASE || 'http://127.0.0.1:8000';
   const [currentUser, setCurrentUser] = useState(null);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const profileRef = useRef(null);
@@ -348,6 +375,94 @@ export default function App() {
           themeMode={themeMode}
           job={selectedJob}
           setActiveTab={setActiveTab}
+          onEnroll={(job) => {
+            if (!job) return;
+            setLearningPlans((prev) => {
+              const exists = prev.find((p) => p.jobtitle === job.jobtitle);
+              if (exists) return prev;
+              const next = [
+                ...prev,
+                {
+                  jobtitle: job.jobtitle,
+                  roadmap: job.roadmap || [],
+                  progress: (job.roadmap || []).map(() => false)
+                }
+              ];
+              persistLearningPlans(next);
+              return next;
+            });
+            setActiveTab('dashboard');
+          }}
+        />
+      ) : activeTab === 'dashboard' ? (
+        <div className="py-12 px-6 max-w-6xl mx-auto">
+          <h1 className="text-4xl font-black mb-6">Dashboard</h1>
+          {learningPlans.length === 0 ? (
+            <p className={theme.textSecondary}>
+              Enroll in a job to start a learning roadmap.
+            </p>
+          ) : (
+            <div className="grid gap-6">
+              <div className={`p-6 rounded-2xl ${theme.card}`}>
+                <div className="text-sm font-bold mb-2">Your Progress</div>
+                <div className="flex items-center gap-6 text-sm">
+                  <div><b>{learningPlans.length}</b> enrolled skills</div>
+                  <div>
+                    <b>
+                      {Math.round(
+                        learningPlans.reduce((acc, plan) => {
+                          const total = plan.roadmap.length || 1;
+                          const completed = plan.progress.filter(Boolean).length;
+                          return acc + (completed / total);
+                        }, 0) / learningPlans.length * 100
+                      )}%</b> avg completion
+                  </div>
+                </div>
+              </div>
+              {learningPlans.map((plan, idx) => {
+                const total = plan.roadmap.length || 1;
+                const completed = plan.progress.filter(Boolean).length;
+                const percent = Math.round((completed / total) * 100);
+                return (
+                  <div key={`${plan.jobtitle}-${idx}`} className={`p-6 rounded-2xl ${theme.card}`}>
+                    <div className="flex items-center justify-between mb-4">
+                      <h2 className="text-xl font-black">{plan.jobtitle}</h2>
+                      <span className="text-sm font-bold">{percent}%</span>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setSelectedPlanIndex(idx);
+                        setActiveTab('skill-detail');
+                      }}
+                      className={`px-6 py-2 rounded-xl font-bold ${theme.primaryBtn}`}
+                    >
+                      Open skill details
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      ) : activeTab === 'skill-detail' ? (
+        <SkillDetailPage
+          theme={theme}
+          themeMode={themeMode}
+          plan={selectedPlanIndex !== null ? learningPlans[selectedPlanIndex] : null}
+          planIndex={selectedPlanIndex}
+          onBack={() => setActiveTab('dashboard')}
+          onToggleStep={(planIndex, stepIndex, checked) => {
+            setLearningPlans((prev) => {
+              const next = [...prev];
+              const updated = { ...next[planIndex] };
+              const progress = [...updated.progress];
+              progress[stepIndex] = checked;
+              updated.progress = progress;
+              next[planIndex] = updated;
+              persistLearningPlans(next);
+              return next;
+            });
+          }}
         />
       ) : activeTab === 'accessibility-features' ? (
         <AccessibilityFeaturesPage theme={theme} themeMode={themeMode} />

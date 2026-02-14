@@ -1,7 +1,7 @@
 import React from 'react';
-import { Briefcase, MapPin, BookOpen } from 'lucide-react';
+import { Briefcase, MapPin, BookOpen, CheckCircle } from 'lucide-react';
 
-export default function JobDetailsPage({ theme, themeMode, job, setActiveTab }) {
+export default function JobDetailsPage({ theme, themeMode, job, setActiveTab, onEnroll }) {
   if (!job) {
     return (
       <div className="py-12 px-6 max-w-5xl mx-auto">
@@ -16,13 +16,13 @@ export default function JobDetailsPage({ theme, themeMode, job, setActiveTab }) 
         ← Back to Career Paths
       </button>
 
-      <div className={`p-8 rounded-[2rem] ${theme.card}`}>
-        <div className="flex items-center gap-3 mb-4">
-          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center bg-white shadow-lg`}>
-            <Briefcase className="text-indigo-600" aria-hidden="true" />
+        <div className={`p-8 rounded-[2rem] ${theme.card}`}>
+          <div className="flex items-center gap-3 mb-4">
+            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center bg-white shadow-lg`}>
+              <Briefcase className="text-indigo-600" aria-hidden="true" />
+            </div>
+            <h1 className="text-3xl font-black">{job.jobtitle}</h1>
           </div>
-          <h1 className="text-3xl font-black">{job.jobtitle}</h1>
-        </div>
 
         <p className={`mb-6 ${theme.textSecondary}`}>{job.summary}</p>
 
@@ -44,6 +44,18 @@ export default function JobDetailsPage({ theme, themeMode, job, setActiveTab }) 
         </div>
 
         <div className={`p-4 rounded-xl ${theme.glass} mb-6`}>
+          <h2 className="text-xl font-black mb-2">Roadmap</h2>
+          <ul className="space-y-2">
+            {(job.roadmap || []).map((step, i) => (
+              <li key={i} className="flex items-start gap-2">
+                <CheckCircle size={16} className="mt-0.5 text-indigo-500" aria-hidden="true" />
+                <span className={theme.textSecondary}>{step}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div className={`p-4 rounded-xl ${theme.glass} mb-6`}>
           <h2 className="text-xl font-black mb-2">Details</h2>
           <p className={theme.textSecondary}>{job.details || 'No details available yet.'}</p>
         </div>
@@ -54,6 +66,15 @@ export default function JobDetailsPage({ theme, themeMode, job, setActiveTab }) 
               {skill}
             </span>
           ))}
+        </div>
+
+        <div className="mt-8">
+          <button
+            onClick={() => onEnroll?.(job)}
+            className={`px-8 py-3 rounded-xl font-bold ${theme.primaryBtn}`}
+          >
+            Enroll / Start Learning
+          </button>
         </div>
       </div>
     </div>

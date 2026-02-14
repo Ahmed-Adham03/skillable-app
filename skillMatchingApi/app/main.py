@@ -106,6 +106,7 @@ def match_jobs(payload: MatchRequest):
             "location": job.get("location"),
             "learning_resource": job.get("learning_resource"),
             "skills": [s.strip() for s in (job.get("skills") or "").split(";") if s.strip()],
+            "roadmap": [s.strip() for s in (job.get("roadmap") or "").split(";") if s.strip()],
             "needs": {
                 "mobility": job.get("mobility"),
                 "vision": job.get("vision"),
