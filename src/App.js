@@ -13,7 +13,6 @@ import { Eye, Accessibility, Volume2 } from 'lucide-react';
 
 export default function App() {
   const API_BASE = process.env.REACT_APP_API_BASE || 'http://127.0.0.1:8000';
-  const CODE_API = process.env.REACT_APP_CODE_API || 'http://127.0.0.1:9100';
   // --- State Management ---
   const [activeTab, setActiveTab] = useState('home'); // Logic to switch pages
   const [themeMode, setThemeMode] = useState('light');
@@ -386,10 +385,7 @@ export default function App() {
                 {
                   jobtitle: job.jobtitle,
                   roadmap: job.roadmap || [],
-                  progress: (job.roadmap || []).map(() => false),
-                  details: job.details || '',
-                  videos: job.videos || [],
-                  sources: job.sources || []
+                  progress: (job.roadmap || []).map(() => false)
                 }
               ];
               persistLearningPlans(next);
@@ -431,23 +427,7 @@ export default function App() {
                   <div key={`${plan.jobtitle}-${idx}`} className={`p-6 rounded-2xl ${theme.card}`}>
                     <div className="flex items-center justify-between mb-4">
                       <h2 className="text-xl font-black">{plan.jobtitle}</h2>
-                      <div className="flex items-center gap-3">
-                        <span className="text-sm font-bold">{percent}%</span>
-                        <button
-                          onClick={() => {
-                            const ok = window.confirm('Remove this skill from your dashboard?');
-                            if (!ok) return;
-                            setLearningPlans((prev) => {
-                              const next = prev.filter((_, i) => i !== idx);
-                              persistLearningPlans(next);
-                              return next;
-                            });
-                          }}
-                          className={`px-3 py-1 rounded-lg font-bold text-xs border ${themeMode === 'contrast' ? 'border-white' : 'border-slate-700'}`}
-                        >
-                          Remove
-                        </button>
-                      </div>
+                      <span className="text-sm font-bold">{percent}%</span>
                     </div>
                     <button
                       onClick={() => {
@@ -507,8 +487,6 @@ export default function App() {
           API_BASE={API_BASE}
           setActiveTab={setActiveTab}
           setCurrentUser={setCurrentUser}
-          setLearningPlans={setLearningPlans}
-          CODE_API={CODE_API}
           speakOnFocus={speakOnFocus}
           speechEnabled={speechEnabled}
           speakText={speakText}
@@ -521,8 +499,6 @@ export default function App() {
           API_BASE={API_BASE}
           setActiveTab={setActiveTab}
           setCurrentUser={setCurrentUser}
-          setLearningPlans={setLearningPlans}
-          CODE_API={CODE_API}
           speakOnFocus={speakOnFocus}
           speechEnabled={speechEnabled}
           speakText={speakText}
