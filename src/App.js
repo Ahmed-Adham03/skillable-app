@@ -385,7 +385,11 @@ export default function App() {
                 ...prev,
                 {
                   jobtitle: job.jobtitle,
+                  summary: job.summary || '',
+                  details: job.details || '',
                   roadmap: job.roadmap || [],
+                  videos: job.videos || [],
+                  sources: job.sources || [],
                   progress: (job.roadmap || []).map(() => false)
                 }
               ];

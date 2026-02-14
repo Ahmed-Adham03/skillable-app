@@ -1,6 +1,7 @@
 import csv
 from pathlib import Path
 from typing import Optional
+from urllib.parse import quote_plus
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -54,6 +55,38 @@ def load_jobs():
     return jobs
 
 
+def build_video_items(jobtitle: str, roadmap: list[str], raw_videos: str) -> list[dict]:
+    parsed = []
+    if raw_videos:
+        for idx, entry in enumerate(raw_videos.split(";")):
+            token = entry.strip()
+            if not token:
+                continue
+            if "|" in token:
+                title, url = token.split("|", 1)
+                parsed.append({
+                    "title": (title or "").strip() or (roadmap[idx] if idx < len(roadmap) else f"Step {idx + 1}"),
+                    "url": (url or "").strip()
+                })
+            else:
+                parsed.append({
+                    "title": roadmap[idx] if idx < len(roadmap) else f"Step {idx + 1}",
+                    "url": token
+                })
+
+    # Ensure each checkpoint has one related video link.
+    if len(parsed) < len(roadmap):
+        for i in range(len(parsed), len(roadmap)):
+            checkpoint = roadmap[i]
+            query = quote_plus(f"{jobtitle} {checkpoint} tutorial")
+            parsed.append({
+                "title": checkpoint,
+                "url": f"https://www.youtube.com/results?search_query={query}"
+            })
+
+    return parsed[: len(roadmap)] if roadmap else parsed
+
+
 def score_job(job, user_levels):
     score = 0
     reasons = []
@@ -99,6 +132,9 @@ def match_jobs(payload: MatchRequest):
     results = []
     for job in jobs:
         score, percent, reasons = score_job(job, user_levels)
+        roadmap = [s.strip() for s in (job.get("roadmap") or "").split(";") if s.strip()]
+        videos = build_video_items(job.get("jobtitle") or "Skill", roadmap, job.get("videos") or "")
+        sources = [s.strip() for s in (job.get("sources") or "").split(";") if s.strip()]
         results.append({
             "jobtitle": job.get("jobtitle"),
             "summary": job.get("summary"),
@@ -106,7 +142,9 @@ def match_jobs(payload: MatchRequest):
             "location": job.get("location"),
             "learning_resource": job.get("learning_resource"),
             "skills": [s.strip() for s in (job.get("skills") or "").split(";") if s.strip()],
-            "roadmap": [s.strip() for s in (job.get("roadmap") or "").split(";") if s.strip()],
+            "roadmap": roadmap,
+            "videos": videos,
+            "sources": sources,
             "needs": {
                 "mobility": job.get("mobility"),
                 "vision": job.get("vision"),

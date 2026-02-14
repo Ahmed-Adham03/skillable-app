@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { User, Sparkles, CheckCircle, Users, Award, Bot } from 'lucide-react';
 
 export default function AuthPage({
@@ -34,6 +34,7 @@ export default function AuthPage({
   const [step, setStep] = useState('credentials');
   const [codeInput, setCodeInput] = useState('');
   const [pendingToken, setPendingToken] = useState('');
+  const [resendCooldown, setResendCooldown] = useState(0);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -105,9 +106,22 @@ export default function AuthPage({
 
       const data = await res.json();
       if (isLogin) {
+        if (!CODE_API) {
+          throw new Error('Code verification service is not configured.');
+        }
+        const sendRes = await fetch(`${CODE_API}/send`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email })
+        });
+        if (!sendRes.ok) {
+          throw new Error('Could not send verification code. Try again.');
+        }
+        const sendData = await sendRes.json().catch(() => ({}));
+        setResendCooldown(Number.isFinite(sendData.expires_in) ? sendData.expires_in : 60);
         setPendingToken(data.access_token);
         setStep('code');
-        setFormSuccess('Enter the 6-digit code to finish sign in.');
+        setFormSuccess('Enter the 6-digit code sent to your email.');
         return;
       } else {
         setFormSuccess('Account created. You can sign in now.');
@@ -136,7 +150,7 @@ export default function AuthPage({
       const res = await fetch(`${CODE_API}/validate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code: codeInput.trim() })
+        body: JSON.stringify({ email, code: codeInput.trim() })
       });
       const data = await res.json();
       if (!data.valid) {
@@ -169,6 +183,36 @@ export default function AuthPage({
     }
   };
 
+  const handleResend = async () => {
+    if (!CODE_API || resendCooldown > 0) return;
+    setFormError('');
+    setFormSuccess('');
+    try {
+      const res = await fetch(`${CODE_API}/send`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+      if (!res.ok) {
+        throw new Error('Could not resend code.');
+      }
+      const data = await res.json().catch(() => ({}));
+      setResendCooldown(Number.isFinite(data.expires_in) ? data.expires_in : 60);
+      setFormSuccess('A new code has been sent.');
+    } catch (err) {
+      setFormError('Unable to resend code.');
+    }
+  };
+
+  useEffect(() => {
+    if (step !== 'code') return;
+    if (resendCooldown <= 0) return;
+    const timer = setInterval(() => {
+      setResendCooldown((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [step, resendCooldown]);
+
   return (
     <div className="animate-fade-in">
       <section className="relative py-20 lg:py-28 overflow-hidden">
@@ -199,6 +243,14 @@ export default function AuthPage({
                 {formSuccess && <div role="status" className="text-sm text-green-600 font-semibold">{formSuccess}</div>}
                 <button type="submit" className={`w-full py-4 rounded-xl font-bold ${theme.primaryBtn}`}>
                   Verify code
+                </button>
+                <button
+                  type="button"
+                  onClick={handleResend}
+                  disabled={resendCooldown > 0}
+                  className={`w-full py-3 rounded-xl font-bold border ${themeMode === 'contrast' ? 'border-white' : 'border-slate-700'} ${resendCooldown > 0 ? 'opacity-60 cursor-not-allowed' : ''}`}
+                >
+                  {resendCooldown > 0 ? `Resend code in ${resendCooldown}s` : 'Resend code'}
                 </button>
               </form>
             ) : (
