@@ -107,6 +107,20 @@ def match_jobs(payload: MatchRequest):
             "learning_resource": job.get("learning_resource"),
             "skills": [s.strip() for s in (job.get("skills") or "").split(";") if s.strip()],
             "roadmap": [s.strip() for s in (job.get("roadmap") or "").split(";") if s.strip()],
+            "videos": [
+                {
+                    "title": (v.split("|", 1)[0].strip() if "|" in v else v.strip()),
+                    "url": (v.split("|", 1)[1].strip() if "|" in v else "")
+                }
+                for v in (job.get("videos") or "").split(";") if v.strip()
+            ],
+            "sources": [
+                {
+                    "title": (s.split("|", 1)[0].strip() if "|" in s else s.strip()),
+                    "url": (s.split("|", 1)[1].strip() if "|" in s else "")
+                }
+                for s in (job.get("sources") or "").split(";") if s.strip()
+            ],
             "needs": {
                 "mobility": job.get("mobility"),
                 "vision": job.get("vision"),
