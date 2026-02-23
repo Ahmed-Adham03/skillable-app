@@ -233,9 +233,27 @@ export default function App() {
   const theme = getTheme();
   const [currentUser, setCurrentUser] = useState(null);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [showPersonalizeHint, setShowPersonalizeHint] = useState(false);
   const profileRef = useRef(null);
   const signOutButtonRef = useRef(null);
   const profileButtonRef = useRef(null);
+
+  const isProfileIncomplete = (user) => {
+    if (!user) return false;
+    const fields = [
+      user.mobility,
+      user.vision,
+      user.hearing,
+      user.cognitive,
+      user.address,
+      user.phone_number
+    ];
+    return fields.some((value) => {
+      const normalized = String(value || '').trim().toLowerCase();
+      return !normalized || normalized === 'n/a';
+    });
+  };
+  const hasProfileAlert = Boolean(currentUser && isProfileIncomplete(currentUser));
 
   useEffect(() => {
     const token = localStorage.getItem('skillable_token');
@@ -261,6 +279,28 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    if (!currentUser?.email) {
+      setShowPersonalizeHint(false);
+      return;
+    }
+    const key = `skillable_personalize_hint_seen_${currentUser.email.toLowerCase()}`;
+    const seen = localStorage.getItem(key) === 'true';
+    if (!seen && isProfileIncomplete(currentUser)) {
+      setShowPersonalizeHint(true);
+      return;
+    }
+    setShowPersonalizeHint(false);
+  }, [currentUser]);
+
+  const dismissPersonalizeHint = () => {
+    if (currentUser?.email) {
+      const key = `skillable_personalize_hint_seen_${currentUser.email.toLowerCase()}`;
+      localStorage.setItem(key, 'true');
+    }
+    setShowPersonalizeHint(false);
+  };
+
+  useEffect(() => {
     if (isProfileOpen) {
       setTimeout(() => signOutButtonRef.current?.focus(), 0);
     }
@@ -270,6 +310,7 @@ export default function App() {
     localStorage.removeItem('skillable_token');
     setCurrentUser(null);
     setIsProfileOpen(false);
+    setShowPersonalizeHint(false);
     setActiveTab('home');
   };
 
@@ -339,6 +380,9 @@ export default function App() {
         signOutButtonRef={signOutButtonRef}
         handleSignOut={handleSignOut}
         toggleTheme={toggleTheme}
+        showPersonalizeHint={showPersonalizeHint}
+        dismissPersonalizeHint={dismissPersonalizeHint}
+        hasProfileAlert={hasProfileAlert}
       />
 
       {/* --- PAGE SWITCHER --- */}
@@ -473,6 +517,15 @@ export default function App() {
         <AccessibilityFeaturesPage theme={theme} themeMode={themeMode} />
       ) : activeTab === 'accessibility-statement' ? (
         <AccessibilityStatementPage theme={theme} themeMode={themeMode} />
+      ) : activeTab === 'cv-generator' ? (
+        <div className="py-12 px-6 max-w-6xl mx-auto">
+          <div className={`p-8 rounded-[2rem] ${theme.card}`}>
+            <h1 className="text-4xl font-black mb-4">CV Generator</h1>
+            <p className={theme.textSecondary}>
+              CV generator is ready to be implemented. We will build this flow next.
+            </p>
+          </div>
+        </div>
       ) : activeTab === 'profile' ? (
         <ProfilePage
           theme={theme}

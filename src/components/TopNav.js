@@ -13,7 +13,10 @@ export default function TopNav({
   profileButtonRef,
   signOutButtonRef,
   handleSignOut,
-  toggleTheme
+  toggleTheme,
+  showPersonalizeHint,
+  dismissPersonalizeHint,
+  hasProfileAlert
 }) {
   return (
     <nav className={`sticky top-0 z-40 transition-all duration-300 ${theme.navBg}`} aria-label="Main">
@@ -30,6 +33,7 @@ export default function TopNav({
           {currentUser && (
             <button onClick={() => setActiveTab('dashboard')} className={`relative transition-colors hover:text-indigo-500 ${activeTab === 'dashboard' ? theme.accent : theme.textSecondary}`}>Dashboard</button>
           )}
+          <button onClick={() => setActiveTab('cv-generator')} className={`relative transition-colors hover:text-indigo-500 ${activeTab === 'cv-generator' ? theme.accent : theme.textSecondary}`}>CV Generator</button>
           <button onClick={() => setActiveTab('careers')} className={`relative transition-colors hover:text-indigo-500 ${activeTab === 'careers' ? theme.accent : theme.textSecondary}`}>Career Paths</button>
           <button onClick={() => document.getElementById('ai')?.scrollIntoView({ behavior: 'smooth' })} className={`transition-colors hover:text-indigo-500 ${theme.textSecondary}`}>AI Tools</button>
           <button onClick={() => setActiveTab('accessibility-features')} className={`relative transition-colors hover:text-indigo-500 ${activeTab === 'accessibility-features' ? theme.accent : theme.textSecondary}`}>Accessibility Features</button>
@@ -58,7 +62,7 @@ export default function TopNav({
                 aria-haspopup="menu"
                 aria-expanded={isProfileOpen}
                 aria-label="Account menu"
-                className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${themeMode === 'contrast' ? 'bg-[#FFFF00] text-black' : 'bg-indigo-600 text-white'}`}
+                className={`relative w-10 h-10 rounded-full flex items-center justify-center font-bold ${themeMode === 'contrast' ? 'bg-[#FFFF00] text-black' : 'bg-indigo-600 text-white'}`}
                 ref={profileButtonRef}
               >
                 {(() => {
@@ -69,6 +73,13 @@ export default function TopNav({
                   if (parts.length > 1) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
                   return email ? email.slice(0, 2).toUpperCase() : 'SK';
                 })()}
+                {hasProfileAlert && (
+                  <span
+                    className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-red-500 border border-white shadow"
+                    aria-label="Profile incomplete"
+                    title="Profile incomplete"
+                  />
+                )}
               </button>
 
               {isProfileOpen && (
@@ -99,13 +110,18 @@ export default function TopNav({
                     </div>
                   </div>
                   <div className="mt-4 space-y-2">
+                    {hasProfileAlert && (
+                      <div className={`rounded-xl p-3 text-xs font-semibold ${themeMode === 'contrast' ? 'border border-white' : 'border border-red-300 bg-red-50 text-red-700'}`}>
+                        Profile is incomplete. Please complete personalization fields that are still set to N/A.
+                      </div>
+                    )}
                     <button
                       onClick={() => {
                         setActiveTab('profile');
                         setIsProfileOpen(false);
                       }}
                       role="menuitem"
-                      className={`w-full py-2.5 rounded-xl font-bold ${themeMode === 'contrast' ? 'border border-white' : 'border border-slate-700'}`}
+                      className={`w-full py-2.5 rounded-xl font-bold text-sm ${theme.primaryBtn}`}
                     >
                       Personalize your experience
                     </button>
@@ -116,6 +132,39 @@ export default function TopNav({
                       className={`w-full py-2.5 rounded-xl font-bold ${themeMode === 'contrast' ? 'bg-white text-black' : 'bg-slate-900 text-white'} `}
                     >
                       Sign out
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {showPersonalizeHint && !isProfileOpen && (
+                <div
+                  className={`absolute right-0 top-full mt-3 w-72 rounded-2xl p-4 shadow-xl ${theme.glass}`}
+                  role="status"
+                  aria-live="polite"
+                >
+                  <div className="absolute -top-2 right-6 w-4 h-4 rotate-45 bg-inherit border-l border-t border-white/20" aria-hidden="true" />
+                  <p className="text-sm font-bold mb-2">Let&apos;s get personalized</p>
+                  <p className={`text-xs mb-3 ${theme.textSecondary}`}>
+                    Complete your profile so Skillable can recommend better career matches for you.
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        dismissPersonalizeHint();
+                        setActiveTab('profile');
+                      }}
+                      className={`px-3 py-2 rounded-lg text-xs font-bold ${theme.primaryBtn}`}
+                    >
+                      Personalize now
+                    </button>
+                    <button
+                      type="button"
+                      onClick={dismissPersonalizeHint}
+                      className={`px-3 py-2 rounded-lg text-xs font-bold border ${themeMode === 'contrast' ? 'border-white' : 'border-slate-700'}`}
+                    >
+                      Later
                     </button>
                   </div>
                 </div>

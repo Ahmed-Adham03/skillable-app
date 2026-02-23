@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 
 const NEED_OPTIONS = [
-  { value: 'N/A', label: 'No issues / N/A' },
+  { value: 'N/A', label: 'N/A (Not selected yet)' },
+  { value: 'No issues', label: 'No issues' },
   { value: 'Mild', label: 'Mild' },
   { value: 'Moderate', label: 'Moderate' },
   { value: 'Significant', label: 'Significant' },
@@ -63,13 +64,19 @@ export default function ProfilePage({
 
   useEffect(() => {
     if (!currentUser) return;
+    const normalizeNeed = (value) => {
+      if (!value) return 'N/A';
+      const key = String(value).trim().toLowerCase();
+      if (key === 'no issues / n/a') return 'No issues';
+      return value;
+    };
     setFullName(currentUser.full_name || 'N/A');
     setPhoneNumber(currentUser.phone_number === 'N/A' ? '' : (currentUser.phone_number || ''));
     setAddress(currentUser.address || 'N/A');
-    setMobility(currentUser.mobility || 'N/A');
-    setVision(currentUser.vision || 'N/A');
-    setHearing(currentUser.hearing || 'N/A');
-    setCognitive(currentUser.cognitive || 'N/A');
+    setMobility(normalizeNeed(currentUser.mobility));
+    setVision(normalizeNeed(currentUser.vision));
+    setHearing(normalizeNeed(currentUser.hearing));
+    setCognitive(normalizeNeed(currentUser.cognitive));
   }, [currentUser]);
 
   const handleSubmit = async (e) => {
@@ -143,7 +150,7 @@ export default function ProfilePage({
           <div className={`p-10 lg:p-12 rounded-[2.5rem] ${theme.glass}`}>
             <h1 className="text-4xl lg:text-5xl font-black mb-4">Personalize your experience</h1>
             <p className={`mb-8 max-w-3xl ${theme.textSecondary}`}>
-              Share your needs so we can recommend paths that fit you. Choose “No issues / N/A” if a category does not apply.
+              Share your needs so we can recommend paths that fit you. Select "No issues" when applicable. Keep "N/A" only if you have not chosen yet.
             </p>
 
             <form className="space-y-6" onSubmit={handleSubmit}>

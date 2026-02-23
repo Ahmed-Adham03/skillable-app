@@ -10,6 +10,7 @@ from pydantic import BaseModel
 DATA_PATH = Path(__file__).resolve().parent.parent / "data" / "jobs.csv"
 
 LEVELS = {
+    "no issues": 0,
     "no issues / n/a": 0,
     "n/a": 0,
     "mild": 1,

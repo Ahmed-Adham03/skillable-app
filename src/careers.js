@@ -6,6 +6,21 @@ export default function CareerPage({ theme, themeMode, currentUser, onSelectJob 
   const [results, setResults] = useState([]);
   const [status, setStatus] = useState('');
   const MATCH_API = process.env.REACT_APP_MATCH_API || 'http://127.0.0.1:9000';
+  const isProfileIncomplete = useMemo(() => {
+    if (!currentUser) return false;
+    const requiredFields = [
+      currentUser.mobility,
+      currentUser.vision,
+      currentUser.hearing,
+      currentUser.cognitive,
+      currentUser.address,
+      currentUser.phone_number
+    ];
+    return requiredFields.some((value) => {
+      const normalized = String(value || '').trim().toLowerCase();
+      return !normalized || normalized === 'n/a';
+    });
+  }, [currentUser]);
 
   const profilePayload = useMemo(() => {
     return {
@@ -18,6 +33,12 @@ export default function CareerPage({ theme, themeMode, currentUser, onSelectJob 
   }, [currentUser]);
 
   useEffect(() => {
+    if (!currentUser) return;
+    if (isProfileIncomplete) {
+      setResults([]);
+      setStatus('');
+      return;
+    }
     const fetchMatches = async () => {
       setStatus('Loading matches...');
       try {
@@ -34,7 +55,7 @@ export default function CareerPage({ theme, themeMode, currentUser, onSelectJob 
       }
     };
     fetchMatches();
-  }, [MATCH_API, profilePayload]);
+  }, [MATCH_API, profilePayload, currentUser, isProfileIncomplete]);
 
   const filtered = results.filter((item) => {
     if (!query.trim()) return true;
@@ -78,7 +99,7 @@ export default function CareerPage({ theme, themeMode, currentUser, onSelectJob 
         </button>
       </div>
 
-      {status && (
+      {status && !isProfileIncomplete && (
         <div className={`mb-8 text-sm font-semibold ${theme.textSecondary}`}>{status}</div>
       )}
       {!currentUser && (
@@ -90,10 +111,19 @@ export default function CareerPage({ theme, themeMode, currentUser, onSelectJob 
           </p>
         </div>
       )}
+      {currentUser && isProfileIncomplete && (
+        <div className={`mb-8 p-4 rounded-2xl ${theme.glass}`}>
+          <h3 className="text-lg font-black mb-2">Complete your profile first</h3>
+          <p className={theme.textSecondary}>
+            We cannot show matching jobs yet because some personalization fields are still set to N/A.
+            Please complete your profile to unlock accurate career matches.
+          </p>
+        </div>
+      )}
 
       {/* Career Cards Grid */}
 
-      {!currentUser && (
+      {(!currentUser || isProfileIncomplete) && (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 opacity-60 blur-[2px]">
         {[1, 2, 3].map((id) => (
           <div key={id} className={`group p-8 rounded-[2rem] flex flex-col h-full ${theme.card}`}>
@@ -106,7 +136,9 @@ export default function CareerPage({ theme, themeMode, currentUser, onSelectJob 
               </div>
             </div>
             <h3 className="text-2xl font-bold mb-2">Career Path Preview</h3>
-            <p className="text-sm font-semibold mb-6 opacity-60">Sign in to see full details</p>
+            <p className="text-sm font-semibold mb-6 opacity-60">
+              {!currentUser ? 'Sign in to see full details' : 'Complete your profile to unlock matches'}
+            </p>
             <div className="flex flex-wrap gap-2 mb-6">
               {['Skill A', 'Skill B', 'Skill C'].map((skill, i) => (
                 <span key={i} className={`text-xs px-3 py-1 rounded-lg border ${themeMode === 'contrast' ? 'border-[#FFFF00]' : 'border-slate-200 dark:border-slate-700'}`}>
@@ -116,7 +148,7 @@ export default function CareerPage({ theme, themeMode, currentUser, onSelectJob 
             </div>
             <div className="mt-auto pt-6 border-t border-dashed border-slate-200 dark:border-slate-700">
               <button className="flex items-center gap-2 font-bold text-sm group/btn">
-                Explore this path
+                {!currentUser ? 'Explore this path' : 'Complete profile first'}
               </button>
             </div>
           </div>
@@ -124,7 +156,7 @@ export default function CareerPage({ theme, themeMode, currentUser, onSelectJob 
       </div>
       )}
 
-      {currentUser && (
+      {currentUser && !isProfileIncomplete && (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {filtered.map((path, idx) => (
           <div key={`${path.jobtitle}-${idx}`} className={`group p-8 rounded-[2rem] flex flex-col h-full ${theme.card}`}>
