@@ -9,11 +9,13 @@ import AccessibilityStatementPage from './pages/AccessibilityStatementPage';
 import ProfilePage from './pages/ProfilePage';
 import JobDetailsPage from './pages/JobDetailsPage';
 import SkillDetailPage from './pages/SkillDetailPage';
+import CreateCVPage from './pages/CreateCVPage';
 import { Eye, Accessibility, Volume2 } from 'lucide-react';
 
 export default function App() {
   const API_BASE = process.env.REACT_APP_API_BASE || 'http://127.0.0.1:8000';
   const CODE_API = process.env.REACT_APP_CODE_API || 'http://127.0.0.1:9100';
+  const OAUTH_REDIRECT_URI = process.env.REACT_APP_OAUTH_REDIRECT_URI || window.location.origin;
   // --- State Management ---
   const [activeTab, setActiveTab] = useState('home'); // Logic to switch pages
   const [themeMode, setThemeMode] = useState('light');
@@ -128,6 +130,46 @@ export default function App() {
   useEffect(() => {
     document.documentElement.classList.toggle('reduce-motion', reducedMotion);
   }, [reducedMotion]);
+
+  // Handle OAuth redirect callbacks (LinkedIn, Facebook)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('code');
+    const state = params.get('state');
+    if (!code || !['linkedin', 'facebook'].includes(state)) return;
+
+    // Clear the OAuth params from the URL immediately
+    window.history.replaceState({}, '', '/');
+
+    const endpoint = `${API_BASE}/auth/oauth/${state}`;
+    fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code, redirect_uri: OAUTH_REDIRECT_URI }),
+    })
+      .then((res) => {
+        if (!res.ok) return res.json().then((d) => { throw new Error(d.detail || 'OAuth failed'); });
+        return res.json();
+      })
+      .then((data) => {
+        localStorage.setItem('skillable_token', data.access_token);
+        return fetch(`${API_BASE}/auth/me`, {
+          headers: { Authorization: `Bearer ${data.access_token}` },
+        });
+      })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((me) => {
+        if (me) {
+          setCurrentUser(me);
+          setActiveTab('home');
+        }
+      })
+      .catch(() => {
+        // If OAuth callback fails, send to login page so user sees the error
+        setActiveTab('login');
+      });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     const token = localStorage.getItem('skillable_token');
@@ -518,14 +560,28 @@ export default function App() {
       ) : activeTab === 'accessibility-statement' ? (
         <AccessibilityStatementPage theme={theme} themeMode={themeMode} />
       ) : activeTab === 'cv-generator' ? (
-        <div className="py-12 px-6 max-w-6xl mx-auto">
-          <div className={`p-8 rounded-[2rem] ${theme.card}`}>
-            <h1 className="text-4xl font-black mb-4">CV Generator</h1>
-            <p className={theme.textSecondary}>
-              CV generator is ready to be implemented. We will build this flow next.
-            </p>
+        currentUser ? (
+          <CreateCVPage
+            theme={theme}
+            themeMode={themeMode}
+            currentUser={currentUser}
+          />
+        ) : (
+          <div className="py-12 px-6 max-w-4xl mx-auto">
+            <div className={`p-8 rounded-[2rem] ${theme.card}`}>
+              <h1 className="text-3xl font-black mb-3">Sign in required</h1>
+              <p className={`mb-6 ${theme.textSecondary}`}>
+                CV Generator is available only for signed-in users.
+              </p>
+              <button
+                onClick={() => setActiveTab('login')}
+                className={`px-6 py-3 rounded-xl font-bold ${theme.primaryBtn}`}
+              >
+                Go to Sign In
+              </button>
+            </div>
           </div>
-        </div>
+        )
       ) : activeTab === 'profile' ? (
         <ProfilePage
           theme={theme}
@@ -544,6 +600,7 @@ export default function App() {
           themeMode={themeMode}
           API_BASE={API_BASE}
           CODE_API={CODE_API}
+          OAUTH_REDIRECT_URI={OAUTH_REDIRECT_URI}
           setActiveTab={setActiveTab}
           setCurrentUser={setCurrentUser}
           setLearningPlans={setLearningPlans}
@@ -558,6 +615,7 @@ export default function App() {
           themeMode={themeMode}
           API_BASE={API_BASE}
           CODE_API={CODE_API}
+          OAUTH_REDIRECT_URI={OAUTH_REDIRECT_URI}
           setActiveTab={setActiveTab}
           setCurrentUser={setCurrentUser}
           setLearningPlans={setLearningPlans}
