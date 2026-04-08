@@ -1,0 +1,593 @@
+import React, { useEffect, useState } from 'react';
+import { useGoogleLogin } from '@react-oauth/google';
+import { User, Sparkles, CheckCircle, Users, Award, Bot } from 'lucide-react';
+
+// Isolated component so useGoogleLogin only mounts when a clientId exists
+function GoogleLoginButton({ onSuccess, onError, className }) {
+  const googleLogin = useGoogleLogin({ flow: 'implicit', onSuccess, onError });
+  return (
+    <button type="button" onClick={() => googleLogin()} aria-label="Sign in with Google" className={className}>
+      <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
+        <path fill="#4285F4" d="M46.1 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h12.4c-.5 2.8-2.1 5.2-4.5 6.8v5.6h7.3c4.3-3.9 6.9-9.7 6.9-16.4z"/>
+        <path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.3-5.6c-2.2 1.5-5 2.3-8.6 2.3-6.6 0-12.2-4.5-14.2-10.5H2.3v5.8C6.3 42.8 14.6 48 24 48z"/>
+        <path fill="#FBBC05" d="M9.8 28.4A14.9 14.9 0 0 1 9 24c0-1.5.3-3 .8-4.4v-5.8H2.3A23.9 23.9 0 0 0 0 24c0 3.9.9 7.5 2.3 10.8l7.5-6.4z"/>
+        <path fill="#EA4335" d="M24 9.5c3.7 0 7 1.3 9.6 3.8l7.2-7.2C36.9 2.1 31.5 0 24 0 14.6 0 6.3 5.2 2.3 13.2l7.5 5.8C11.8 14 17.4 9.5 24 9.5z"/>
+      </svg>
+      Google
+    </button>
+  );
+}
+
+export default function AuthPage({
+  variant,
+  theme,
+  themeMode,
+  API_BASE,
+  OAUTH_REDIRECT_URI,
+  setActiveTab,
+  setCurrentUser,
+  setLearningPlans,
+  CODE_API,
+  speakOnFocus,
+  speechEnabled,
+  speakText
+}) {
+  const isLogin = variant === 'login';
+  const title = isLogin ? 'Welcome back' : 'Create your account';
+  const subtitle = isLogin
+    ? 'Sign in to keep building a career path that fits you.'
+    : 'Join Skillable to get personalized, accessible guidance.';
+
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formError, setFormError] = useState('');
+  const [formSuccess, setFormSuccess] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [step, setStep] = useState('credentials');
+  const [codeInput, setCodeInput] = useState('');
+  const [pendingToken, setPendingToken] = useState('');
+  const [resendCooldown, setResendCooldown] = useState(0);
+
+  const [socialError, setSocialError] = useState('');
+
+  const handleSocialLogin = async (endpoint, body) => {
+    setSocialError('');
+    try {
+      const res = await fetch(`${API_BASE}${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        throw new Error(d.detail || 'Sign-in failed.');
+      }
+      const data = await res.json();
+      localStorage.setItem('skillable_token', data.access_token);
+      const meRes = await fetch(`${API_BASE}/auth/me`, {
+        headers: { Authorization: `Bearer ${data.access_token}` },
+      });
+      const me = await meRes.json().catch(() => null);
+      if (me) {
+        setCurrentUser(me);
+        if (setLearningPlans) {
+          fetch(`${API_BASE}/auth/learning-plans`, {
+            headers: { Authorization: `Bearer ${data.access_token}` },
+          })
+            .then((r) => (r.ok ? r.json() : []))
+            .then((plans) => setLearningPlans(Array.isArray(plans) ? plans : []))
+            .catch(() => {});
+        }
+        setActiveTab('home');
+      }
+    } catch (err) {
+      setSocialError(err.message || 'Social sign-in failed.');
+    }
+  };
+
+  const hasGoogleClientId = Boolean(process.env.REACT_APP_GOOGLE_CLIENT_ID);
+
+  const handleLinkedInLogin = () => {
+    const LINKEDIN_CLIENT_ID = process.env.REACT_APP_LINKEDIN_CLIENT_ID || '';
+    if (!LINKEDIN_CLIENT_ID) {
+      setSocialError('LinkedIn sign-in is not configured (missing REACT_APP_LINKEDIN_CLIENT_ID).');
+      return;
+    }
+    const redirectUri = encodeURIComponent(OAUTH_REDIRECT_URI || window.location.origin);
+    const url = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${LINKEDIN_CLIENT_ID}&redirect_uri=${redirectUri}&scope=openid%20profile%20email&state=linkedin`;
+    window.location.href = url;
+  };
+
+  const handleFacebookLogin = () => {
+    const FACEBOOK_APP_ID = process.env.REACT_APP_FACEBOOK_APP_ID || '';
+    if (!FACEBOOK_APP_ID) {
+      setSocialError('Facebook sign-in is not configured (missing REACT_APP_FACEBOOK_APP_ID).');
+      return;
+    }
+    const redirectUri = encodeURIComponent(OAUTH_REDIRECT_URI || window.location.origin);
+    const url = `https://www.facebook.com/v18.0/dialog/oauth?client_id=${FACEBOOK_APP_ID}&redirect_uri=${redirectUri}&scope=email,public_profile&state=facebook`;
+    window.location.href = url;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setFormError('');
+    setFormSuccess('');
+    setFieldErrors({});
+
+    if (!email || !password || (!isLogin && (!firstName || !lastName))) {
+      setFormError('Please complete all required fields.');
+      setFieldErrors({
+        firstName: !isLogin && !firstName ? 'First name is required.' : '',
+        lastName: !isLogin && !lastName ? 'Last name is required.' : '',
+        email: !email ? 'Email address is required.' : '',
+        password: !password ? 'Password is required.' : ''
+      });
+      if (speakOnFocus && speechEnabled) {
+        speakText('A required field is missing. Please complete all required fields.');
+      }
+      return;
+    }
+    if (!isLogin) {
+      const hasMin = password.length >= 8;
+      const hasSpecial = /[^A-Za-z0-9]/.test(password);
+      const emailLower = (email || '').toLowerCase();
+      const passwordLower = password.toLowerCase();
+      const containsEmail = emailLower && passwordLower.includes(emailLower);
+
+      if (!hasMin || !hasSpecial || containsEmail) {
+        const messages = [];
+        if (!hasMin) messages.push('at least 8 characters');
+        if (!hasSpecial) messages.push('a special character');
+        if (containsEmail) messages.push('not include your email');
+        const message = `Password must contain ${messages.join(', ')}.`;
+        setFormError(message);
+        setFieldErrors({ password: message });
+        if (speakOnFocus && speechEnabled) {
+          speakText(message);
+        }
+        return;
+      }
+    }
+    if (!isLogin && password !== confirmPassword) {
+      setFormError('Passwords do not match.');
+      setFieldErrors({ confirmPassword: 'Passwords do not match.' });
+      if (speakOnFocus && speechEnabled) {
+        speakText('Passwords do not match.');
+      }
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const endpoint = isLogin ? '/auth/login' : '/auth/register';
+      const payload = isLogin
+        ? { email, password }
+        : { full_name: `${firstName} ${lastName}`.trim(), email, password };
+
+      const res = await fetch(`${API_BASE}${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        const message = data.detail || 'Request failed. Please try again.';
+        throw new Error(message);
+      }
+
+      const data = await res.json();
+      if (isLogin) {
+        if (!CODE_API) {
+          throw new Error('Code verification service is not configured.');
+        }
+        const sendRes = await fetch(`${CODE_API}/send`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email })
+        });
+        if (!sendRes.ok) {
+          throw new Error('Could not send verification code. Try again.');
+        }
+        const sendData = await sendRes.json().catch(() => ({}));
+        setResendCooldown(Number.isFinite(sendData.expires_in) ? sendData.expires_in : 60);
+        setPendingToken(data.access_token);
+        setStep('code');
+        setFormSuccess('Enter the 6-digit code sent to your email.');
+        return;
+      } else {
+        setFormSuccess('Account created. You can sign in now.');
+        setActiveTab('login');
+      }
+    } catch (err) {
+      const message = err.message || 'Something went wrong.';
+      setFormError(message);
+      if (speakOnFocus && speechEnabled) {
+        speakText(message);
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleCodeSubmit = async (e) => {
+    e.preventDefault();
+    setFormError('');
+    setFormSuccess('');
+    if (!codeInput.trim() || codeInput.trim().length !== 6) {
+      setFormError('Enter the 6-digit code.');
+      return;
+    }
+    try {
+      const res = await fetch(`${CODE_API}/validate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, code: codeInput.trim() })
+      });
+      const data = await res.json();
+      if (!data.valid) {
+        setFormError('Invalid or expired code.');
+        return;
+      }
+      localStorage.setItem('skillable_token', pendingToken);
+      const meRes = await fetch(`${API_BASE}/auth/me`, {
+        headers: { Authorization: `Bearer ${pendingToken}` }
+      });
+      const me = await meRes.json().catch(() => null);
+      if (me) {
+        setCurrentUser(me);
+        if (setLearningPlans) {
+          fetch(`${API_BASE}/auth/learning-plans`, {
+            headers: { Authorization: `Bearer ${pendingToken}` }
+          })
+            .then((res) => (res.ok ? res.json() : []))
+            .then((plans) => setLearningPlans(Array.isArray(plans) ? plans : []))
+            .catch(() => {});
+        }
+        setFormSuccess('Signed in successfully.');
+        if (speakOnFocus && speechEnabled) {
+          speakText('Signed in successfully');
+        }
+        setActiveTab('home');
+      }
+    } catch (err) {
+      setFormError('Unable to validate code.');
+    }
+  };
+
+  const handleResend = async () => {
+    if (!CODE_API || resendCooldown > 0) return;
+    setFormError('');
+    setFormSuccess('');
+    try {
+      const res = await fetch(`${CODE_API}/send`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+      if (!res.ok) {
+        throw new Error('Could not resend code.');
+      }
+      const data = await res.json().catch(() => ({}));
+      setResendCooldown(Number.isFinite(data.expires_in) ? data.expires_in : 60);
+      setFormSuccess('A new code has been sent.');
+    } catch (err) {
+      setFormError('Unable to resend code.');
+    }
+  };
+
+  useEffect(() => {
+    if (step !== 'code') return;
+    if (resendCooldown <= 0) return;
+    const timer = setInterval(() => {
+      setResendCooldown((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [step, resendCooldown]);
+
+  return (
+    <div className="animate-fade-in">
+      <section className="relative py-20 lg:py-28 overflow-hidden">
+        <div className="container mx-auto px-6 grid lg:grid-cols-2 gap-14 items-center">
+          <div className={`p-10 lg:p-12 rounded-[2.5rem] ${theme.glass}`}>
+            <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold mb-6 border ${themeMode === 'contrast' ? 'border-[#FFFF00]' : 'bg-indigo-500/10 text-indigo-300'}`}>
+              <User size={14} aria-hidden="true" />
+              <span>{isLogin ? 'Member Access' : 'New to Skillable'}</span>
+            </div>
+            <h1 className="text-4xl lg:text-5xl font-black mb-4">{title}</h1>
+            <p className={`mb-8 ${theme.textSecondary}`}>{subtitle}</p>
+
+            {isLogin && step === 'code' ? (
+              <form className="space-y-5" onSubmit={handleCodeSubmit}>
+                <div className="space-y-2">
+                  <label className="text-sm font-bold" htmlFor="login-code">Authenticator code</label>
+                  <input
+                    id="login-code"
+                    className={`w-full p-4 rounded-xl border ${theme.input}`}
+                    placeholder="6-digit code"
+                    value={codeInput}
+                    onChange={(e) => setCodeInput(e.target.value.replace(/\D+/g, '').slice(0, 6))}
+                    inputMode="numeric"
+                    maxLength={6}
+                  />
+                </div>
+                {formError && <div role="alert" className="text-sm text-red-500 font-semibold">Error: {formError}</div>}
+                {formSuccess && <div role="status" className="text-sm text-green-600 font-semibold">{formSuccess}</div>}
+                <button type="submit" className={`w-full py-4 rounded-xl font-bold ${theme.primaryBtn}`}>
+                  Verify code
+                </button>
+                <button
+                  type="button"
+                  onClick={handleResend}
+                  disabled={resendCooldown > 0}
+                  className={`w-full py-3 rounded-xl font-bold border ${themeMode === 'contrast' ? 'border-white' : 'border-slate-700'} ${resendCooldown > 0 ? 'opacity-60 cursor-not-allowed' : ''}`}
+                >
+                  {resendCooldown > 0 ? `Resend code in ${resendCooldown}s` : 'Resend code'}
+                </button>
+              </form>
+            ) : (
+              <form className="space-y-5" onSubmit={handleSubmit}>
+              {!isLogin && (
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold" htmlFor={`${variant}-first-name`}>First name</label>
+                    <input
+                      id={`${variant}-first-name`}
+                      aria-invalid={Boolean(fieldErrors.firstName)}
+                      aria-describedby={fieldErrors.firstName ? `${variant}-first-name-error` : undefined}
+                      className={`w-full p-4 rounded-xl border ${theme.input}`}
+                      placeholder="Alex"
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value.replace(/\s+/g, ''))}
+                    />
+                    {fieldErrors.firstName && (
+                      <div id={`${variant}-first-name-error`} className="text-xs text-red-500 font-semibold">
+                        {fieldErrors.firstName}
+                      </div>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold" htmlFor={`${variant}-last-name`}>Last name</label>
+                    <input
+                      id={`${variant}-last-name`}
+                      aria-invalid={Boolean(fieldErrors.lastName)}
+                      aria-describedby={fieldErrors.lastName ? `${variant}-last-name-error` : undefined}
+                      className={`w-full p-4 rounded-xl border ${theme.input}`}
+                      placeholder="Morgan"
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value.replace(/\s+/g, ''))}
+                    />
+                    {fieldErrors.lastName && (
+                      <div id={`${variant}-last-name-error`} className="text-xs text-red-500 font-semibold">
+                        {fieldErrors.lastName}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+              <div className="space-y-2">
+                <label className="text-sm font-bold" htmlFor={`${variant}-email`}>Email address</label>
+                <input
+                  id={`${variant}-email`}
+                  aria-invalid={Boolean(fieldErrors.email)}
+                  aria-describedby={fieldErrors.email ? `${variant}-email-error` : undefined}
+                  className={`w-full p-4 rounded-xl border ${theme.input}`}
+                  type="email"
+                  placeholder="alex@skillable.ai"
+                  aria-label="Email address"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+                {fieldErrors.email && (
+                  <div id={`${variant}-email-error`} className="text-xs text-red-500 font-semibold">
+                    {fieldErrors.email}
+                  </div>
+                )}
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-bold" htmlFor={`${variant}-password`}>Password</label>
+                <div className="relative">
+                  <input
+                    id={`${variant}-password`}
+                    aria-invalid={Boolean(fieldErrors.password)}
+                    aria-describedby={fieldErrors.password ? `${variant}-password-error` : undefined}
+                    className={`w-full p-4 pr-24 rounded-xl border ${theme.input}`}
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="••••••••"
+                    aria-label="Password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
+                  <button
+                    type="button"
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    onClick={() => setShowPassword((prev) => !prev)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold opacity-70"
+                  >
+                    {showPassword ? 'Hide' : 'Show'}
+                  </button>
+                </div>
+                {fieldErrors.password && (
+                  <div id={`${variant}-password-error`} className="text-xs text-red-500 font-semibold">
+                    {fieldErrors.password}
+                  </div>
+                )}
+              </div>
+              {!isLogin && (
+                <div className="space-y-2">
+                  <label className="text-sm font-bold" htmlFor={`${variant}-confirm-password`}>Confirm password</label>
+                  <div className="relative">
+                    <input
+                      id={`${variant}-confirm-password`}
+                      aria-invalid={Boolean(fieldErrors.confirmPassword)}
+                      aria-describedby={fieldErrors.confirmPassword ? `${variant}-confirm-password-error` : undefined}
+                      className={`w-full p-4 pr-24 rounded-xl border ${theme.input}`}
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      placeholder="••••••••"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                    />
+                    <button
+                      type="button"
+                      aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
+                      onClick={() => setShowConfirmPassword((prev) => !prev)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold opacity-70"
+                    >
+                      {showConfirmPassword ? 'Hide' : 'Show'}
+                    </button>
+                  </div>
+                  {fieldErrors.confirmPassword && (
+                    <div id={`${variant}-confirm-password-error`} className="text-xs text-red-500 font-semibold">
+                      {fieldErrors.confirmPassword}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="flex items-center justify-between text-sm">
+                <label className="flex items-center gap-2 font-semibold">
+                  <input type="checkbox" className="w-4 h-4 accent-indigo-500" />
+                  Keep me signed in
+                </label>
+                <button type="button" className={`font-bold ${theme.accent}`}>Forgot password?</button>
+              </div>
+
+              {formError && <div role="alert" className="text-sm text-red-500 font-semibold">Error: {formError}</div>}
+              {formSuccess && <div role="status" className="text-sm text-green-600 font-semibold">{formSuccess}</div>}
+
+              <button type="submit" className={`w-full py-4 rounded-xl font-bold ${theme.primaryBtn}`}>
+                {isSubmitting ? 'Please wait...' : (isLogin ? 'Sign In' : 'Create Account')}
+              </button>
+            </form>
+            )}
+
+            {/* Social sign-in */}
+            <div className="flex items-center gap-3 mt-6">
+              <hr className={`flex-1 ${themeMode === 'contrast' ? 'border-white' : 'border-slate-300'}`} />
+              <span className={`text-xs font-semibold ${theme.textSecondary}`}>or continue with</span>
+              <hr className={`flex-1 ${themeMode === 'contrast' ? 'border-white' : 'border-slate-300'}`} />
+            </div>
+
+            <div className="grid grid-cols-3 gap-3 mt-4">
+              {/* Google */}
+              {hasGoogleClientId ? (
+                <GoogleLoginButton
+                  onSuccess={(t) => handleSocialLogin('/auth/oauth/google', { id_token: t.access_token })}
+                  onError={() => setSocialError('Google sign-in was cancelled or failed.')}
+                  className={`flex items-center justify-center gap-2 py-3 rounded-xl border font-semibold text-sm transition-opacity hover:opacity-80 ${themeMode === 'contrast' ? 'border-white text-white' : 'border-slate-300 text-slate-700 bg-white'}`}
+                />
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setSocialError('Google sign-in is not configured (missing REACT_APP_GOOGLE_CLIENT_ID).')}
+                  aria-label="Sign in with Google (not configured)"
+                  className={`flex items-center justify-center gap-2 py-3 rounded-xl border font-semibold text-sm opacity-50 cursor-not-allowed ${themeMode === 'contrast' ? 'border-white text-white' : 'border-slate-300 text-slate-700 bg-white'}`}
+                >
+                  <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
+                    <path fill="#4285F4" d="M46.1 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h12.4c-.5 2.8-2.1 5.2-4.5 6.8v5.6h7.3c4.3-3.9 6.9-9.7 6.9-16.4z"/>
+                    <path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.3-5.6c-2.2 1.5-5 2.3-8.6 2.3-6.6 0-12.2-4.5-14.2-10.5H2.3v5.8C6.3 42.8 14.6 48 24 48z"/>
+                    <path fill="#FBBC05" d="M9.8 28.4A14.9 14.9 0 0 1 9 24c0-1.5.3-3 .8-4.4v-5.8H2.3A23.9 23.9 0 0 0 0 24c0 3.9.9 7.5 2.3 10.8l7.5-6.4z"/>
+                    <path fill="#EA4335" d="M24 9.5c3.7 0 7 1.3 9.6 3.8l7.2-7.2C36.9 2.1 31.5 0 24 0 14.6 0 6.3 5.2 2.3 13.2l7.5 5.8C11.8 14 17.4 9.5 24 9.5z"/>
+                  </svg>
+                  Google
+                </button>
+              )}
+
+              {/* LinkedIn */}
+              <button
+                type="button"
+                onClick={handleLinkedInLogin}
+                aria-label="Sign in with LinkedIn"
+                className={`flex items-center justify-center gap-2 py-3 rounded-xl border font-semibold text-sm transition-opacity hover:opacity-80 ${themeMode === 'contrast' ? 'border-white text-white' : 'border-slate-300 text-[#0A66C2] bg-white'}`}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="#0A66C2" aria-hidden="true">
+                  <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                </svg>
+                LinkedIn
+              </button>
+
+              {/* Facebook */}
+              <button
+                type="button"
+                onClick={handleFacebookLogin}
+                aria-label="Sign in with Facebook"
+                className={`flex items-center justify-center gap-2 py-3 rounded-xl border font-semibold text-sm transition-opacity hover:opacity-80 ${themeMode === 'contrast' ? 'border-white text-white' : 'border-slate-300 text-[#1877F2] bg-white'}`}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="#1877F2" aria-hidden="true">
+                  <path d="M24 12.073C24 5.404 18.627 0 12 0S0 5.404 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.97h-1.513c-1.491 0-1.956.93-1.956 1.874v2.25h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/>
+                </svg>
+                Facebook
+              </button>
+            </div>
+
+            {socialError && (
+              <div role="alert" className="mt-3 text-sm text-red-500 font-semibold text-center">
+                {socialError}
+              </div>
+            )}
+
+            <div className="mt-6 text-sm text-center">
+              {isLogin ? "Don't have an account?" : 'Already have an account?'}
+              <button
+                onClick={() => setActiveTab(isLogin ? 'register' : 'login')}
+                className={`ml-2 font-bold ${theme.accent}`}
+              >
+                {isLogin ? 'Create one' : 'Sign in'}
+              </button>
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            <div className={`p-8 rounded-3xl ${theme.card}`}>
+              <div className="flex items-center gap-3 mb-4">
+                <div className={`p-3 rounded-xl ${themeMode === 'contrast' ? 'bg-[#FFFF00]' : 'bg-indigo-600 text-white'}`}>
+                  <Sparkles size={20} aria-hidden="true" />
+                </div>
+                <h2 className="text-xl font-black">Why Skillable?</h2>
+              </div>
+              <p className={theme.textSecondary}>
+                We blend AI guidance with accessibility-first design so you can explore careers with confidence.
+              </p>
+            </div>
+
+            <div className="grid gap-4">
+              {[
+                { icon: <CheckCircle size={18} aria-hidden="true" />, text: 'Personalized pathways that update with your progress.' },
+                { icon: <Users size={18} aria-hidden="true" />, text: 'Community insights from inclusive employers.' },
+                { icon: <Award size={18} aria-hidden="true" />, text: 'Verified accessibility tips for interviews and onboarding.' }
+              ].map((item, idx) => (
+                <div key={idx} className={`flex items-center gap-3 p-5 rounded-2xl ${theme.card}`}>
+                  <div className={`p-2 rounded-lg ${themeMode === 'contrast' ? 'bg-[#FFFF00] text-black' : 'bg-indigo-600/10 text-indigo-500'}`}>
+                    {item.icon}
+                  </div>
+                  <p className="font-semibold">{item.text}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className={`p-6 rounded-2xl ${theme.glass}`}>
+              <div className="flex items-center gap-2 font-bold mb-2">
+                <Bot size={16} aria-hidden="true" />
+                <span>Need a quick tour?</span>
+              </div>
+              <p className={theme.textSecondary}>Jump into the AI tools to see how Skillable simplifies career decisions.</p>
+              <button
+                onClick={() => setActiveTab('home')}
+                className={`mt-4 px-5 py-2.5 rounded-xl font-bold border ${themeMode === 'contrast' ? 'border-white' : 'border-slate-700'}`}
+              >
+                Explore the AI tools
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
