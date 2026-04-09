@@ -1,3 +1,4 @@
+import logging
 import os
 import random
 import sqlite3
@@ -7,15 +8,20 @@ from typing import Optional
 
 import requests
 from dotenv import load_dotenv
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, EmailStr
 
-load_dotenv()
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Always load the .env next to this package, regardless of working directory
+_ENV_PATH = Path(__file__).resolve().parent.parent / ".env"
+load_dotenv(dotenv_path=_ENV_PATH)
 
 DB_PATH = Path(__file__).resolve().parent.parent / "data" / "auth.db"
-CODE_TTL_SECONDS = 60
+CODE_TTL_SECONDS = 300
 BREVO_API_KEY = os.getenv("BREVO_API_KEY", "")
 BREVO_SENDER_EMAIL = os.getenv("BREVO_SENDER_EMAIL", "")
 BREVO_SENDER_NAME = os.getenv("BREVO_SENDER_NAME", "Skillable")
@@ -106,6 +112,19 @@ class SendRequest(BaseModel):
 @app.on_event("startup")
 def on_startup():
     init_db()
+    if not BREVO_API_KEY or not BREVO_SENDER_EMAIL:
+        logger.error("BREVO_API_KEY or BREVO_SENDER_EMAIL is missing — emails will not be sent!")
+    else:
+        logger.info("Authenticator ready. Sender: %s", BREVO_SENDER_EMAIL)
+
+
+@app.get("/health")
+def health():
+    return {
+        "status": "ok",
+        "brevo_configured": bool(BREVO_API_KEY and BREVO_SENDER_EMAIL),
+        "sender": BREVO_SENDER_EMAIL or "NOT SET",
+    }
     # No default codes; generated per email on demand.
 
 
@@ -133,28 +152,36 @@ def send_email(to_email: str, code: str):
         raise RuntimeError("Brevo API is not configured.")
     subject = "Your Skillable verification code"
     body = (
-        f"Your Skillable verification code is {code}. "
-        f"It expires in {CODE_TTL_SECONDS} seconds."
+        f"Your Skillable verification code is: {code}\n\n"
+        f"This code expires in {CODE_TTL_SECONDS // 60} minutes.\n"
+        f"If you did not request this, ignore this email."
     )
     payload = {
         "sender": {"name": BREVO_SENDER_NAME, "email": BREVO_SENDER_EMAIL},
         "to": [{"email": to_email}],
         "subject": subject,
-        "textContent": body
+        "textContent": body,
     }
     headers = {
         "accept": "application/json",
         "api-key": BREVO_API_KEY,
-        "content-type": "application/json"
+        "content-type": "application/json",
     }
-    response = requests.post(
-        "https://api.brevo.com/v3/smtp/email",
-        json=payload,
-        headers=headers,
-        timeout=10
-    )
-    if response.status_code >= 300:
-        raise RuntimeError(f"Brevo email failed: {response.status_code} {response.text}")
+    try:
+        response = requests.post(
+            "https://api.brevo.com/v3/smtp/email",
+            json=payload,
+            headers=headers,
+            timeout=10,
+        )
+        if response.status_code < 300:
+            logger.info("Email sent to %s", to_email)
+            return
+        logger.error("Brevo rejected email: %s %s", response.status_code, response.text)
+        raise RuntimeError(f"Brevo error {response.status_code}: {response.text}")
+    except requests.RequestException as e:
+        logger.error("Brevo request failed: %s", e)
+        raise RuntimeError(f"Could not reach email service: {e}")
 
 
 @app.post("/send")
@@ -162,7 +189,13 @@ def send_code(payload: SendRequest):
     code = generate_code()
     invalidate_codes(payload.email)
     insert_code(payload.email, code)
-    send_email(payload.email, code)
+    try:
+        send_email(payload.email, code)
+    except RuntimeError as e:
+        logger.error("Email delivery failed for %s: %s", payload.email, e)
+        # Invalidate the code we just inserted so the DB stays clean
+        invalidate_codes(payload.email)
+        raise HTTPException(status_code=503, detail="Could not send verification email. Please try again.")
     return {"sent": True, "expires_in": CODE_TTL_SECONDS}
 
 
@@ -172,8 +205,6 @@ def validate(payload: ValidateRequest):
     if not row or not is_valid(row) or row[1] != payload.code:
         return {"valid": False}
     mark_used(row[0])
-    # rotate code immediately
-    insert_code(payload.email, generate_code())
     return {"valid": True}
 
 

@@ -10,6 +10,8 @@ import ProfilePage from './pages/ProfilePage';
 import JobDetailsPage from './pages/JobDetailsPage';
 import SkillDetailPage from './pages/SkillDetailPage';
 import CreateCVPage from './pages/CreateCVPage';
+import TracksPage from './pages/TracksPage';
+import OnboardingPage from './pages/OnboardingPage';
 import { Eye, Accessibility, Volume2 } from 'lucide-react';
 
 export default function App() {
@@ -197,7 +199,8 @@ export default function App() {
 
   useEffect(() => {
     if (chatMessages.length <= 1) return;
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const container = chatEndRef.current?.parentElement;
+    if (container) container.scrollTop = container.scrollHeight;
   }, [chatMessages]);
 
   // --- Theme Controls ---
@@ -208,7 +211,7 @@ export default function App() {
 
   // --- API Call ---
   const callGeminiAPI = async (payload, isChat = false) => {
-    const apiKey = process.env.REACT_APP_GEMINI_API_KEY || "AIzaSyDrCMezChD6SVKDyjfzP77NmG6X4J6RHv8";
+    const apiKey = process.env.REACT_APP_GEMINI_API_KEY || "AIzaSyB9yuEG9Z7RMVJwmaHwpM95uKDnmT2367M";
 
     const systemPrompt = `أنت المساعد الذكي المدمج والخاص بمنصة "Skillable". أنت جزء من الموقع تتحدث مع المستخدم من داخله. تحلى باللطف الشديد، الإيجابية، ورد بنفس لغة المستخدم (عربي أو إنجليزي).
 تجنب تماماً أن تتحدث كأنك من خارج الموقع (لا تقل ابحث عن زر كذا أو اذهب لموقعنا)، بل قل "يمكنك عمل كذا من خلال موقعنا هنا". تجنب الترحيب في كل رسالة؛ رحب في أول رسالة فقط. 
@@ -330,6 +333,7 @@ export default function App() {
 
   const theme = getTheme();
   const [currentUser, setCurrentUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [showPersonalizeHint, setShowPersonalizeHint] = useState(false);
   const profileRef = useRef(null);
@@ -355,15 +359,16 @@ export default function App() {
 
   useEffect(() => {
     const token = localStorage.getItem('skillable_token');
-    if (!token) return;
+    if (!token) { setAuthLoading(false); return; }
     fetch(`${API_BASE}/auth/me`, {
       headers: { Authorization: `Bearer ${token}` }
     })
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (data) setCurrentUser(data);
+        setAuthLoading(false);
       })
-      .catch(() => {});
+      .catch(() => { setAuthLoading(false); });
   }, [API_BASE]);
 
   useEffect(() => {
@@ -473,6 +478,7 @@ export default function App() {
         setIsProfileOpen={setIsProfileOpen}
         isProfileOpen={isProfileOpen}
         currentUser={currentUser}
+        authLoading={authLoading}
         profileRef={profileRef}
         profileButtonRef={profileButtonRef}
         signOutButtonRef={signOutButtonRef}
@@ -611,6 +617,10 @@ export default function App() {
             });
           }}
         />
+      ) : activeTab === 'onboarding' ? (
+        <OnboardingPage theme={theme} themeMode={themeMode} setActiveTab={setActiveTab} API_BASE={API_BASE} />
+      ) : activeTab === 'tracks' ? (
+        <TracksPage theme={theme} themeMode={themeMode} />
       ) : activeTab === 'accessibility-features' ? (
         <AccessibilityFeaturesPage theme={theme} themeMode={themeMode} />
       ) : activeTab === 'accessibility-statement' ? (
@@ -682,7 +692,7 @@ export default function App() {
       )}
       </main>
 
-      <Footer theme={theme} themeMode={themeMode} setActiveTab={setActiveTab} />
+      {activeTab !== 'onboarding' && <Footer theme={theme} themeMode={themeMode} setActiveTab={setActiveTab} />}
 
     </div>
   );

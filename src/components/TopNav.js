@@ -9,6 +9,7 @@ export default function TopNav({
   setIsProfileOpen,
   isProfileOpen,
   currentUser,
+  authLoading,
   profileRef,
   profileButtonRef,
   signOutButtonRef,
@@ -36,8 +37,8 @@ export default function TopNav({
           {currentUser && (
             <button onClick={() => setActiveTab('cv-generator')} className={`relative transition-colors hover:text-indigo-500 ${activeTab === 'cv-generator' ? theme.accent : theme.textSecondary}`}>CV Generator</button>
           )}
-          <button onClick={() => setActiveTab('careers')} className={`relative transition-colors hover:text-indigo-500 ${activeTab === 'careers' ? theme.accent : theme.textSecondary}`}>Career Paths</button>
-          <button onClick={() => document.getElementById('ai')?.scrollIntoView({ behavior: 'smooth' })} className={`transition-colors hover:text-indigo-500 ${theme.textSecondary}`}>AI Tools</button>
+          <button onClick={() => setActiveTab('careers')} className={`relative transition-colors hover:text-indigo-500 ${activeTab === 'careers' ? theme.accent : theme.textSecondary}`}>Courses</button>
+          <button onClick={() => setActiveTab('tracks')} className={`relative transition-colors hover:text-indigo-500 ${activeTab === 'tracks' ? theme.accent : theme.textSecondary}`}>Tracks</button>
           <button onClick={() => setActiveTab('accessibility-features')} className={`relative transition-colors hover:text-indigo-500 ${activeTab === 'accessibility-features' ? theme.accent : theme.textSecondary}`}>Accessibility Features</button>
         </div>
 
@@ -45,7 +46,7 @@ export default function TopNav({
           {themeMode !== 'contrast' && (
             <button onClick={toggleTheme} className="p-2.5 rounded-full" aria-label="Darkmode">{themeMode === 'dark' ? <Sun size={20} aria-hidden="true" /> : <Moon size={20} aria-hidden="true" />}</button>
           )}
-          {currentUser ? (
+          {authLoading ? null : currentUser ? (
             <div className="relative" ref={profileRef}>
               <button
                 onClick={() => setIsProfileOpen((prev) => !prev)}

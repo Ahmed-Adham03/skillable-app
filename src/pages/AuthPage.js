@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useGoogleLogin } from '@react-oauth/google';
 import { User, Sparkles, CheckCircle, Users, Award, Bot } from 'lucide-react';
 
@@ -50,9 +50,11 @@ export default function AuthPage({
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [step, setStep] = useState('credentials');
-  const [codeInput, setCodeInput] = useState('');
+  const [codeInput, setCodeInput] = useState(['', '', '', '', '', '']);
+  const codeRefs = useRef([]);
   const [pendingToken, setPendingToken] = useState('');
   const [resendCooldown, setResendCooldown] = useState(0);
+  const [isNewUser, setIsNewUser] = useState(false);
 
   const [socialError, setSocialError] = useState('');
 
@@ -166,7 +168,7 @@ export default function AuthPage({
 
     setIsSubmitting(true);
     try {
-      const endpoint = isLogin ? '/auth/login' : '/auth/register';
+      const endpoint = isLogin ? '/auth/login' : '/auth/initiate-register';
       const payload = isLogin
         ? { email, password }
         : { full_name: `${firstName} ${lastName}`.trim(), email, password };
@@ -184,28 +186,28 @@ export default function AuthPage({
       }
 
       const data = await res.json();
-      if (isLogin) {
-        if (!CODE_API) {
-          throw new Error('Code verification service is not configured.');
-        }
-        const sendRes = await fetch(`${CODE_API}/send`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email })
-        });
-        if (!sendRes.ok) {
-          throw new Error('Could not send verification code. Try again.');
-        }
-        const sendData = await sendRes.json().catch(() => ({}));
-        setResendCooldown(Number.isFinite(sendData.expires_in) ? sendData.expires_in : 60);
-        setPendingToken(data.access_token);
-        setStep('code');
-        setFormSuccess('Enter the 6-digit code sent to your email.');
-        return;
-      } else {
-        setFormSuccess('Account created. You can sign in now.');
-        setActiveTab('login');
+      if (!CODE_API) throw new Error('Code verification service is not configured.');
+
+      // Both login and register: send the code from the frontend directly
+      const sendRes = await fetch(`${CODE_API}/send`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+      if (!sendRes.ok) {
+        const errData = await sendRes.json().catch(() => ({}));
+        throw new Error(errData.detail || 'Could not send verification code. Try again.');
       }
+      const sendData = await sendRes.json().catch(() => ({}));
+      setResendCooldown(Number.isFinite(sendData.expires_in) ? sendData.expires_in : 300);
+
+      if (isLogin) {
+        setPendingToken(data.access_token);
+      } else {
+        setIsNewUser(true);
+      }
+      setStep('code');
+      setFormSuccess('Enter the 6-digit code sent to your email.');
     } catch (err) {
       const message = err.message || 'Something went wrong.';
       setFormError(message);
@@ -221,41 +223,65 @@ export default function AuthPage({
     e.preventDefault();
     setFormError('');
     setFormSuccess('');
-    if (!codeInput.trim() || codeInput.trim().length !== 6) {
+    const code = codeInput.join('');
+    if (code.length !== 6) {
       setFormError('Enter the 6-digit code.');
       return;
     }
     try {
-      const res = await fetch(`${CODE_API}/validate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, code: codeInput.trim() })
-      });
-      const data = await res.json();
-      if (!data.valid) {
-        setFormError('Invalid or expired code.');
-        return;
+      let token = pendingToken;
+
+      if (isNewUser) {
+        // Registration: backend validates code AND creates the user atomically
+        const res = await fetch(`${API_BASE}/auth/complete-register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, code })
+        });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          const msg = data.detail || 'Invalid or expired code.';
+          setFormError(msg);
+          setCodeInput(['', '', '', '', '', '']);
+          setTimeout(() => codeRefs.current[0]?.focus(), 0);
+          return;
+        }
+        const data = await res.json();
+        token = data.access_token;
+      } else {
+        // Login: validate code via CODE_API
+        const res = await fetch(`${CODE_API}/validate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, code })
+        });
+        const data = await res.json();
+        if (!data.valid) {
+          setFormError('Invalid or expired code.');
+          setCodeInput(['', '', '', '', '', '']);
+          setTimeout(() => codeRefs.current[0]?.focus(), 0);
+          return;
+        }
       }
-      localStorage.setItem('skillable_token', pendingToken);
+
+      localStorage.setItem('skillable_token', token);
       const meRes = await fetch(`${API_BASE}/auth/me`, {
-        headers: { Authorization: `Bearer ${pendingToken}` }
+        headers: { Authorization: `Bearer ${token}` }
       });
       const me = await meRes.json().catch(() => null);
       if (me) {
         setCurrentUser(me);
         if (setLearningPlans) {
           fetch(`${API_BASE}/auth/learning-plans`, {
-            headers: { Authorization: `Bearer ${pendingToken}` }
+            headers: { Authorization: `Bearer ${token}` }
           })
             .then((res) => (res.ok ? res.json() : []))
             .then((plans) => setLearningPlans(Array.isArray(plans) ? plans : []))
             .catch(() => {});
         }
         setFormSuccess('Signed in successfully.');
-        if (speakOnFocus && speechEnabled) {
-          speakText('Signed in successfully');
-        }
-        setActiveTab('home');
+        if (speakOnFocus && speechEnabled) speakText('Signed in successfully');
+        setActiveTab(isNewUser ? 'onboarding' : 'home');
       }
     } catch (err) {
       setFormError('Unable to validate code.');
@@ -276,12 +302,17 @@ export default function AuthPage({
         throw new Error('Could not resend code.');
       }
       const data = await res.json().catch(() => ({}));
-      setResendCooldown(Number.isFinite(data.expires_in) ? data.expires_in : 60);
+      setResendCooldown(Number.isFinite(data.expires_in) ? data.expires_in : 300);
       setFormSuccess('A new code has been sent.');
     } catch (err) {
       setFormError('Unable to resend code.');
     }
   };
+
+  useEffect(() => {
+    if (step !== 'code') return;
+    if (codeInput.join('').length === 6) handleCodeSubmit({ preventDefault: () => {} });
+  }, [codeInput]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (step !== 'code') return;
@@ -304,19 +335,43 @@ export default function AuthPage({
             <h1 className="text-4xl lg:text-5xl font-black mb-4">{title}</h1>
             <p className={`mb-8 ${theme.textSecondary}`}>{subtitle}</p>
 
-            {isLogin && step === 'code' ? (
+            {step === 'code' ? (
               <form className="space-y-5" onSubmit={handleCodeSubmit}>
-                <div className="space-y-2">
-                  <label className="text-sm font-bold" htmlFor="login-code">Authenticator code</label>
-                  <input
-                    id="login-code"
-                    className={`w-full p-4 rounded-xl border ${theme.input}`}
-                    placeholder="6-digit code"
-                    value={codeInput}
-                    onChange={(e) => setCodeInput(e.target.value.replace(/\D+/g, '').slice(0, 6))}
-                    inputMode="numeric"
-                    maxLength={6}
-                  />
+                <div className="space-y-3">
+                  <label className="text-sm font-bold">Authenticator code</label>
+                  <div className="flex gap-3 justify-center">
+                    {codeInput.map((digit, i) => (
+                      <input
+                        key={i}
+                        ref={(el) => (codeRefs.current[i] = el)}
+                        className={`w-12 h-14 text-center text-xl font-bold rounded-xl border ${theme.input}`}
+                        value={digit}
+                        inputMode="numeric"
+                        maxLength={1}
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/\D/g, '').slice(-1);
+                          const next = [...codeInput];
+                          next[i] = val;
+                          setCodeInput(next);
+                          if (val && i < 5) codeRefs.current[i + 1]?.focus();
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Backspace' && !codeInput[i] && i > 0) {
+                            codeRefs.current[i - 1]?.focus();
+                          }
+                        }}
+                        onPaste={(e) => {
+                          e.preventDefault();
+                          const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+                          const next = [...codeInput];
+                          pasted.split('').forEach((ch, j) => { next[j] = ch; });
+                          setCodeInput(next);
+                          const focusIdx = Math.min(pasted.length, 5);
+                          codeRefs.current[focusIdx]?.focus();
+                        }}
+                      />
+                    ))}
+                  </div>
                 </div>
                 {formError && <div role="alert" className="text-sm text-red-500 font-semibold">Error: {formError}</div>}
                 {formSuccess && <div role="status" className="text-sm text-green-600 font-semibold">{formSuccess}</div>}
@@ -343,7 +398,6 @@ export default function AuthPage({
                       aria-invalid={Boolean(fieldErrors.firstName)}
                       aria-describedby={fieldErrors.firstName ? `${variant}-first-name-error` : undefined}
                       className={`w-full p-4 rounded-xl border ${theme.input}`}
-                      placeholder="Alex"
                       value={firstName}
                       onChange={(e) => setFirstName(e.target.value.replace(/\s+/g, ''))}
                     />
@@ -360,7 +414,6 @@ export default function AuthPage({
                       aria-invalid={Boolean(fieldErrors.lastName)}
                       aria-describedby={fieldErrors.lastName ? `${variant}-last-name-error` : undefined}
                       className={`w-full p-4 rounded-xl border ${theme.input}`}
-                      placeholder="Morgan"
                       value={lastName}
                       onChange={(e) => setLastName(e.target.value.replace(/\s+/g, ''))}
                     />
@@ -380,7 +433,6 @@ export default function AuthPage({
                   aria-describedby={fieldErrors.email ? `${variant}-email-error` : undefined}
                   className={`w-full p-4 rounded-xl border ${theme.input}`}
                   type="email"
-                  placeholder="alex@skillable.ai"
                   aria-label="Email address"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}

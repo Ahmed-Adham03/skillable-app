@@ -94,7 +94,7 @@ export default function HomePage({
               <div ref={chatEndRef} />
             </div>
             <div className="p-4 border-t flex gap-2">
-              <input className={`flex-1 p-3 rounded-xl ${theme.input}`} value={chatInput} onChange={(e) => setChatInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleChatSend()} placeholder="Ask anything..." aria-label="Chat message" />
+              <input className={`flex-1 p-3 rounded-xl ${theme.input}`} value={chatInput} onChange={(e) => setChatInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleChatSend(); } }} placeholder="Ask anything..." aria-label="Chat message" />
               <button onClick={handleChatSend} className={`p-3 rounded-xl ${theme.primaryBtn}`} aria-label="Send message"><Send size={20} aria-hidden="true" /></button>
             </div>
           </div>
