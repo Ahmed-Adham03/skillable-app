@@ -11,6 +11,8 @@ class UserOut(BaseModel):
     vision: str
     hearing: str
     cognitive: str
+    experience_level: str
+    skills: list
     learning_plans: list
 
     class Config:

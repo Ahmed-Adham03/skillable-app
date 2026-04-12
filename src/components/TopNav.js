@@ -1,5 +1,6 @@
 import React from 'react';
 import { Moon, Sun } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
 
 export default function TopNav({
   theme,
@@ -85,8 +86,14 @@ export default function TopNav({
                 )}
               </button>
 
+              <AnimatePresence>
               {isProfileOpen && (
-                <div
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95, y: -8 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: -8 }}
+                  transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+                  style={{ transformOrigin: 'top right' }}
                   className={`absolute right-0 mt-3 w-64 rounded-2xl p-4 shadow-xl ${theme.glass}`}
                   role="menu"
                   onKeyDown={(e) => {
@@ -137,8 +144,9 @@ export default function TopNav({
                       Sign out
                     </button>
                   </div>
-                </div>
+                </motion.div>
               )}
+              </AnimatePresence>
 
               {showPersonalizeHint && !isProfileOpen && (
                 <div

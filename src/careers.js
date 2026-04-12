@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Briefcase, ArrowRight, Map, Search } from 'lucide-react';
+import { Briefcase, ArrowRight, Map, Search, MapPin, Banknote, Layers } from 'lucide-react';
 
 export default function CareerPage({ theme, themeMode, currentUser, onSelectJob }) {
   const [query, setQuery] = useState('');
@@ -24,10 +24,12 @@ export default function CareerPage({ theme, themeMode, currentUser, onSelectJob 
 
   const profilePayload = useMemo(() => {
     return {
-      mobility: currentUser?.mobility || 'N/A',
-      vision: currentUser?.vision || 'N/A',
-      hearing: currentUser?.hearing || 'N/A',
-      cognitive: currentUser?.cognitive || 'N/A',
+      mobility:         currentUser?.mobility         || 'N/A',
+      vision:           currentUser?.vision           || 'N/A',
+      hearing:          currentUser?.hearing          || 'N/A',
+      cognitive:        currentUser?.cognitive        || 'N/A',
+      experience_level: currentUser?.experience_level || 'N/A',
+      skills:           Array.isArray(currentUser?.skills) ? currentUser.skills : [],
       top_n: 12
     };
   }, [currentUser]);
@@ -158,46 +160,111 @@ export default function CareerPage({ theme, themeMode, currentUser, onSelectJob 
 
       {currentUser && !isProfileIncomplete && (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {filtered.map((path, idx) => (
-          <div key={`${path.jobtitle}-${idx}`} className={`group p-8 rounded-[2rem] flex flex-col h-full ${theme.card}`}>
-            <div className="flex justify-between items-start mb-6">
-              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center bg-white shadow-lg text-2xl`}>
-                <Briefcase className="text-indigo-600" aria-hidden="true" />
+        {filtered.map((path, idx) => {
+          const tierColor = {
+            Excellent: themeMode === 'contrast' ? 'bg-[#FFFF00] text-black' : 'bg-emerald-100 text-emerald-700',
+            Good:      themeMode === 'contrast' ? 'bg-[#FFFF00] text-black' : 'bg-indigo-100 text-indigo-700',
+            Fair:      themeMode === 'contrast' ? 'bg-[#FFFF00] text-black' : 'bg-amber-100 text-amber-700',
+            Low:       themeMode === 'contrast' ? 'bg-[#FFFF00] text-black' : 'bg-slate-100 text-slate-500',
+          }[path.compatibility_tier] || 'bg-indigo-100 text-indigo-700';
+          const directOverlap = Array.isArray(path.skill_overlap) ? path.skill_overlap : [];
+          const inferredOverlap = Array.isArray(path.inferred_overlap) ? path.inferred_overlap : [];
+
+          return (
+          <div key={`${path.jobtitle}-${idx}`} className={`group p-8 rounded-[2rem] flex flex-col h-full transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl ${theme.card}`}>
+
+            {/* Header row */}
+            <div className="flex justify-between items-start mb-5">
+              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${themeMode === 'dark' ? 'bg-indigo-500/20' : 'bg-indigo-50'}`}>
+                <Briefcase size={22} className="text-indigo-500" aria-hidden="true" />
               </div>
-              <div className={`px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest ${themeMode === 'contrast' ? 'bg-[#FFFF00] text-black' : 'bg-indigo-100 text-indigo-700'}`}>
-                {path.match_percentage}% Match
+              <div className="flex flex-col items-end gap-1">
+                <span className={`px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest ${tierColor}`}>
+                  {path.match_percentage}% · {path.compatibility_tier}
+                </span>
+                {path.category && (
+                  <span className={`text-[10px] font-semibold uppercase tracking-widest opacity-50`}>
+                    {path.category}
+                  </span>
+                )}
               </div>
             </div>
 
-            <h3 className="text-2xl font-bold mb-2 group-hover:text-indigo-500 transition-colors">
+            {/* Title */}
+            <h3 className="text-xl font-black mb-1 group-hover:text-indigo-500 transition-colors leading-tight">
               {path.jobtitle}
             </h3>
-            <p className={`text-sm font-semibold mb-6 opacity-60`}>
+
+            {/* Meta row */}
+            <div className={`flex flex-wrap items-center gap-3 text-xs font-semibold mb-3 ${themeMode === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
+              {path.job_type && (
+                <span className="flex items-center gap-1"><MapPin size={11} />{path.job_type}</span>
+              )}
+              {path.salary_range && (
+                <span className="flex items-center gap-1"><Banknote size={11} />{path.salary_range}</span>
+              )}
+              {path.experience_level && (
+                <span className="flex items-center gap-1"><Layers size={11} />{path.experience_level}</span>
+              )}
+            </div>
+
+            <p className={`text-sm mb-5 leading-relaxed line-clamp-2 ${themeMode === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
               {path.summary}
             </p>
 
-            <div className="flex flex-wrap gap-2 mb-6">
-              {(path.skills || []).map((skill, i) => (
-                <span key={i} className={`text-xs px-3 py-1 rounded-lg border ${themeMode === 'contrast' ? 'border-[#FFFF00]' : 'border-slate-200 dark:border-slate-700'}`}>
-                  {skill}
-                </span>
-              ))}
-            </div>
+            {/* Skill overlap */}
+            {directOverlap.length > 0 && (
+              <div className="mb-4">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-500 mb-1.5">Skills you have</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {directOverlap.slice(0, 4).map((s, i) => (
+                    <span key={i} className={`text-xs px-2.5 py-1 rounded-lg font-semibold ${themeMode === 'dark' ? 'bg-emerald-500/15 text-emerald-400' : 'bg-emerald-50 text-emerald-700'}`}>{s}</span>
+                  ))}
+                  {directOverlap.length > 4 && (
+                    <span className={`text-xs px-2.5 py-1 rounded-lg font-semibold opacity-50 ${themeMode === 'dark' ? 'bg-white/5' : 'bg-slate-100'}`}>+{directOverlap.length - 4}</span>
+                  )}
+                </div>
+              </div>
+            )}
 
-            <div className="mb-6 text-xs opacity-70 space-y-1">
-              {(path.why_matched || []).slice(0, 3).map((reason, i) => (
-                <div key={i}>• {reason}</div>
-              ))}
-            </div>
+            {inferredOverlap.length > 0 && (
+              <div className="mb-4">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-sky-500 mb-1.5">Inferred from your skills</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {inferredOverlap.slice(0, 4).map((s, i) => (
+                    <span key={i} className={`text-xs px-2.5 py-1 rounded-lg font-semibold ${themeMode === 'dark' ? 'bg-sky-500/15 text-sky-300' : 'bg-sky-50 text-sky-700'}`}>{s}</span>
+                  ))}
+                  {inferredOverlap.length > 4 && (
+                    <span className={`text-xs px-2.5 py-1 rounded-lg font-semibold opacity-50 ${themeMode === 'dark' ? 'bg-white/5' : 'bg-slate-100'}`}>+{inferredOverlap.length - 4}</span>
+                  )}
+                </div>
+              </div>
+            )}
 
-            <div className="mt-auto pt-6 border-t border-dashed border-slate-200 dark:border-slate-700">
-              <button className="flex items-center gap-2 font-bold text-sm group/btn" onClick={() => onSelectJob(path)}>
-                Explore this path 
+            {/* Skill gaps */}
+            {path.missing_skills && path.missing_skills.length > 0 && (
+              <div className="mb-4">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-amber-500 mb-1.5">Skills to build</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {path.missing_skills.slice(0, 3).map((s, i) => (
+                    <span key={i} className={`text-xs px-2.5 py-1 rounded-lg font-semibold ${themeMode === 'dark' ? 'bg-amber-500/10 text-amber-400' : 'bg-amber-50 text-amber-700'}`}>{s}</span>
+                  ))}
+                  {path.missing_skills.length > 3 && (
+                    <span className={`text-xs px-2.5 py-1 rounded-lg font-semibold opacity-50 ${themeMode === 'dark' ? 'bg-white/5' : 'bg-slate-100'}`}>+{path.missing_skills.length - 3}</span>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <div className={`mt-auto pt-5 border-t ${themeMode === 'contrast' ? 'border-white/30' : 'border-dashed border-slate-200 dark:border-slate-700'}`}>
+              <button className={`flex items-center gap-2 font-bold text-sm group/btn ${themeMode === 'contrast' ? 'text-[#FFFF00]' : 'text-indigo-500'}`} onClick={() => onSelectJob(path)}>
+                Explore this path
                 <ArrowRight size={16} className="group-hover/btn:translate-x-2 transition-transform" />
               </button>
             </div>
           </div>
-        ))}
+          );
+        })}
       </div>
       )}
     </div>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import CareersPage from './careers';
 import TopNav from './components/TopNav';
 import Footer from './components/Footer';
@@ -11,15 +12,43 @@ import JobDetailsPage from './pages/JobDetailsPage';
 import SkillDetailPage from './pages/SkillDetailPage';
 import CreateCVPage from './pages/CreateCVPage';
 import TracksPage from './pages/TracksPage';
+import TrackDetailPage from './pages/TrackDetailPage';
 import OnboardingPage from './pages/OnboardingPage';
+import DashboardPage from './pages/DashboardPage';
 import { Eye, Accessibility, Volume2 } from 'lucide-react';
 
 export default function App() {
   const API_BASE = process.env.REACT_APP_API_BASE || 'http://127.0.0.1:8000';
   const CODE_API = process.env.REACT_APP_CODE_API || 'http://127.0.0.1:9100';
   const OAUTH_REDIRECT_URI = process.env.REACT_APP_OAUTH_REDIRECT_URI || window.location.origin;
+  // --- Routing ---
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const TAB_TO_PATH = {
+    home: '/',
+    careers: '/careers',
+    'job-details': '/job-details',
+    tracks: '/tracks',
+    dashboard: '/dashboard',
+    'skill-detail': '/skill-detail',
+    'accessibility-features': '/accessibility-features',
+    'accessibility-statement': '/accessibility-statement',
+    'cv-generator': '/cv-generator',
+    profile: '/profile',
+    login: '/login',
+    register: '/register',
+    onboarding: '/onboarding',
+  };
+
+  const PATH_TO_TAB = Object.fromEntries(
+    Object.entries(TAB_TO_PATH).map(([k, v]) => [v, k])
+  );
+
+  const activeTab = PATH_TO_TAB[location.pathname] ?? 'home';
+  const setActiveTab = (tab) => navigate(TAB_TO_PATH[tab] ?? '/');
+
   // --- State Management ---
-  const [activeTab, setActiveTab] = useState('home'); // Logic to switch pages
   const [themeMode, setThemeMode] = useState('light');
   const [fontSize, setFontSize] = useState(100);
   const [scrolled, setScrolled] = useState(false);
@@ -54,7 +83,7 @@ export default function App() {
 
   // Chat & AI Logic
   const [chatMessages, setChatMessages] = useState([
-    { role: 'bot', text: 'Welcome to Skillable 👋\nI am your smart assistant for career analysis. How can I help you?' }
+    { role: 'bot', text: 'Welcome to Skillable.\nI am your smart assistant for career analysis. How can I help you?' }
   ]);
   const [chatInput, setChatInput] = useState('');
   const [isChatLoading, setIsChatLoading] = useState(false);
@@ -141,7 +170,7 @@ export default function App() {
     if (!code || !['linkedin', 'facebook'].includes(state)) return;
 
     // Clear the OAuth params from the URL immediately
-    window.history.replaceState({}, '', '/');
+    navigate('/', { replace: true });
 
     const endpoint = `${API_BASE}/auth/oauth/${state}`;
     fetch(endpoint, {
@@ -268,7 +297,7 @@ export default function App() {
       if (!response.ok) {
         console.error("Gemini API error:", data);
         if (response.status === 429) {
-           return "عذراً! وصلنا للحد الأقصى لعدد الرسائل المسموحة حالياً، يرجى الانتظار دقيقة واحدة والمحاولة مرة أخرى. ⏳";
+           return "عذراً! وصلنا للحد الأقصى لعدد الرسائل المسموحة حالياً، يرجى الانتظار دقيقة واحدة والمحاولة مرة أخرى.";
         }
         return "Sorry, I couldn't process that.";
       }
@@ -491,208 +520,201 @@ export default function App() {
 
       {/* --- PAGE SWITCHER --- */}
       <main id="main-content">
-      {activeTab === 'home' ? (
-        <HomePage
-          theme={theme}
-          themeMode={themeMode}
-          simplifyInput={simplifyInput}
-          setSimplifyInput={setSimplifyInput}
-          simplifiedText={simplifiedText}
-          isSimplifying={isSimplifying}
-          handleSimplify={handleSimplify}
-          chatMessages={chatMessages}
-          chatInput={chatInput}
-          setChatInput={setChatInput}
-          isChatLoading={isChatLoading}
-          handleChatSend={handleChatSend}
-          chatEndRef={chatEndRef}
-          setActiveTab={setActiveTab}
-        />
-      ) : activeTab === 'careers' ? (
-        <CareersPage
-          theme={theme}
-          themeMode={themeMode}
-          currentUser={currentUser}
-          onSelectJob={(job) => {
-            setSelectedJob(job);
-            setActiveTab('job-details');
-          }}
-        />
-      ) : activeTab === 'job-details' ? (
-        <JobDetailsPage
-          theme={theme}
-          themeMode={themeMode}
-          job={selectedJob}
-          setActiveTab={setActiveTab}
-          onEnroll={(job) => {
-            if (!job) return;
-            setLearningPlans((prev) => {
-              const exists = prev.find((p) => p.jobtitle === job.jobtitle);
-              if (exists) return prev;
-              const next = [
-                ...prev,
-                {
-                  jobtitle: job.jobtitle,
-                  summary: job.summary || '',
-                  details: job.details || '',
-                  roadmap: job.roadmap || [],
-                  videos: job.videos || [],
-                  sources: job.sources || [],
-                  progress: (job.roadmap || []).map(() => false)
-                }
-              ];
-              persistLearningPlans(next);
-              return next;
-            });
-            setActiveTab('dashboard');
-          }}
-        />
-      ) : activeTab === 'dashboard' ? (
-        <div className="py-12 px-6 max-w-6xl mx-auto">
-          <h1 className="text-4xl font-black mb-6">Dashboard</h1>
-          {learningPlans.length === 0 ? (
-            <p className={theme.textSecondary}>
-              Enroll in a job to start a learning roadmap.
-            </p>
-          ) : (
-            <div className="grid gap-6">
-              <div className={`p-6 rounded-2xl ${theme.card}`}>
-                <div className="text-sm font-bold mb-2">Your Progress</div>
-                <div className="flex items-center gap-6 text-sm">
-                  <div><b>{learningPlans.length}</b> enrolled skills</div>
-                  <div>
-                    <b>
-                      {Math.round(
-                        learningPlans.reduce((acc, plan) => {
-                          const total = plan.roadmap.length || 1;
-                          const completed = plan.progress.filter(Boolean).length;
-                          return acc + (completed / total);
-                        }, 0) / learningPlans.length * 100
-                      )}%</b> avg completion
-                  </div>
+        <Routes>
+          <Route path="/" element={
+            <HomePage
+              theme={theme}
+              themeMode={themeMode}
+              simplifyInput={simplifyInput}
+              setSimplifyInput={setSimplifyInput}
+              simplifiedText={simplifiedText}
+              isSimplifying={isSimplifying}
+              handleSimplify={handleSimplify}
+              chatMessages={chatMessages}
+              chatInput={chatInput}
+              setChatInput={setChatInput}
+              isChatLoading={isChatLoading}
+              handleChatSend={handleChatSend}
+              chatEndRef={chatEndRef}
+              setActiveTab={setActiveTab}
+            />
+          } />
+          <Route path="/careers" element={
+            <CareersPage
+              theme={theme}
+              themeMode={themeMode}
+              currentUser={currentUser}
+              onSelectJob={(job) => {
+                setSelectedJob(job);
+                setActiveTab('job-details');
+              }}
+            />
+          } />
+          <Route path="/job-details" element={
+            <JobDetailsPage
+              theme={theme}
+              themeMode={themeMode}
+              job={selectedJob}
+              setActiveTab={setActiveTab}
+              onEnroll={(job) => {
+                if (!job) return;
+                setLearningPlans((prev) => {
+                  const exists = prev.find((p) => p.jobtitle === job.jobtitle);
+                  if (exists) return prev;
+                  const next = [
+                    ...prev,
+                    {
+                      jobtitle: job.jobtitle,
+                      summary: job.summary || '',
+                      details: job.details || '',
+                      roadmap: job.roadmap || [],
+                      videos: job.videos || [],
+                      sources: job.sources || [],
+                      progress: (job.roadmap || []).map(() => false)
+                    }
+                  ];
+                  persistLearningPlans(next);
+                  return next;
+                });
+                setActiveTab('dashboard');
+              }}
+            />
+          } />
+          <Route path="/dashboard" element={
+            <DashboardPage
+              theme={theme}
+              themeMode={themeMode}
+              learningPlans={learningPlans}
+              setSelectedPlanIndex={setSelectedPlanIndex}
+              setActiveTab={setActiveTab}
+            />
+          } />
+          <Route path="/skill-detail" element={
+            <SkillDetailPage
+              theme={theme}
+              themeMode={themeMode}
+              plan={selectedPlanIndex !== null ? learningPlans[selectedPlanIndex] : null}
+              planIndex={selectedPlanIndex}
+              onBack={() => setActiveTab('dashboard')}
+              onToggleStep={(planIndex, stepIndex, checked) => {
+                setLearningPlans((prev) => {
+                  const next = [...prev];
+                  const updated = { ...next[planIndex] };
+                  const progress = [...updated.progress];
+                  progress[stepIndex] = checked;
+                  updated.progress = progress;
+                  next[planIndex] = updated;
+                  persistLearningPlans(next);
+                  return next;
+                });
+              }}
+            />
+          } />
+          <Route path="/onboarding" element={
+            <OnboardingPage theme={theme} themeMode={themeMode} setActiveTab={setActiveTab} API_BASE={API_BASE} />
+          } />
+          <Route path="/tracks" element={
+            <TracksPage theme={theme} themeMode={themeMode} />
+          } />
+          <Route path="/tracks/:trackId" element={
+            <TrackDetailPage theme={theme} themeMode={themeMode} currentUser={currentUser} />
+          } />
+          <Route path="/accessibility-features" element={
+            <AccessibilityFeaturesPage theme={theme} themeMode={themeMode} />
+          } />
+          <Route path="/accessibility-statement" element={
+            <AccessibilityStatementPage theme={theme} themeMode={themeMode} />
+          } />
+          <Route path="/cv-generator" element={
+            currentUser ? (
+              <CreateCVPage
+                theme={theme}
+                themeMode={themeMode}
+                currentUser={currentUser}
+              />
+            ) : (
+              <div className="py-12 px-6 max-w-4xl mx-auto">
+                <div className={`p-8 rounded-[2rem] ${theme.card}`}>
+                  <h1 className="text-3xl font-black mb-3">Sign in required</h1>
+                  <p className={`mb-6 ${theme.textSecondary}`}>
+                    CV Generator is available only for signed-in users.
+                  </p>
+                  <button
+                    onClick={() => setActiveTab('login')}
+                    className={`px-6 py-3 rounded-xl font-bold ${theme.primaryBtn}`}
+                  >
+                    Go to Sign In
+                  </button>
                 </div>
               </div>
-              {learningPlans.map((plan, idx) => {
-                const total = plan.roadmap.length || 1;
-                const completed = plan.progress.filter(Boolean).length;
-                const percent = Math.round((completed / total) * 100);
-                return (
-                  <div key={`${plan.jobtitle}-${idx}`} className={`p-6 rounded-2xl ${theme.card}`}>
-                    <div className="flex items-center justify-between mb-4">
-                      <h2 className="text-xl font-black">{plan.jobtitle}</h2>
-                      <span className="text-sm font-bold">{percent}%</span>
-                    </div>
-                    <button
-                      onClick={() => {
-                        setSelectedPlanIndex(idx);
-                        setActiveTab('skill-detail');
-                      }}
-                      className={`px-6 py-2 rounded-xl font-bold ${theme.primaryBtn}`}
-                    >
-                      Open skill details
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      ) : activeTab === 'skill-detail' ? (
-        <SkillDetailPage
-          theme={theme}
-          themeMode={themeMode}
-          plan={selectedPlanIndex !== null ? learningPlans[selectedPlanIndex] : null}
-          planIndex={selectedPlanIndex}
-          onBack={() => setActiveTab('dashboard')}
-          onToggleStep={(planIndex, stepIndex, checked) => {
-            setLearningPlans((prev) => {
-              const next = [...prev];
-              const updated = { ...next[planIndex] };
-              const progress = [...updated.progress];
-              progress[stepIndex] = checked;
-              updated.progress = progress;
-              next[planIndex] = updated;
-              persistLearningPlans(next);
-              return next;
-            });
-          }}
-        />
-      ) : activeTab === 'onboarding' ? (
-        <OnboardingPage theme={theme} themeMode={themeMode} setActiveTab={setActiveTab} API_BASE={API_BASE} />
-      ) : activeTab === 'tracks' ? (
-        <TracksPage theme={theme} themeMode={themeMode} />
-      ) : activeTab === 'accessibility-features' ? (
-        <AccessibilityFeaturesPage theme={theme} themeMode={themeMode} />
-      ) : activeTab === 'accessibility-statement' ? (
-        <AccessibilityStatementPage theme={theme} themeMode={themeMode} />
-      ) : activeTab === 'cv-generator' ? (
-        currentUser ? (
-          <CreateCVPage
-            theme={theme}
-            themeMode={themeMode}
-            currentUser={currentUser}
-          />
-        ) : (
-          <div className="py-12 px-6 max-w-4xl mx-auto">
-            <div className={`p-8 rounded-[2rem] ${theme.card}`}>
-              <h1 className="text-3xl font-black mb-3">Sign in required</h1>
-              <p className={`mb-6 ${theme.textSecondary}`}>
-                CV Generator is available only for signed-in users.
-              </p>
-              <button
-                onClick={() => setActiveTab('login')}
-                className={`px-6 py-3 rounded-xl font-bold ${theme.primaryBtn}`}
-              >
-                Go to Sign In
-              </button>
-            </div>
-          </div>
-        )
-      ) : activeTab === 'profile' ? (
-        <ProfilePage
-          theme={theme}
-          themeMode={themeMode}
-          API_BASE={API_BASE}
-          currentUser={currentUser}
-          setCurrentUser={setCurrentUser}
-          speakOnFocus={speakOnFocus}
-          speechEnabled={speechEnabled}
-          speakText={speakText}
-        />
-      ) : activeTab === 'login' ? (
-        <AuthPage
-          variant="login"
-          theme={theme}
-          themeMode={themeMode}
-          API_BASE={API_BASE}
-          CODE_API={CODE_API}
-          OAUTH_REDIRECT_URI={OAUTH_REDIRECT_URI}
-          setActiveTab={setActiveTab}
-          setCurrentUser={setCurrentUser}
-          setLearningPlans={setLearningPlans}
-          speakOnFocus={speakOnFocus}
-          speechEnabled={speechEnabled}
-          speakText={speakText}
-        />
-      ) : (
-        <AuthPage
-          variant="register"
-          theme={theme}
-          themeMode={themeMode}
-          API_BASE={API_BASE}
-          CODE_API={CODE_API}
-          OAUTH_REDIRECT_URI={OAUTH_REDIRECT_URI}
-          setActiveTab={setActiveTab}
-          setCurrentUser={setCurrentUser}
-          setLearningPlans={setLearningPlans}
-          speakOnFocus={speakOnFocus}
-          speechEnabled={speechEnabled}
-          speakText={speakText}
-        />
-      )}
+            )
+          } />
+          <Route path="/profile" element={
+            <ProfilePage
+              theme={theme}
+              themeMode={themeMode}
+              API_BASE={API_BASE}
+              currentUser={currentUser}
+              setCurrentUser={setCurrentUser}
+              speakOnFocus={speakOnFocus}
+              speechEnabled={speechEnabled}
+              speakText={speakText}
+            />
+          } />
+          <Route path="/login" element={
+            <AuthPage
+              variant="login"
+              theme={theme}
+              themeMode={themeMode}
+              API_BASE={API_BASE}
+              CODE_API={CODE_API}
+              OAUTH_REDIRECT_URI={OAUTH_REDIRECT_URI}
+              setActiveTab={setActiveTab}
+              setCurrentUser={setCurrentUser}
+              setLearningPlans={setLearningPlans}
+              speakOnFocus={speakOnFocus}
+              speechEnabled={speechEnabled}
+              speakText={speakText}
+            />
+          } />
+          <Route path="/register" element={
+            <AuthPage
+              variant="register"
+              theme={theme}
+              themeMode={themeMode}
+              API_BASE={API_BASE}
+              CODE_API={CODE_API}
+              OAUTH_REDIRECT_URI={OAUTH_REDIRECT_URI}
+              setActiveTab={setActiveTab}
+              setCurrentUser={setCurrentUser}
+              setLearningPlans={setLearningPlans}
+              speakOnFocus={speakOnFocus}
+              speechEnabled={speechEnabled}
+              speakText={speakText}
+            />
+          } />
+          <Route path="*" element={
+            <HomePage
+              theme={theme}
+              themeMode={themeMode}
+              simplifyInput={simplifyInput}
+              setSimplifyInput={setSimplifyInput}
+              simplifiedText={simplifiedText}
+              isSimplifying={isSimplifying}
+              handleSimplify={handleSimplify}
+              chatMessages={chatMessages}
+              chatInput={chatInput}
+              setChatInput={setChatInput}
+              isChatLoading={isChatLoading}
+              handleChatSend={handleChatSend}
+              chatEndRef={chatEndRef}
+              setActiveTab={setActiveTab}
+            />
+          } />
+        </Routes>
       </main>
 
-      {activeTab !== 'onboarding' && <Footer theme={theme} themeMode={themeMode} setActiveTab={setActiveTab} />}
+      {location.pathname !== '/onboarding' && <Footer theme={theme} themeMode={themeMode} setActiveTab={setActiveTab} />}
 
     </div>
   );

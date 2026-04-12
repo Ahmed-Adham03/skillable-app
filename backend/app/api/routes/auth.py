@@ -99,6 +99,8 @@ def complete_register(payload: CompleteRegister, db: Session = Depends(get_db)):
         vision="N/A",
         hearing="N/A",
         cognitive="N/A",
+        experience_level="N/A",
+        skills=[],
         learning_plans=[],
     )
     db.add(user)
@@ -178,13 +180,24 @@ def update_profile(
     if address != "N/A" and address not in GOVERNORATES:
         raise HTTPException(status_code=400, detail="Address must be a valid Egyptian governorate.")
 
-    current_user.full_name = full_name
-    current_user.phone_number = phone_number
-    current_user.address = address
-    current_user.mobility = normalize(payload.mobility)
-    current_user.vision = normalize(payload.vision)
-    current_user.hearing = normalize(payload.hearing)
-    current_user.cognitive = normalize(payload.cognitive)
+    valid_experience_levels = {"N/A", "Entry", "Mid", "Senior"}
+    experience_level = normalize(payload.experience_level)
+    if experience_level not in valid_experience_levels:
+        raise HTTPException(status_code=400, detail="experience_level must be one of: Entry, Mid, Senior, N/A.")
+
+    # Skills: deduplicate, strip whitespace, max 30 items, each max 60 chars
+    raw_skills = payload.skills if isinstance(payload.skills, list) else []
+    cleaned_skills = list({s.strip()[:60] for s in raw_skills if isinstance(s, str) and s.strip()})[:30]
+
+    current_user.full_name        = full_name
+    current_user.phone_number     = phone_number
+    current_user.address          = address
+    current_user.mobility         = normalize(payload.mobility)
+    current_user.vision           = normalize(payload.vision)
+    current_user.hearing          = normalize(payload.hearing)
+    current_user.cognitive        = normalize(payload.cognitive)
+    current_user.experience_level = experience_level
+    current_user.skills           = cleaned_skills
 
     db.commit()
     db.refresh(current_user)
