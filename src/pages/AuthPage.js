@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useGoogleLogin } from '@react-oauth/google';
 import { User, Sparkles, CheckCircle, Users, Award, Bot } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 // Isolated component so useGoogleLogin only mounts when a clientId exists
 function GoogleLoginButton({ onSuccess, onError, className }) {
@@ -32,11 +33,10 @@ export default function AuthPage({
   speechEnabled,
   speakText
 }) {
+  const { t } = useTranslation();
   const isLogin = variant === 'login';
-  const title = isLogin ? 'Welcome back' : 'Create your account';
-  const subtitle = isLogin
-    ? 'Sign in to keep building a career path that fits you.'
-    : 'Join Skillable to get personalized, accessible guidance.';
+  const title = isLogin ? t('auth.welcomeBack') : t('auth.createAccount');
+  const subtitle = isLogin ? t('auth.signInSubtitle') : t('auth.registerSubtitle');
 
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -124,12 +124,12 @@ export default function AuthPage({
     setFieldErrors({});
 
     if (!email || !password || (!isLogin && (!firstName || !lastName))) {
-      setFormError('Please complete all required fields.');
+      setFormError(t('auth.fieldRequired'));
       setFieldErrors({
-        firstName: !isLogin && !firstName ? 'First name is required.' : '',
-        lastName: !isLogin && !lastName ? 'Last name is required.' : '',
-        email: !email ? 'Email address is required.' : '',
-        password: !password ? 'Password is required.' : ''
+        firstName: !isLogin && !firstName ? t('auth.firstNameRequired') : '',
+        lastName: !isLogin && !lastName ? t('auth.lastNameRequired') : '',
+        email: !email ? t('auth.emailRequired') : '',
+        password: !password ? t('auth.passwordRequired') : ''
       });
       if (speakOnFocus && speechEnabled) {
         speakText('A required field is missing. Please complete all required fields.');
@@ -158,8 +158,8 @@ export default function AuthPage({
       }
     }
     if (!isLogin && password !== confirmPassword) {
-      setFormError('Passwords do not match.');
-      setFieldErrors({ confirmPassword: 'Passwords do not match.' });
+      setFormError(t('auth.passwordsMismatch'));
+      setFieldErrors({ confirmPassword: t('auth.passwordsMismatch') });
       if (speakOnFocus && speechEnabled) {
         speakText('Passwords do not match.');
       }
@@ -207,7 +207,7 @@ export default function AuthPage({
         setIsNewUser(true);
       }
       setStep('code');
-      setFormSuccess('Enter the 6-digit code sent to your email.');
+      setFormSuccess(t('auth.codeSent'));
     } catch (err) {
       const message = err.message || 'Something went wrong.';
       setFormError(message);
@@ -225,7 +225,7 @@ export default function AuthPage({
     setFormSuccess('');
     const code = codeInput.join('');
     if (code.length !== 6) {
-      setFormError('Enter the 6-digit code.');
+      setFormError(t('auth.codeEnterSix'));
       return;
     }
     try {
@@ -241,7 +241,7 @@ export default function AuthPage({
         if (!res.ok) {
           const data = await res.json().catch(() => ({}));
           const msg = data.detail || 'Invalid or expired code.';
-          setFormError(msg);
+          setFormError(msg || t('auth.codeInvalid'));
           setCodeInput(['', '', '', '', '', '']);
           setTimeout(() => codeRefs.current[0]?.focus(), 0);
           return;
@@ -257,7 +257,7 @@ export default function AuthPage({
         });
         const data = await res.json();
         if (!data.valid) {
-          setFormError('Invalid or expired code.');
+          setFormError(t('auth.codeInvalid'));
           setCodeInput(['', '', '', '', '', '']);
           setTimeout(() => codeRefs.current[0]?.focus(), 0);
           return;
@@ -279,12 +279,12 @@ export default function AuthPage({
             .then((plans) => setLearningPlans(Array.isArray(plans) ? plans : []))
             .catch(() => {});
         }
-        setFormSuccess('Signed in successfully.');
-        if (speakOnFocus && speechEnabled) speakText('Signed in successfully');
+        setFormSuccess(t('auth.signedIn'));
+        if (speakOnFocus && speechEnabled) speakText(t('auth.signedIn'));
         setActiveTab(isNewUser ? 'onboarding' : 'home');
       }
     } catch (err) {
-      setFormError('Unable to validate code.');
+      setFormError(t('auth.codeValidateFail'));
     }
   };
 
@@ -299,13 +299,13 @@ export default function AuthPage({
         body: JSON.stringify({ email })
       });
       if (!res.ok) {
-        throw new Error('Could not resend code.');
+        throw new Error(t('auth.resendFail'));
       }
       const data = await res.json().catch(() => ({}));
       setResendCooldown(Number.isFinite(data.expires_in) ? data.expires_in : 300);
-      setFormSuccess('A new code has been sent.');
+      setFormSuccess(t('auth.newCodeSent'));
     } catch (err) {
-      setFormError('Unable to resend code.');
+      setFormError(t('auth.resendFail'));
     }
   };
 
@@ -330,7 +330,7 @@ export default function AuthPage({
           <div className={`p-10 lg:p-12 rounded-[2.5rem] ${theme.glass}`}>
             <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold mb-6 border ${themeMode === 'contrast' ? 'border-[#FFFF00]' : 'bg-indigo-500/10 text-indigo-300'}`}>
               <User size={14} aria-hidden="true" />
-              <span>{isLogin ? 'Member Access' : 'New to Skillable'}</span>
+              <span>{isLogin ? t('auth.memberAccess') : t('auth.newToSkillable')}</span>
             </div>
             <h1 className="text-4xl lg:text-5xl font-black mb-4">{title}</h1>
             <p className={`mb-8 ${theme.textSecondary}`}>{subtitle}</p>
@@ -338,7 +338,7 @@ export default function AuthPage({
             {step === 'code' ? (
               <form className="space-y-5" onSubmit={handleCodeSubmit}>
                 <div className="space-y-3">
-                  <label className="text-sm font-bold">Authenticator code</label>
+                  <label className="text-sm font-bold">{t('auth.authenticatorCode')}</label>
                   <div className="flex gap-3 justify-center">
                     {codeInput.map((digit, i) => (
                       <input
@@ -373,10 +373,10 @@ export default function AuthPage({
                     ))}
                   </div>
                 </div>
-                {formError && <div role="alert" className="text-sm text-red-500 font-semibold">Error: {formError}</div>}
+                {formError && <div role="alert" className="text-sm text-red-500 font-semibold">{t('auth.errorPrefix')}{formError}</div>}
                 {formSuccess && <div role="status" className="text-sm text-green-600 font-semibold">{formSuccess}</div>}
                 <button type="submit" className={`w-full py-4 rounded-xl font-bold ${theme.primaryBtn}`}>
-                  Verify code
+                  {t('auth.verifyCode')}
                 </button>
                 <button
                   type="button"
@@ -384,7 +384,7 @@ export default function AuthPage({
                   disabled={resendCooldown > 0}
                   className={`w-full py-3 rounded-xl font-bold border ${themeMode === 'contrast' ? 'border-white' : 'border-slate-700'} ${resendCooldown > 0 ? 'opacity-60 cursor-not-allowed' : ''}`}
                 >
-                  {resendCooldown > 0 ? `Resend code in ${resendCooldown}s` : 'Resend code'}
+                  {resendCooldown > 0 ? t('auth.resendCodeIn', { seconds: resendCooldown }) : t('auth.resendCode')}
                 </button>
               </form>
             ) : (
@@ -392,7 +392,7 @@ export default function AuthPage({
               {!isLogin && (
                 <div className="grid md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <label className="text-sm font-bold" htmlFor={`${variant}-first-name`}>First name</label>
+                    <label className="text-sm font-bold" htmlFor={`${variant}-first-name`}>{t('auth.firstName')}</label>
                     <input
                       id={`${variant}-first-name`}
                       aria-invalid={Boolean(fieldErrors.firstName)}
@@ -408,7 +408,7 @@ export default function AuthPage({
                     )}
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm font-bold" htmlFor={`${variant}-last-name`}>Last name</label>
+                    <label className="text-sm font-bold" htmlFor={`${variant}-last-name`}>{t('auth.lastName')}</label>
                     <input
                       id={`${variant}-last-name`}
                       aria-invalid={Boolean(fieldErrors.lastName)}
@@ -426,7 +426,7 @@ export default function AuthPage({
                 </div>
               )}
               <div className="space-y-2">
-                <label className="text-sm font-bold" htmlFor={`${variant}-email`}>Email address</label>
+                <label className="text-sm font-bold" htmlFor={`${variant}-email`}>{t('auth.emailAddress')}</label>
                 <input
                   id={`${variant}-email`}
                   aria-invalid={Boolean(fieldErrors.email)}
@@ -444,7 +444,7 @@ export default function AuthPage({
                 )}
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-bold" htmlFor={`${variant}-password`}>Password</label>
+                <label className="text-sm font-bold" htmlFor={`${variant}-password`}>{t('auth.password')}</label>
                 <div className="relative">
                   <input
                     id={`${variant}-password`}
@@ -459,11 +459,11 @@ export default function AuthPage({
                   />
                   <button
                     type="button"
-                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    aria-label={showPassword ? t('auth.hide') : t('auth.show')}
                     onClick={() => setShowPassword((prev) => !prev)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold opacity-70"
                   >
-                    {showPassword ? 'Hide' : 'Show'}
+                    {showPassword ? t('auth.hide') : t('auth.show')}
                   </button>
                 </div>
                 {fieldErrors.password && (
@@ -474,7 +474,7 @@ export default function AuthPage({
               </div>
               {!isLogin && (
                 <div className="space-y-2">
-                  <label className="text-sm font-bold" htmlFor={`${variant}-confirm-password`}>Confirm password</label>
+                  <label className="text-sm font-bold" htmlFor={`${variant}-confirm-password`}>{t('auth.confirmPassword')}</label>
                   <div className="relative">
                     <input
                       id={`${variant}-confirm-password`}
@@ -488,11 +488,11 @@ export default function AuthPage({
                     />
                     <button
                       type="button"
-                      aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
+                      aria-label={showConfirmPassword ? t('auth.hide') : t('auth.show')}
                       onClick={() => setShowConfirmPassword((prev) => !prev)}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold opacity-70"
                     >
-                      {showConfirmPassword ? 'Hide' : 'Show'}
+                      {showConfirmPassword ? t('auth.hide') : t('auth.show')}
                     </button>
                   </div>
                   {fieldErrors.confirmPassword && (
@@ -506,16 +506,16 @@ export default function AuthPage({
               <div className="flex items-center justify-between text-sm">
                 <label className="flex items-center gap-2 font-semibold">
                   <input type="checkbox" className="w-4 h-4 accent-indigo-500" />
-                  Keep me signed in
+                  {t('auth.keepSignedIn')}
                 </label>
-                <button type="button" className={`font-bold ${theme.accent}`}>Forgot password?</button>
+                <button type="button" className={`font-bold ${theme.accent}`}>{t('auth.forgotPassword')}</button>
               </div>
 
-              {formError && <div role="alert" className="text-sm text-red-500 font-semibold">Error: {formError}</div>}
+              {formError && <div role="alert" className="text-sm text-red-500 font-semibold">{t('auth.errorPrefix')}{formError}</div>}
               {formSuccess && <div role="status" className="text-sm text-green-600 font-semibold">{formSuccess}</div>}
 
               <button type="submit" className={`w-full py-4 rounded-xl font-bold ${theme.primaryBtn}`}>
-                {isSubmitting ? 'Please wait...' : (isLogin ? 'Sign In' : 'Create Account')}
+                {isSubmitting ? t('auth.pleaseWait') : (isLogin ? t('auth.signIn') : t('auth.createAccountBtn'))}
               </button>
             </form>
             )}
@@ -523,7 +523,7 @@ export default function AuthPage({
             {/* Social sign-in */}
             <div className="flex items-center gap-3 mt-6">
               <hr className={`flex-1 ${themeMode === 'contrast' ? 'border-white' : 'border-slate-300'}`} />
-              <span className={`text-xs font-semibold ${theme.textSecondary}`}>or continue with</span>
+              <span className={`text-xs font-semibold ${theme.textSecondary}`}>{t('auth.orContinueWith')}</span>
               <hr className={`flex-1 ${themeMode === 'contrast' ? 'border-white' : 'border-slate-300'}`} />
             </div>
 
@@ -586,12 +586,12 @@ export default function AuthPage({
             )}
 
             <div className="mt-6 text-sm text-center">
-              {isLogin ? "Don't have an account?" : 'Already have an account?'}
+              {isLogin ? t('auth.noAccount') : t('auth.hasAccount')}
               <button
                 onClick={() => setActiveTab(isLogin ? 'register' : 'login')}
                 className={`ml-2 font-bold ${theme.accent}`}
               >
-                {isLogin ? 'Create one' : 'Sign in'}
+                {isLogin ? t('auth.createOne') : t('auth.signInLink')}
               </button>
             </div>
           </div>
@@ -602,18 +602,18 @@ export default function AuthPage({
                 <div className={`p-3 rounded-xl ${themeMode === 'contrast' ? 'bg-[#FFFF00]' : 'bg-indigo-600 text-white'}`}>
                   <Sparkles size={20} aria-hidden="true" />
                 </div>
-                <h2 className="text-xl font-black">Why Skillable?</h2>
+                <h2 className="text-xl font-black">{t('auth.whySkillable')}</h2>
               </div>
               <p className={theme.textSecondary}>
-                We blend AI guidance with accessibility-first design so you can explore careers with confidence.
+                {t('auth.whySubtitle')}
               </p>
             </div>
 
             <div className="grid gap-4">
               {[
-                { icon: <CheckCircle size={18} aria-hidden="true" />, text: 'Personalized pathways that update with your progress.' },
-                { icon: <Users size={18} aria-hidden="true" />, text: 'Community insights from inclusive employers.' },
-                { icon: <Award size={18} aria-hidden="true" />, text: 'Verified accessibility tips for interviews and onboarding.' }
+                { icon: <CheckCircle size={18} aria-hidden="true" />, text: t('auth.benefit1') },
+                { icon: <Users size={18} aria-hidden="true" />, text: t('auth.benefit2') },
+                { icon: <Award size={18} aria-hidden="true" />, text: t('auth.benefit3') }
               ].map((item, idx) => (
                 <div key={idx} className={`flex items-center gap-3 p-5 rounded-2xl ${theme.card}`}>
                   <div className={`p-2 rounded-lg ${themeMode === 'contrast' ? 'bg-[#FFFF00] text-black' : 'bg-indigo-600/10 text-indigo-500'}`}>
@@ -627,14 +627,14 @@ export default function AuthPage({
             <div className={`p-6 rounded-2xl ${theme.glass}`}>
               <div className="flex items-center gap-2 font-bold mb-2">
                 <Bot size={16} aria-hidden="true" />
-                <span>Need a quick tour?</span>
+                <span>{t('auth.quickTour')}</span>
               </div>
-              <p className={theme.textSecondary}>Jump into the AI tools to see how Skillable simplifies career decisions.</p>
+              <p className={theme.textSecondary}>{t('auth.quickTourBody')}</p>
               <button
                 onClick={() => setActiveTab('home')}
                 className={`mt-4 px-5 py-2.5 rounded-xl font-bold border ${themeMode === 'contrast' ? 'border-white' : 'border-slate-700'}`}
               >
-                Explore the AI tools
+                {t('auth.exploreAI')}
               </button>
             </div>
           </div>

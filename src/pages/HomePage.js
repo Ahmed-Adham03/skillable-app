@@ -4,80 +4,27 @@ import {
   ChevronLeft, ChevronRight, Map, FileText, Layers,
   Brain, Eye, Ear, PersonStanding, Target, BookOpen
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
-const FEATURES = [
-  {
-    tag: 'Matching',
-    title: 'Career matching built around you',
-    body: 'Our algorithm scores every job across 4 accessibility dimensions — mobility, vision, hearing, and cognitive — then layers in your skills and experience to rank your best fits.',
-    Icon: Target,
-    bg: 'linear-gradient(135deg,#0f0c29,#302b63,#5b21b6)',
-    accent: '#8b5cf6',
-    tab: 'careers',
-    cta: 'See your matches',
-  },
-  {
-    tag: 'Tracks',
-    title: 'Structured learning paths',
-    body: 'Frontend, Backend, Full Stack — each track is broken into phases with curated resources, skill checklists, and gap analysis that compares what you know to what you need.',
-    Icon: Layers,
-    bg: 'linear-gradient(135deg,#042f2e,#134e4a,#0f766e)',
-    accent: '#14b8a6',
-    tab: 'tracks',
-    cta: 'Browse tracks',
-  },
-  {
-    tag: 'AI Assistant',
-    title: 'A career advisor, always on',
-    body: 'Ask about accessibility laws, interview prep, or how to explain a gap in your CV. Powered by Gemini — answers are concise, practical, and tuned for job seekers with disabilities.',
-    Icon: Bot,
-    bg: 'linear-gradient(135deg,#1c0a00,#7c2d12,#c2410c)',
-    accent: '#f97316',
-    tab: 'home',
-    cta: 'Try the assistant',
-    scrollTo: 'ai',
-  },
-  {
-    tag: 'Text Tools',
-    title: 'Complex text made simple',
-    body: 'Paste any job description and get an Easy Read version — plain language, short sentences, no jargon. Useful for cognitive accessibility or just cutting through corporate speak.',
-    Icon: BookOpen,
-    bg: 'linear-gradient(135deg,#0c1445,#1e3a5f,#1d4ed8)',
-    accent: '#3b82f6',
-    tab: 'home',
-    cta: 'Try the simplifier',
-    scrollTo: 'simplifier',
-  },
-  {
-    tag: 'CV Builder',
-    title: 'A CV that speaks for itself',
-    body: 'Generate a clean, structured CV from your profile in one click. Download as PDF. No formatting headaches, no blank-page anxiety.',
-    Icon: FileText,
-    bg: 'linear-gradient(135deg,#1a0533,#4a1772,#7e22ce)',
-    accent: '#a855f7',
-    tab: 'cv-generator',
-    cta: 'Build my CV',
-  },
-  {
-    tag: 'Remote work',
-    title: 'Location should never be a barrier',
-    body: 'We surface and prioritize remote and hybrid roles — because for many people with disabilities, proximity to an office is the first and biggest obstacle.',
-    Icon: Globe,
-    bg: 'linear-gradient(135deg,#052e16,#14532d,#15803d)',
-    accent: '#22c55e',
-    tab: 'careers',
-    cta: 'Explore remote jobs',
-  },
-];
-
-const DIMS = [
-  { Icon: PersonStanding, label: 'Mobility',  color: '#8b5cf6' },
-  { Icon: Eye,            label: 'Vision',    color: '#3b82f6' },
-  { Icon: Ear,            label: 'Hearing',   color: '#14b8a6' },
-  { Icon: Brain,          label: 'Cognitive', color: '#f97316' },
+const FEATURE_META = [
+  { key: 'matching', Icon: Target, bg: 'linear-gradient(135deg,#0f0c29,#302b63,#5b21b6)', accent: '#8b5cf6', tab: 'careers' },
+  { key: 'tracks',   Icon: Layers,  bg: 'linear-gradient(135deg,#042f2e,#134e4a,#0f766e)', accent: '#14b8a6', tab: 'tracks' },
+  { key: 'ai',       Icon: Bot,     bg: 'linear-gradient(135deg,#1c0a00,#7c2d12,#c2410c)', accent: '#f97316', tab: 'home', scrollTo: 'ai' },
+  { key: 'textTools',Icon: BookOpen,bg: 'linear-gradient(135deg,#0c1445,#1e3a5f,#1d4ed8)', accent: '#3b82f6', tab: 'home', scrollTo: 'simplifier' },
+  { key: 'cv',       Icon: FileText,bg: 'linear-gradient(135deg,#1a0533,#4a1772,#7e22ce)', accent: '#a855f7', tab: 'cv-generator' },
+  { key: 'remote',   Icon: Globe,   bg: 'linear-gradient(135deg,#052e16,#14532d,#15803d)', accent: '#22c55e', tab: 'careers' },
 ];
 
 function FeatureCarousel({ themeMode, setActiveTab }) {
+  const { t } = useTranslation();
+  const FEATURES = FEATURE_META.map((m) => ({
+    ...m,
+    tag: t(`home.features.${m.key}.tag`),
+    title: t(`home.features.${m.key}.title`),
+    body: t(`home.features.${m.key}.body`),
+    cta: t(`home.features.${m.key}.cta`),
+  }));
+
   const [active, setActive]   = useState(0);
   const [visible, setVisible] = useState(true);
   const [hovered, setHovered] = useState(false);
@@ -200,6 +147,13 @@ export default function HomePage({
   chatMessages, chatInput, setChatInput, isChatLoading, handleChatSend, chatEndRef,
   setActiveTab,
 }) {
+  const { t } = useTranslation();
+  const DIMS = [
+    { Icon: PersonStanding, label: t('home.dims.mobility'),  color: '#8b5cf6' },
+    { Icon: Eye,            label: t('home.dims.vision'),    color: '#3b82f6' },
+    { Icon: Ear,            label: t('home.dims.hearing'),   color: '#14b8a6' },
+    { Icon: Brain,          label: t('home.dims.cognitive'), color: '#f97316' },
+  ];
   return (
     <div className="animate-fade-in">
 
@@ -216,17 +170,17 @@ export default function HomePage({
           {/* ── Left: headline ── */}
           <div className="lg:w-[42%] flex-shrink-0">
             <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold mb-5 border ${themeMode === 'contrast' ? 'border-[#FFFF00] text-[#FFFF00]' : 'border-indigo-500/30 bg-indigo-500/10 text-indigo-400'}`}>
-              <Sparkles size={12} /> AI-powered career matching for everyone
+              <Sparkles size={12} /> {t('home.heroBadge')}
             </div>
 
             <h1 className="text-4xl lg:text-5xl font-black mb-4 leading-[1.08] tracking-tight">
-              Your ability is your{' '}
+              {t('home.heroTitle1')}{' '}
               <span className={`text-transparent bg-clip-text bg-gradient-to-r ${themeMode === 'contrast' ? 'from-[#FFFF00] to-white' : 'from-indigo-500 to-violet-500'}`}>
-                greatest asset
+                {t('home.heroTitleHighlight')}
               </span>
             </h1>
             <p className={`text-base mb-6 max-w-md leading-relaxed ${theme.textSecondary}`}>
-              Skillable matches you to careers using your actual profile — disabilities included, never excluded.
+              {t('home.heroSubtitle')}
             </p>
 
             <div className="flex flex-wrap gap-3 mb-8">
@@ -234,13 +188,13 @@ export default function HomePage({
                 onClick={() => setActiveTab('careers')}
                 className={`px-6 py-3 rounded-2xl font-bold flex items-center gap-2 text-sm ${theme.primaryBtn}`}
               >
-                <Map size={16} /> Find my career match
+                <Map size={16} /> {t('home.findMatch')}
               </button>
               <button
                 onClick={() => setActiveTab('tracks')}
                 className={`px-6 py-3 rounded-2xl font-bold border flex items-center gap-2 text-sm ${themeMode === 'contrast' ? 'border-white' : themeMode === 'dark' ? 'border-white/20 hover:border-white/40' : 'border-slate-300 hover:border-slate-500'} transition-all`}
               >
-                <Layers size={16} /> Learning tracks
+                <Layers size={16} /> {t('home.learningTracks')}
               </button>
             </div>
 
@@ -254,14 +208,14 @@ export default function HomePage({
               ))}
               <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border ${themeMode === 'dark' ? 'bg-white/5 border-white/10' : 'bg-white border-slate-200 shadow-sm'}`}>
                 <Briefcase size={12} style={{ color: '#6366f1' }} />
-                Skills & experience
+                {t('home.dims.skillsExperience')}
               </div>
             </div>
           </div>
 
           {/* ── Right: carousel ── */}
           <div className="flex-1 w-full min-w-0">
-            <p className="text-[10px] font-black uppercase tracking-widest opacity-40 mb-2">What Skillable does</p>
+            <p className="text-[10px] font-black uppercase tracking-widest opacity-40 mb-2">{t('home.whatSkillableDoes')}</p>
             <FeatureCarousel themeMode={themeMode} setActiveTab={setActiveTab} />
           </div>
 
@@ -270,13 +224,13 @@ export default function HomePage({
 
       {/* ── How it works ── */}
       <section className="py-16 container mx-auto px-6">
-        <p className="text-xs font-black uppercase tracking-widest opacity-40 mb-1 text-center">How it works</p>
-        <h2 className="text-2xl font-black text-center mb-12">Three steps to your next opportunity</h2>
+        <p className="text-xs font-black uppercase tracking-widest opacity-40 mb-1 text-center">{t('home.howItWorks')}</p>
+        <h2 className="text-2xl font-black text-center mb-12">{t('home.threeSteps')}</h2>
         <div className="grid md:grid-cols-3 gap-6">
           {[
-            { n: '01', title: 'Build your profile', body: 'Set your accessibility needs, experience level, and skills. The more detail, the sharper your matches.', color: '#6366f1' },
-            { n: '02', title: 'Get matched',         body: 'Our algorithm scores every career across disability accommodation, skill overlap, and experience fit.', color: '#14b8a6' },
-            { n: '03', title: 'Start learning',      body: 'Pick a track, follow the roadmap, fill skill gaps with curated resources — at your own pace.', color: '#f97316' },
+            { n: '01', title: t('home.steps.01.title'), body: t('home.steps.01.body'), color: '#6366f1' },
+            { n: '02', title: t('home.steps.02.title'), body: t('home.steps.02.body'), color: '#14b8a6' },
+            { n: '03', title: t('home.steps.03.title'), body: t('home.steps.03.body'), color: '#f97316' },
           ].map(({ n, title, body, color }) => (
             <div key={n} className={`p-7 rounded-3xl relative overflow-hidden ${themeMode === 'dark' ? 'bg-white/5 border border-white/10' : 'bg-white border border-slate-100 shadow-sm'}`}>
               <div className="absolute top-5 right-5 text-6xl font-black opacity-[0.06] leading-none select-none">{n}</div>
@@ -301,19 +255,19 @@ export default function HomePage({
                 <Bot size={16} className="text-indigo-400" />
               </div>
               <div>
-                <p className="text-sm font-black">Skillable AI</p>
-                <p className="text-xs opacity-40">Ask me anything about your career</p>
+                <p className="text-sm font-black">{t('home.aiTitle')}</p>
+                <p className="text-xs opacity-40">{t('home.aiSubtitle')}</p>
               </div>
               <div className="ml-auto flex items-center gap-1.5">
                 <div className="w-2 h-2 rounded-full bg-emerald-400" />
-                <span className="text-xs opacity-50">Online</span>
+                <span className="text-xs opacity-50">{t('home.aiOnline')}</span>
               </div>
             </div>
             <div className="flex-1 px-5 py-4 overflow-y-auto space-y-3">
               {chatMessages.length === 0 && (
                 <div className="h-full flex items-center justify-center">
                   <p className={`text-sm text-center max-w-[200px] leading-relaxed ${theme.textSecondary}`}>
-                    Ask about jobs, accessibility laws, interview tips, or anything career-related.
+                    {t('home.aiEmptyMsg')}
                   </p>
                 </div>
               )}
@@ -337,7 +291,7 @@ export default function HomePage({
                 value={chatInput}
                 onChange={(e) => setChatInput(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleChatSend(); } }}
-                placeholder="Ask anything…"
+                placeholder={t('home.aiPlaceholder')}
               />
               <button
                 onClick={handleChatSend}
@@ -355,10 +309,10 @@ export default function HomePage({
                 <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: '#3b82f618' }}>
                   <BookOpen size={16} className="text-blue-400" />
                 </div>
-                <p className="text-sm font-black">Text Simplifier</p>
+                <p className="text-sm font-black">{t('home.textSimplifier')}</p>
               </div>
               <p className={`text-sm leading-relaxed ${theme.textSecondary}`}>
-                Paste any job description or document. We'll rewrite it in plain, clear language.
+                {t('home.simplifierSubtitle')}
               </p>
             </div>
 
@@ -367,7 +321,7 @@ export default function HomePage({
               style={{ minHeight: 160 }}
               value={simplifyInput}
               onChange={(e) => setSimplifyInput(e.target.value)}
-              placeholder="Paste text here…"
+              placeholder={t('home.simplifyPlaceholder')}
             />
 
             <button
@@ -375,7 +329,7 @@ export default function HomePage({
               disabled={isSimplifying || !simplifyInput.trim()}
               className={`px-7 py-3 rounded-xl font-bold text-sm self-start transition-all disabled:opacity-50 ${theme.primaryBtn}`}
             >
-              {isSimplifying ? 'Simplifying…' : 'Simplify text'}
+              {isSimplifying ? t('home.simplifying') : t('home.simplifyBtn')}
             </button>
 
             {simplifiedText && (

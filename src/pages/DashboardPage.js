@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BookOpen, TrendingUp, CheckCircle, ChevronRight, Compass, LayoutDashboard } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 function ProgressRing({ percent, size = 64, stroke = 5, color = '#6366f1' }) {
   const r = (size - stroke) / 2;
@@ -22,6 +23,7 @@ function ProgressRing({ percent, size = 64, stroke = 5, color = '#6366f1' }) {
 
 export default function DashboardPage({ theme, themeMode, learningPlans, setSelectedPlanIndex, setActiveTab }) {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const totalSteps = learningPlans.reduce((a, p) => a + (p.roadmap?.length || 0), 0);
   const completedSteps = learningPlans.reduce((a, p) => a + (p.progress?.filter(Boolean).length || 0), 0);
@@ -51,16 +53,16 @@ export default function DashboardPage({ theme, themeMode, learningPlans, setSele
           <Compass size={36} className={isContrast ? 'text-[#FFFF00]' : 'text-indigo-500'} />
         </div>
         <div>
-          <h1 className="text-3xl font-black mb-2">No learning paths yet</h1>
+          <h1 className="text-3xl font-black mb-2">{t('dashboard.noPathsTitle')}</h1>
           <p className={`text-base max-w-sm mx-auto ${theme.textSecondary}`}>
-            Enroll in a career path and your progress will appear here.
+            {t('dashboard.noPathsSubtitle')}
           </p>
         </div>
         <button
           onClick={() => navigate('/careers')}
           className={`px-8 py-3 rounded-xl font-bold flex items-center gap-2 ${theme.primaryBtn}`}
         >
-          Browse career paths <ChevronRight size={16} />
+          {t('dashboard.browseCareerPaths')} <ChevronRight size={16} />
         </button>
       </div>
     );
@@ -74,17 +76,17 @@ export default function DashboardPage({ theme, themeMode, learningPlans, setSele
         <div className="max-w-6xl mx-auto">
           <div className="flex items-center gap-3 mb-2">
             <LayoutDashboard size={20} className="text-white/70" aria-hidden="true" />
-            <span className="text-white/70 text-sm font-semibold tracking-wide uppercase">Dashboard</span>
+            <span className="text-white/70 text-sm font-semibold tracking-wide uppercase">{t('nav.dashboard')}</span>
           </div>
-          <h1 className="text-4xl font-black text-white mb-1">Your learning journey</h1>
-          <p className="text-white/60 text-sm">Track progress across all enrolled career paths.</p>
+          <h1 className="text-4xl font-black text-white mb-1">{t('dashboard.title')}</h1>
+          <p className="text-white/60 text-sm">{t('dashboard.subtitle')}</p>
 
           {/* ── Stat chips ── */}
           <div className="flex flex-wrap gap-4 mt-8">
             {[
-              { label: 'Enrolled paths', value: learningPlans.length, Icon: BookOpen },
-              { label: 'Avg completion', value: `${avgPercent}%`, Icon: TrendingUp },
-              { label: 'Steps completed', value: `${completedSteps} / ${totalSteps}`, Icon: CheckCircle },
+              { label: t('dashboard.enrolledPaths'), value: learningPlans.length, Icon: BookOpen },
+              { label: t('dashboard.avgCompletion'), value: `${avgPercent}%`, Icon: TrendingUp },
+              { label: t('dashboard.stepsCompleted'), value: `${completedSteps} / ${totalSteps}`, Icon: CheckCircle },
             ].map(({ label, value, Icon }) => (
               <div key={label} className={`flex items-center gap-3 px-5 py-3 rounded-2xl ${isContrast ? 'border border-[#FFFF00] bg-black' : 'bg-white/10 backdrop-blur-sm border border-white/10'}`}>
                 <Icon size={16} className="text-white/60" aria-hidden="true" />
@@ -100,7 +102,7 @@ export default function DashboardPage({ theme, themeMode, learningPlans, setSele
 
       {/* ── Plan cards ── */}
       <div className="max-w-6xl mx-auto px-6 py-10 space-y-5">
-        <h2 className="text-sm font-bold tracking-widest uppercase opacity-50 mb-6">Active paths</h2>
+        <h2 className="text-sm font-bold tracking-widest uppercase opacity-50 mb-6">{t('dashboard.activePaths')}</h2>
 
         {learningPlans.map((plan, idx) => {
           const total = plan.roadmap?.length || 1;
@@ -114,7 +116,7 @@ export default function DashboardPage({ theme, themeMode, learningPlans, setSele
             ? (typeof plan.roadmap[nextStepIdx] === 'string' ? plan.roadmap[nextStepIdx] : plan.roadmap[nextStepIdx].title || plan.roadmap[nextStepIdx].step || '')
             : null;
 
-          const statusLabel = pct === 100 ? 'Completed' : pct === 0 ? 'Not started' : 'In progress';
+          const statusLabel = pct === 100 ? t('dashboard.status.completed') : pct === 0 ? t('dashboard.status.notStarted') : t('dashboard.status.inProgress');
           const statusColor = pct === 100
             ? 'text-emerald-500 bg-emerald-500/10'
             : pct === 0
@@ -160,7 +162,7 @@ export default function DashboardPage({ theme, themeMode, learningPlans, setSele
                   </div>
                   {nextStep && pct < 100 && (
                     <p className={`text-xs mt-2 ${theme.textSecondary}`}>
-                      Next: <span className="font-semibold">{nextStep}</span>
+                      {t('dashboard.next')} <span className="font-semibold">{nextStep}</span>
                     </p>
                   )}
                 </div>
@@ -173,7 +175,7 @@ export default function DashboardPage({ theme, themeMode, learningPlans, setSele
                   }}
                   className={`flex-shrink-0 flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm ${isContrast ? 'bg-[#FFFF00] text-black' : `${accent.soft} ${accent.text}`} transition-all hover:scale-105`}
                 >
-                  {pct === 100 ? 'Review' : pct === 0 ? 'Start' : 'Continue'}
+                  {pct === 100 ? t('dashboard.cta.review') : pct === 0 ? t('dashboard.cta.start') : t('dashboard.cta.continue')}
                   <ChevronRight size={16} aria-hidden="true" />
                 </button>
               </div>
@@ -184,14 +186,14 @@ export default function DashboardPage({ theme, themeMode, learningPlans, setSele
         {/* Browse more */}
         <div className={`mt-4 p-6 rounded-2xl border-dashed border-2 flex flex-col sm:flex-row items-center justify-between gap-4 ${isContrast ? 'border-[#FFFF00]' : isDark ? 'border-slate-700' : 'border-slate-300'}`}>
           <div>
-            <p className="font-bold">Looking for more?</p>
-            <p className={`text-sm ${theme.textSecondary}`}>Browse all available career paths and expand your skills.</p>
+            <p className="font-bold">{t('dashboard.lookingForMore')}</p>
+            <p className={`text-sm ${theme.textSecondary}`}>{t('dashboard.lookingForMoreSubtitle')}</p>
           </div>
           <button
             onClick={() => navigate('/careers')}
             className={`flex-shrink-0 px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 ${theme.primaryBtn}`}
           >
-            Browse paths <ChevronRight size={16} />
+            {t('dashboard.browsePaths')} <ChevronRight size={16} />
           </button>
         </div>
       </div>

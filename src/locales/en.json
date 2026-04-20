@@ -1,0 +1,204 @@
+{
+  "nav": {
+    "home": "Home",
+    "dashboard": "Dashboard",
+    "cvGenerator": "CV Generator",
+    "courses": "Courses",
+    "tracks": "Tracks",
+    "accessibilityFeatures": "Accessibility Features",
+    "signIn": "Sign In",
+    "getStarted": "Get Started",
+    "signOut": "Sign out",
+    "personalizeExperience": "Personalize your experience",
+    "accountMenu": "Account menu",
+    "profileIncomplete": "Profile incomplete",
+    "profileIncompleteMsg": "Profile is incomplete. Please complete personalization fields that are still set to N/A.",
+    "personalizeNow": "Personalize now",
+    "later": "Later",
+    "letsPersonalize": "Let's get personalized",
+    "completeProfileMsg": "Complete your profile so Skillable can recommend better career matches for you.",
+    "goToHome": "Go to home"
+  },
+  "accessibility": {
+    "quickTools": "Quick accessibility tools",
+    "contrast": "Contrast",
+    "speakFocus": "Speak Focus",
+    "on": "On",
+    "off": "Off",
+    "enableSpeech": "Enable Speech",
+    "reduceMotionOn": "Reduce Motion On",
+    "reduceMotionOff": "Reduce Motion Off",
+    "skipToMain": "Skip to main content"
+  },
+  "footer": {
+    "accessibilityStatement": "Accessibility Statement",
+    "commitment": "Skillable is committed to providing an inclusive experience. We aim to align with WCAG 2.1 Level A/AA where possible and continuously improve.",
+    "faqs": "FAQs",
+    "terms": "Terms",
+    "privacy": "Privacy Policy",
+    "copyright": "© 2026 Skillable - Empowering Abilities"
+  },
+  "home": {
+    "heroBadge": "AI-powered career matching for everyone",
+    "heroTitle1": "Your ability is your",
+    "heroTitleHighlight": "greatest asset",
+    "heroSubtitle": "Skillable matches you to careers using your actual profile — disabilities included, never excluded.",
+    "findMatch": "Find my career match",
+    "learningTracks": "Learning tracks",
+    "whatSkillableDoes": "What Skillable does",
+    "dims": {
+      "mobility": "Mobility",
+      "vision": "Vision",
+      "hearing": "Hearing",
+      "cognitive": "Cognitive",
+      "skillsExperience": "Skills & experience"
+    },
+    "howItWorks": "How it works",
+    "threeSteps": "Three steps to your next opportunity",
+    "steps": {
+      "01": { "title": "Build your profile", "body": "Set your accessibility needs, experience level, and skills. The more detail, the sharper your matches." },
+      "02": { "title": "Get matched", "body": "Our algorithm scores every career across disability accommodation, skill overlap, and experience fit." },
+      "03": { "title": "Start learning", "body": "Pick a track, follow the roadmap, fill skill gaps with curated resources — at your own pace." }
+    },
+    "aiTitle": "Skillable AI",
+    "aiSubtitle": "Ask me anything about your career",
+    "aiOnline": "Online",
+    "aiEmptyMsg": "Ask about jobs, accessibility laws, interview tips, or anything career-related.",
+    "aiPlaceholder": "Ask anything…",
+    "textSimplifier": "Text Simplifier",
+    "simplifierSubtitle": "Paste any job description or document. We'll rewrite it in plain, clear language.",
+    "simplifyPlaceholder": "Paste text here…",
+    "simplifyBtn": "Simplify text",
+    "simplifying": "Simplifying…",
+    "features": {
+      "matching": {
+        "tag": "Matching",
+        "title": "Career matching built around you",
+        "body": "Our algorithm scores every job across 4 accessibility dimensions — mobility, vision, hearing, and cognitive — then layers in your skills and experience to rank your best fits.",
+        "cta": "See your matches"
+      },
+      "tracks": {
+        "tag": "Tracks",
+        "title": "Structured learning paths",
+        "body": "Frontend, Backend, Full Stack — each track is broken into phases with curated resources, skill checklists, and gap analysis that compares what you know to what you need.",
+        "cta": "Browse tracks"
+      },
+      "ai": {
+        "tag": "AI Assistant",
+        "title": "A career advisor, always on",
+        "body": "Ask about accessibility laws, interview prep, or how to explain a gap in your CV. Powered by Gemini — answers are concise, practical, and tuned for job seekers with disabilities.",
+        "cta": "Try the assistant"
+      },
+      "textTools": {
+        "tag": "Text Tools",
+        "title": "Complex text made simple",
+        "body": "Paste any job description and get an Easy Read version — plain language, short sentences, no jargon. Useful for cognitive accessibility or just cutting through corporate speak.",
+        "cta": "Try the simplifier"
+      },
+      "cv": {
+        "tag": "CV Builder",
+        "title": "A CV that speaks for itself",
+        "body": "Generate a clean, structured CV from your profile in one click. Download as PDF. No formatting headaches, no blank-page anxiety.",
+        "cta": "Build my CV"
+      },
+      "remote": {
+        "tag": "Remote work",
+        "title": "Location should never be a barrier",
+        "body": "We surface and prioritize remote and hybrid roles — because for many people with disabilities, proximity to an office is the first and biggest obstacle.",
+        "cta": "Explore remote jobs"
+      }
+    }
+  },
+  "auth": {
+    "memberAccess": "Member Access",
+    "newToSkillable": "New to Skillable",
+    "welcomeBack": "Welcome back",
+    "createAccount": "Create your account",
+    "signInSubtitle": "Sign in to keep building a career path that fits you.",
+    "registerSubtitle": "Join Skillable to get personalized, accessible guidance.",
+    "firstName": "First name",
+    "lastName": "Last name",
+    "emailAddress": "Email address",
+    "password": "Password",
+    "confirmPassword": "Confirm password",
+    "keepSignedIn": "Keep me signed in",
+    "forgotPassword": "Forgot password?",
+    "signIn": "Sign In",
+    "createAccountBtn": "Create Account",
+    "pleaseWait": "Please wait...",
+    "orContinueWith": "or continue with",
+    "noAccount": "Don't have an account?",
+    "hasAccount": "Already have an account?",
+    "createOne": "Create one",
+    "signInLink": "Sign in",
+    "show": "Show",
+    "hide": "Hide",
+    "verifyCode": "Verify code",
+    "resendCode": "Resend code",
+    "resendCodeIn": "Resend code in {{seconds}}s",
+    "authenticatorCode": "Authenticator code",
+    "whySkillable": "Why Skillable?",
+    "whySubtitle": "We blend AI guidance with accessibility-first design so you can explore careers with confidence.",
+    "benefit1": "Personalized pathways that update with your progress.",
+    "benefit2": "Community insights from inclusive employers.",
+    "benefit3": "Verified accessibility tips for interviews and onboarding.",
+    "quickTour": "Need a quick tour?",
+    "quickTourBody": "Jump into the AI tools to see how Skillable simplifies career decisions.",
+    "exploreAI": "Explore the AI tools",
+    "errorPrefix": "Error: ",
+    "fieldRequired": "Please complete all required fields.",
+    "firstNameRequired": "First name is required.",
+    "lastNameRequired": "Last name is required.",
+    "emailRequired": "Email address is required.",
+    "passwordRequired": "Password is required.",
+    "passwordsMismatch": "Passwords do not match.",
+    "codeEnterSix": "Enter the 6-digit code.",
+    "codeInvalid": "Invalid or expired code.",
+    "codeValidateFail": "Unable to validate code.",
+    "codeSent": "Enter the 6-digit code sent to your email.",
+    "signedIn": "Signed in successfully.",
+    "resendFail": "Unable to resend code.",
+    "newCodeSent": "A new code has been sent."
+  },
+  "dashboard": {
+    "title": "Your learning journey",
+    "subtitle": "Track progress across all enrolled career paths.",
+    "enrolledPaths": "Enrolled paths",
+    "avgCompletion": "Avg completion",
+    "stepsCompleted": "Steps completed",
+    "activePaths": "Active paths",
+    "noPathsTitle": "No learning paths yet",
+    "noPathsSubtitle": "Enroll in a career path and your progress will appear here.",
+    "browseCareerPaths": "Browse career paths",
+    "lookingForMore": "Looking for more?",
+    "lookingForMoreSubtitle": "Browse all available career paths and expand your skills.",
+    "browsePaths": "Browse paths",
+    "next": "Next:",
+    "status": {
+      "completed": "Completed",
+      "notStarted": "Not started",
+      "inProgress": "In progress"
+    },
+    "cta": {
+      "review": "Review",
+      "start": "Start",
+      "continue": "Continue"
+    }
+  },
+  "tracks": {
+    "badge": "Learning Tracks",
+    "title": "Choose your path",
+    "subtitle": "Structured, step-by-step learning tracks designed to take you from zero to job-ready.",
+    "viewTrack": "View Track",
+    "more": "+{{count}} more"
+  },
+  "cv": {
+    "signInRequired": "Sign in required",
+    "signInBody": "CV Generator is available only for signed-in users.",
+    "goToSignIn": "Go to Sign In"
+  },
+  "language": {
+    "toggle": "العربية",
+    "current": "EN"
+  }
+}

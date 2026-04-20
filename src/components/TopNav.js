@@ -1,6 +1,7 @@
 import React from 'react';
 import { Moon, Sun } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 
 export default function TopNav({
   theme,
@@ -20,10 +21,12 @@ export default function TopNav({
   dismissPersonalizeHint,
   hasProfileAlert
 }) {
+  const { t } = useTranslation();
+
   return (
     <nav className={`sticky top-0 z-40 transition-all duration-300 ${theme.navBg}`} aria-label="Main">
       <div className="container mx-auto px-6 h-20 flex justify-between items-center">
-        <button onClick={() => setActiveTab('home')} className="flex items-center gap-2 cursor-pointer group" aria-label="Go to home">
+        <button onClick={() => setActiveTab('home')} className="flex items-center gap-2 cursor-pointer group" aria-label={t('nav.goToHome')}>
           <div className="p-1 rounded-xl transition-all">
             <img src="/SkillableLogo3BG0.png" alt="Skillable logo" className="w-11 h-11 object-contain" />
           </div>
@@ -31,16 +34,16 @@ export default function TopNav({
         </button>
 
         <div className="hidden md:flex items-center gap-8 font-bold text-sm">
-          <button onClick={() => setActiveTab('home')} className={`relative transition-colors hover:text-indigo-500 ${activeTab === 'home' ? theme.accent : theme.textSecondary}`}>Home</button>
+          <button onClick={() => setActiveTab('home')} className={`relative transition-colors hover:text-indigo-500 ${activeTab === 'home' ? theme.accent : theme.textSecondary}`}>{t('nav.home')}</button>
           {currentUser && (
-            <button onClick={() => setActiveTab('dashboard')} className={`relative transition-colors hover:text-indigo-500 ${activeTab === 'dashboard' ? theme.accent : theme.textSecondary}`}>Dashboard</button>
+            <button onClick={() => setActiveTab('dashboard')} className={`relative transition-colors hover:text-indigo-500 ${activeTab === 'dashboard' ? theme.accent : theme.textSecondary}`}>{t('nav.dashboard')}</button>
           )}
           {currentUser && (
-            <button onClick={() => setActiveTab('cv-generator')} className={`relative transition-colors hover:text-indigo-500 ${activeTab === 'cv-generator' ? theme.accent : theme.textSecondary}`}>CV Generator</button>
+            <button onClick={() => setActiveTab('cv-generator')} className={`relative transition-colors hover:text-indigo-500 ${activeTab === 'cv-generator' ? theme.accent : theme.textSecondary}`}>{t('nav.cvGenerator')}</button>
           )}
-          <button onClick={() => setActiveTab('careers')} className={`relative transition-colors hover:text-indigo-500 ${activeTab === 'careers' ? theme.accent : theme.textSecondary}`}>Courses</button>
-          <button onClick={() => setActiveTab('tracks')} className={`relative transition-colors hover:text-indigo-500 ${activeTab === 'tracks' ? theme.accent : theme.textSecondary}`}>Tracks</button>
-          <button onClick={() => setActiveTab('accessibility-features')} className={`relative transition-colors hover:text-indigo-500 ${activeTab === 'accessibility-features' ? theme.accent : theme.textSecondary}`}>Accessibility Features</button>
+          <button onClick={() => setActiveTab('careers')} className={`relative transition-colors hover:text-indigo-500 ${activeTab === 'careers' ? theme.accent : theme.textSecondary}`}>{t('nav.courses')}</button>
+          <button onClick={() => setActiveTab('tracks')} className={`relative transition-colors hover:text-indigo-500 ${activeTab === 'tracks' ? theme.accent : theme.textSecondary}`}>{t('nav.tracks')}</button>
+          <button onClick={() => setActiveTab('accessibility-features')} className={`relative transition-colors hover:text-indigo-500 ${activeTab === 'accessibility-features' ? theme.accent : theme.textSecondary}`}>{t('nav.accessibilityFeatures')}</button>
         </div>
 
         <div className="flex items-center gap-4">
@@ -115,14 +118,14 @@ export default function TopNav({
                       })()}
                     </div>
                     <div>
-                      <div className="text-sm font-bold">{currentUser?.full_name || 'Skillable Member'}</div>
+                      <div className="text-sm font-bold">{currentUser?.full_name || 'Skillable'}</div>
                       <div className={`text-xs ${theme.textSecondary}`}>{currentUser?.email}</div>
                     </div>
                   </div>
                   <div className="mt-4 space-y-2">
                     {hasProfileAlert && (
                       <div className={`rounded-xl p-3 text-xs font-semibold ${themeMode === 'contrast' ? 'border border-white' : 'border border-red-300 bg-red-50 text-red-700'}`}>
-                        Profile is incomplete. Please complete personalization fields that are still set to N/A.
+                        {t('nav.profileIncompleteMsg')}
                       </div>
                     )}
                     <button
@@ -133,7 +136,7 @@ export default function TopNav({
                       role="menuitem"
                       className={`w-full py-2.5 rounded-xl font-bold text-sm ${theme.primaryBtn}`}
                     >
-                      Personalize your experience
+                      {t('nav.personalizeExperience')}
                     </button>
                     <button
                       onClick={handleSignOut}
@@ -141,7 +144,7 @@ export default function TopNav({
                       role="menuitem"
                       className={`w-full py-2.5 rounded-xl font-bold ${themeMode === 'contrast' ? 'bg-white text-black' : 'bg-slate-900 text-white'} `}
                     >
-                      Sign out
+                      {t('nav.signOut')}
                     </button>
                   </div>
                 </motion.div>
@@ -155,9 +158,9 @@ export default function TopNav({
                   aria-live="polite"
                 >
                   <div className="absolute -top-2 right-6 w-4 h-4 rotate-45 bg-inherit border-l border-t border-white/20" aria-hidden="true" />
-                  <p className="text-sm font-bold mb-2">Let&apos;s get personalized</p>
+                  <p className="text-sm font-bold mb-2">{t('nav.letsPersonalize')}</p>
                   <p className={`text-xs mb-3 ${theme.textSecondary}`}>
-                    Complete your profile so Skillable can recommend better career matches for you.
+                    {t('nav.completeProfileMsg')}
                   </p>
                   <div className="flex gap-2">
                     <button
@@ -168,14 +171,14 @@ export default function TopNav({
                       }}
                       className={`px-3 py-2 rounded-lg text-xs font-bold ${theme.primaryBtn}`}
                     >
-                      Personalize now
+                      {t('nav.personalizeNow')}
                     </button>
                     <button
                       type="button"
                       onClick={dismissPersonalizeHint}
                       className={`px-3 py-2 rounded-lg text-xs font-bold border ${themeMode === 'contrast' ? 'border-white' : 'border-slate-700'}`}
                     >
-                      Later
+                      {t('nav.later')}
                     </button>
                   </div>
                 </div>
@@ -183,8 +186,8 @@ export default function TopNav({
             </div>
           ) : (
             <>
-              <button onClick={() => setActiveTab('login')} className={`px-5 py-2.5 rounded-xl font-bold border ${themeMode === 'contrast' ? 'border-white' : 'border-slate-700'}`}>Sign In</button>
-              <button onClick={() => setActiveTab('register')} className={`px-6 py-2.5 rounded-xl font-bold ${theme.primaryBtn}`}>Get Started</button>
+              <button onClick={() => setActiveTab('login')} className={`px-5 py-2.5 rounded-xl font-bold border ${themeMode === 'contrast' ? 'border-white' : 'border-slate-700'}`}>{t('nav.signIn')}</button>
+              <button onClick={() => setActiveTab('register')} className={`px-6 py-2.5 rounded-xl font-bold ${theme.primaryBtn}`}>{t('nav.getStarted')}</button>
             </>
           )}
         </div>

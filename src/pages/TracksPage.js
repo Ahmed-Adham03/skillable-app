@@ -2,20 +2,22 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { TRACKS } from '../data/tracks';
 import { ArrowRight, Clock, BarChart2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 export default function TracksPage({ theme, themeMode }) {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   return (
     <div className="animate-fade-in py-16 px-6 max-w-6xl mx-auto">
       {/* Header */}
       <div className="mb-14 text-center">
         <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold mb-6 border ${themeMode === 'contrast' ? 'border-[#FFFF00]' : 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20'}`}>
-          Learning Tracks
+          {t('tracks.badge')}
         </div>
-        <h1 className="text-4xl lg:text-5xl font-black mb-4">Choose your path</h1>
+        <h1 className="text-4xl lg:text-5xl font-black mb-4">{t('tracks.title')}</h1>
         <p className={`text-lg max-w-xl mx-auto ${theme.textSecondary}`}>
-          Structured, step-by-step learning tracks designed to take you from zero to job-ready.
+          {t('tracks.subtitle')}
         </p>
       </div>
 
@@ -60,13 +62,13 @@ export default function TracksPage({ theme, themeMode }) {
                 ))}
                 {track.techStack.length > 5 && (
                   <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${theme.textSecondary}`}>
-                    +{track.techStack.length - 5} more
+                    {t('tracks.more', { count: track.techStack.length - 5 })}
                   </span>
                 )}
               </div>
 
               <div className={`flex items-center gap-1 text-sm font-bold mt-auto pt-2 ${themeMode === 'contrast' ? 'text-[#FFFF00]' : 'text-indigo-500'}`}>
-                View Track <ArrowRight size={16} aria-hidden="true" />
+                {t('tracks.viewTrack')} <ArrowRight size={16} aria-hidden="true" />
               </div>
             </div>
           </button>

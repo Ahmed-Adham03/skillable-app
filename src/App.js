@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import i18n from './i18n';
 import CareersPage from './careers';
 import TopNav from './components/TopNav';
 import Footer from './components/Footer';
@@ -15,9 +17,25 @@ import TracksPage from './pages/TracksPage';
 import TrackDetailPage from './pages/TrackDetailPage';
 import OnboardingPage from './pages/OnboardingPage';
 import DashboardPage from './pages/DashboardPage';
-import { Eye, Accessibility, Volume2 } from 'lucide-react';
+import { Eye, Accessibility, Volume2, Languages } from 'lucide-react';
 
 export default function App() {
+  const { t } = useTranslation();
+  const [lang, setLang] = useState(localStorage.getItem('skillable_lang') || 'en');
+
+  const toggleLanguage = () => {
+    const next = lang === 'en' ? 'ar' : 'en';
+    setLang(next);
+    i18n.changeLanguage(next);
+    localStorage.setItem('skillable_lang', next);
+    document.documentElement.dir = next === 'ar' ? 'rtl' : 'ltr';
+    document.documentElement.lang = next;
+  };
+
+  useEffect(() => {
+    document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+    document.documentElement.lang = lang;
+  }, [lang]);
   const API_BASE = process.env.REACT_APP_API_BASE || 'http://127.0.0.1:8000';
   const CODE_API = process.env.REACT_APP_CODE_API || 'http://127.0.0.1:9100';
   const OAUTH_REDIRECT_URI = process.env.REACT_APP_OAUTH_REDIRECT_URI || window.location.origin;
@@ -448,10 +466,13 @@ export default function App() {
 
   return (
     <div className={`min-h-screen transition-colors duration-500 font-sans ${theme.appBg} ${theme.textPrimary}`} style={{ fontSize: `${fontSize}%` }}>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap');`}</style>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800;900&family=Inter:wght@300;400;600;700;800&display=swap');
+        :root { font-family: ${lang === 'ar' ? "'Cairo', sans-serif" : "'Inter', sans-serif"}; }
+      `}</style>
 
       <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-50 focus:bg-white focus:text-slate-900 focus:px-4 focus:py-2 focus:rounded-lg">
-        Skip to main content
+        {t('accessibility.skipToMain')}
       </a>
 
       {/* Dynamic Background Blobs */}
@@ -462,9 +483,9 @@ export default function App() {
 
       {/* Accessibility Bar */}
       <div className={`relative z-50 px-6 py-2 flex justify-between items-center text-xs font-bold border-b transition-colors ${themeMode === 'contrast' ? 'bg-[#FFFF00] text-black border-black' : (themeMode === 'dark' ? 'bg-slate-900 border-slate-800 text-slate-400' : 'bg-white border-slate-100 text-slate-500')}`}>
-        <div className="flex items-center gap-2"><Accessibility size={14} aria-hidden="true" /><span>Quick accessibility tools</span></div>
+        <div className="flex items-center gap-2"><Accessibility size={14} aria-hidden="true" /><span>{t('accessibility.quickTools')}</span></div>
         <div className="flex items-center gap-4">
-          <button onClick={activateHighContrast} className="hover:text-indigo-500 flex items-center gap-1"><Eye size={14} aria-hidden="true" /> Contrast</button>
+          <button onClick={activateHighContrast} className="hover:text-indigo-500 flex items-center gap-1"><Eye size={14} aria-hidden="true" /> {t('accessibility.contrast')}</button>
           <button
             onClick={() => {
               const next = !speakOnFocus;
@@ -475,7 +496,7 @@ export default function App() {
             className="hover:text-indigo-500 flex items-center gap-1"
             aria-pressed={speakOnFocus}
           >
-            <Volume2 size={14} aria-hidden="true" /> Speak Focus {speakOnFocus ? 'On' : 'Off'}
+            <Volume2 size={14} aria-hidden="true" /> {t('accessibility.speakFocus')} {speakOnFocus ? t('accessibility.on') : t('accessibility.off')}
           </button>
           {!speechEnabled && (
             <button
@@ -485,7 +506,7 @@ export default function App() {
               }}
               className="hover:text-indigo-500 flex items-center gap-1"
             >
-              Enable Speech
+              {t('accessibility.enableSpeech')}
             </button>
           )}
           <button
@@ -493,9 +514,16 @@ export default function App() {
             className="hover:text-indigo-500 flex items-center gap-1"
             aria-pressed={reducedMotion}
           >
-            {reducedMotion ? 'Reduce Motion On' : 'Reduce Motion Off'}
+            {reducedMotion ? t('accessibility.reduceMotionOn') : t('accessibility.reduceMotionOff')}
           </button>
           <div className="flex gap-1"><button onClick={decreaseFont} className="px-2">A-</button><button onClick={increaseFont} className="px-2">A+</button></div>
+          <button
+            onClick={toggleLanguage}
+            className="hover:text-indigo-500 flex items-center gap-1 border rounded px-2 py-0.5"
+            aria-label="Toggle language"
+          >
+            <Languages size={13} aria-hidden="true" /> {t('language.toggle')}
+          </button>
         </div>
       </div>
 
@@ -635,15 +663,15 @@ export default function App() {
             ) : (
               <div className="py-12 px-6 max-w-4xl mx-auto">
                 <div className={`p-8 rounded-[2rem] ${theme.card}`}>
-                  <h1 className="text-3xl font-black mb-3">Sign in required</h1>
+                  <h1 className="text-3xl font-black mb-3">{t('cv.signInRequired')}</h1>
                   <p className={`mb-6 ${theme.textSecondary}`}>
-                    CV Generator is available only for signed-in users.
+                    {t('cv.signInBody')}
                   </p>
                   <button
                     onClick={() => setActiveTab('login')}
                     className={`px-6 py-3 rounded-xl font-bold ${theme.primaryBtn}`}
                   >
-                    Go to Sign In
+                    {t('cv.goToSignIn')}
                   </button>
                 </div>
               </div>
