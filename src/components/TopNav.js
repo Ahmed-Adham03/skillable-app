@@ -42,7 +42,11 @@ export default function TopNav({
             <button onClick={() => setActiveTab('cv-generator')} className={`relative transition-colors hover:text-indigo-500 ${activeTab === 'cv-generator' ? theme.accent : theme.textSecondary}`}>{t('nav.cvGenerator')}</button>
           )}
           <button onClick={() => setActiveTab('careers')} className={`relative transition-colors hover:text-indigo-500 ${activeTab === 'careers' ? theme.accent : theme.textSecondary}`}>{t('nav.courses')}</button>
+          <button onClick={() => setActiveTab('open-roles')} className={`relative transition-colors hover:text-indigo-500 ${activeTab === 'open-roles' ? theme.accent : theme.textSecondary}`}>{t('nav.openRoles')}</button>
           <button onClick={() => setActiveTab('tracks')} className={`relative transition-colors hover:text-indigo-500 ${activeTab === 'tracks' ? theme.accent : theme.textSecondary}`}>{t('nav.tracks')}</button>
+          {(currentUser?.role === 'job_poster' || currentUser?.role === 'admin') && (
+            <button onClick={() => setActiveTab('post-job')} className={`relative transition-colors hover:text-indigo-500 ${activeTab === 'post-job' ? theme.accent : theme.textSecondary}`}>{t('nav.postJob')}</button>
+          )}
           <button onClick={() => setActiveTab('accessibility-features')} className={`relative transition-colors hover:text-indigo-500 ${activeTab === 'accessibility-features' ? theme.accent : theme.textSecondary}`}>{t('nav.accessibilityFeatures')}</button>
         </div>
 

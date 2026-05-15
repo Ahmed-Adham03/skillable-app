@@ -123,8 +123,6 @@ export default function CareerPage({ theme, themeMode, currentUser, onSelectJob 
         </div>
       )}
 
-      {/* Career Cards Grid */}
-
       {(!currentUser || isProfileIncomplete) && (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 opacity-60 blur-[2px]">
         {[1, 2, 3].map((id) => (

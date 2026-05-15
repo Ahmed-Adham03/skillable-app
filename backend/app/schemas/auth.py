@@ -5,6 +5,7 @@ class UserCreate(BaseModel):
     full_name: str | None = None
     email: EmailStr
     password: str = Field(min_length=8)
+    role: str = "job_seeker"
 
 
 class CompleteRegister(BaseModel):

@@ -9,6 +9,8 @@ from app.api.deps import get_db, get_current_user
 from app.core.config import CODE_API_URL  # used for validate only
 from app.core.security import get_password_hash, verify_password, create_access_token
 from app.models.user import User
+from app.models.user_role import UserRole
+from app.models.recruiter import RecruiterProfile
 from app.schemas.auth import UserCreate, CompleteRegister, UserLogin, Token
 from app.schemas.user import UserOut
 from app.schemas.profile import ProfileUpdate
@@ -59,10 +61,12 @@ def initiate_register(payload: UserCreate, db: Session = Depends(get_db)):
     existing = db.query(User).filter(User.email == payload.email).first()
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered.")
+    role = payload.role if payload.role in {"job_seeker", "job_poster"} else "job_seeker"
 
     _pending[payload.email] = {
         "full_name": payload.full_name or "",
         "password_hash": get_password_hash(payload.password),
+        "role": role,
         "created_at": int(time.time()),
     }
     return {"pending": True}
@@ -106,6 +110,14 @@ def complete_register(payload: CompleteRegister, db: Session = Depends(get_db)):
     db.add(user)
     db.commit()
     db.refresh(user)
+    db.add(UserRole(user_id=user.id, role=pending.get("role", "job_seeker")))
+    if pending.get("role") == "job_poster":
+        db.add(RecruiterProfile(
+            user_id=user.id,
+            contact_name=pending["full_name"] or user.email,
+            organization_name=pending["full_name"] or "N/A",
+        ))
+    db.commit()
     del _pending[payload.email]
 
     token = create_access_token(subject=user.email)
@@ -126,10 +138,13 @@ def login(payload: UserLogin, db: Session = Depends(get_db)):
 
 
 @router.get("/me", response_model=UserOut)
-def me(current_user: User = Depends(get_current_user)):
+def me(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     if current_user.learning_plans is None:
         current_user.learning_plans = []
-    return current_user
+    role = db.query(UserRole).filter(UserRole.user_id == current_user.id).first()
+    data = UserOut.model_validate(current_user).model_dump()
+    data["role"] = role.role if role else "job_seeker"
+    return data
 
 
 @router.get("/learning-plans", response_model=list)

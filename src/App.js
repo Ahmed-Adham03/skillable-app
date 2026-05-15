@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
+import { Navigate, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import i18n from './i18n';
 import CareersPage from './careers';
@@ -17,6 +17,10 @@ import TracksPage from './pages/TracksPage';
 import TrackDetailPage from './pages/TrackDetailPage';
 import OnboardingPage from './pages/OnboardingPage';
 import DashboardPage from './pages/DashboardPage';
+import PostJobPage from './pages/PostJobPage';
+import OpenRolesPage from './pages/OpenRolesPage';
+import OpenRoleDetailPage from './pages/OpenRoleDetailPage';
+import OpenRoleApplyPage from './pages/OpenRoleApplyPage';
 import { Eye, Accessibility, Volume2, Languages } from 'lucide-react';
 
 export default function App() {
@@ -47,6 +51,8 @@ export default function App() {
     home: '/',
     careers: '/careers',
     'job-details': '/job-details',
+    'open-roles': '/open-roles',
+    'open-role-details': '/open-role-details',
     tracks: '/tracks',
     dashboard: '/dashboard',
     'skill-detail': '/skill-detail',
@@ -54,6 +60,7 @@ export default function App() {
     'accessibility-statement': '/accessibility-statement',
     'cv-generator': '/cv-generator',
     profile: '/profile',
+    'post-job': '/post-job',
     login: '/login',
     register: '/register',
     onboarding: '/onboarding',
@@ -63,7 +70,9 @@ export default function App() {
     Object.entries(TAB_TO_PATH).map(([k, v]) => [v, k])
   );
 
-  const activeTab = PATH_TO_TAB[location.pathname] ?? 'home';
+  const activeTab = location.pathname.startsWith('/open-roles')
+    ? 'open-roles'
+    : PATH_TO_TAB[location.pathname] ?? 'home';
   const setActiveTab = (tab) => navigate(TAB_TO_PATH[tab] ?? '/');
 
   // --- State Management ---
@@ -84,6 +93,7 @@ export default function App() {
   });
   const [speechStatus, setSpeechStatus] = useState('');
   const [selectedJob, setSelectedJob] = useState(null);
+  const [selectedOpenRole, setSelectedOpenRole] = useState(null);
   const [selectedPlanIndex, setSelectedPlanIndex] = useState(null);
   const [learningPlans, setLearningPlans] = useState([]);
 
@@ -578,6 +588,36 @@ export default function App() {
               }}
             />
           } />
+          <Route path="/open-roles" element={
+            <OpenRolesPage
+              theme={theme}
+              themeMode={themeMode}
+              API_BASE={API_BASE}
+              currentUser={currentUser}
+              setActiveTab={setActiveTab}
+              onSelectRole={(role) => {
+                setSelectedOpenRole(role);
+                setActiveTab('open-role-details');
+              }}
+            />
+          } />
+          <Route path="/open-role-details" element={
+            <OpenRoleDetailPage
+              theme={theme}
+              themeMode={themeMode}
+              API_BASE={API_BASE}
+              currentUser={currentUser}
+              role={selectedOpenRole}
+            />
+          } />
+          <Route path="/open-roles/:roleId/apply" element={
+            <OpenRoleApplyPage
+              theme={theme}
+              themeMode={themeMode}
+              API_BASE={API_BASE}
+              currentUser={currentUser}
+            />
+          } />
           <Route path="/job-details" element={
             <JobDetailsPage
               theme={theme}
@@ -616,6 +656,27 @@ export default function App() {
               setSelectedPlanIndex={setSelectedPlanIndex}
               setActiveTab={setActiveTab}
             />
+          } />
+          <Route path="/post-job" element={
+            authLoading ? (
+              <div className="py-16 px-6 max-w-3xl mx-auto">
+                <div className={`p-8 rounded-3xl ${theme.card}`}>
+                  <p className={`text-sm font-bold ${theme.textSecondary}`}>{t('postJob.checkingAccess')}</p>
+                </div>
+              </div>
+            ) : !currentUser ? (
+              <Navigate to="/login" replace />
+            ) : currentUser.role !== 'job_poster' && currentUser.role !== 'admin' ? (
+              <Navigate to="/open-roles" replace />
+            ) : (
+              <PostJobPage
+                theme={theme}
+                themeMode={themeMode}
+                API_BASE={API_BASE}
+                currentUser={currentUser}
+                setActiveTab={setActiveTab}
+              />
+            )
           } />
           <Route path="/skill-detail" element={
             <SkillDetailPage

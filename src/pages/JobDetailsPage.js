@@ -4,6 +4,7 @@ import {
   ArrowLeft, MapPin, BookOpen, CheckCircle2,
   Zap, ChevronRight, Target, Layers
 } from 'lucide-react';
+import { getJobLogo } from '../data/jobLogos';
 
 export default function JobDetailsPage({ theme, themeMode, job, setActiveTab, onEnroll }) {
   const navigate = useNavigate();
@@ -26,6 +27,8 @@ export default function JobDetailsPage({ theme, themeMode, job, setActiveTab, on
   const roadmap  = job.roadmap     || [];
   const skills   = job.skills      || [];
   const reasons  = job.why_matched || [];
+  const logo = getJobLogo(job.logo_key);
+  const LogoIcon = logo.Icon;
 
   return (
     <div className="animate-fade-in">
@@ -44,11 +47,13 @@ export default function JobDetailsPage({ theme, themeMode, job, setActiveTab, on
             <div className="flex-1">
               {/* Icon + title */}
               <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold mb-4 ${isContrast ? 'border border-[#FFFF00] text-[#FFFF00]' : 'bg-white/10 text-white/70 border border-white/10'}`}>
-                <Layers size={12} /> Career Path
+                {job.source === 'open_job' ? <LogoIcon size={12} /> : <Layers size={12} />}
+                {job.source === 'open_job' ? 'Open Job' : 'Career Path'}
               </div>
               <h1 className="text-4xl lg:text-5xl font-black text-white leading-tight mb-4">
                 {job.jobtitle}
               </h1>
+              {job.company_name && <p className="text-white/70 text-sm font-bold mb-2">{job.company_name}</p>}
               <p className="text-white/65 text-base max-w-2xl leading-relaxed">{job.summary}</p>
 
               {/* Quick meta */}
@@ -66,6 +71,11 @@ export default function JobDetailsPage({ theme, themeMode, job, setActiveTab, on
                 {roadmap.length > 0 && (
                   <span className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full ${isContrast ? 'border border-[#FFFF00] text-[#FFFF00]' : 'bg-white/10 text-white/70 border border-white/10'}`}>
                     <BookOpen size={12} /> {roadmap.length} learning steps
+                  </span>
+                )}
+                {job.duration && (
+                  <span className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full ${isContrast ? 'border border-[#FFFF00] text-[#FFFF00]' : 'bg-white/10 text-white/70 border border-white/10'}`}>
+                    <BookOpen size={12} /> {job.duration}
                   </span>
                 )}
               </div>

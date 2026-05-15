@@ -43,6 +43,7 @@ export default function AuthPage({
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [accountRole, setAccountRole] = useState('job_seeker');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState('');
   const [formSuccess, setFormSuccess] = useState('');
@@ -179,7 +180,7 @@ export default function AuthPage({
       const endpoint = isLogin ? '/auth/login' : '/auth/initiate-register';
       const payload = isLogin
         ? { email, password }
-        : { full_name: `${firstName} ${lastName}`.trim(), email, password };
+        : { full_name: `${firstName} ${lastName}`.trim(), email, password, role: accountRole };
 
       const res = await fetch(`${API_BASE}${endpoint}`, {
         method: 'POST',
@@ -452,6 +453,26 @@ export default function AuthPage({
                   </div>
                 )}
               </div>
+              {!isLogin && (
+                <div className="space-y-2">
+                  <label className="text-sm font-bold">{t('auth.accountType')}</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[
+                      { value: 'job_seeker', label: t('auth.jobSeeker') },
+                      { value: 'job_poster', label: t('auth.jobPoster') },
+                    ].map((role) => (
+                      <button
+                        key={role.value}
+                        type="button"
+                        onClick={() => setAccountRole(role.value)}
+                        className={`px-3 py-2 rounded-xl text-sm font-bold border transition ${accountRole === role.value ? theme.primaryBtn : themeMode === 'contrast' ? 'border-white' : 'border-slate-300'}`}
+                      >
+                        {role.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
               <div className="space-y-2">
                 <label className="text-sm font-bold" htmlFor={`${variant}-password`}>{t('auth.password')}</label>
                 <div className="relative">

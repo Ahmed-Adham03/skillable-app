@@ -5,6 +5,7 @@ class UserOut(BaseModel):
     id: int
     full_name: str | None = None
     email: EmailStr
+    role: str = "job_seeker"
     phone_number: str
     address: str
     mobility: str

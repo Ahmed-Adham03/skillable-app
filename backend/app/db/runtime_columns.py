@@ -1,0 +1,49 @@
+from sqlalchemy import inspect, text
+from sqlalchemy.orm import Session
+
+from app.models.user import User
+from app.models.user_role import UserRole
+from app.models.recruiter import RecruiterProfile
+from app.models.open_job import OpenJob
+
+
+def ensure_runtime_records(db: Session):
+    inspector = inspect(db.bind)
+    user_columns = {column["name"] for column in inspector.get_columns(User.__tablename__)}
+    has_legacy_role = "role" in user_columns
+    table_names = set(inspector.get_table_names())
+
+    if OpenJob.__tablename__ in table_names:
+        open_job_columns = {column["name"] for column in inspector.get_columns(OpenJob.__tablename__)}
+        if "contact_email" not in open_job_columns:
+            db.execute(text("ALTER TABLE open_jobs ADD COLUMN contact_email VARCHAR(255) NOT NULL DEFAULT 'N/A'"))
+            db.commit()
+        if "recruiter_profile_id" not in open_job_columns:
+            db.execute(text("ALTER TABLE open_jobs ADD COLUMN recruiter_profile_id INTEGER NULL"))
+            db.commit()
+
+    users = db.query(User).all()
+    for user in users:
+        existing = db.query(UserRole).filter(UserRole.user_id == user.id).first()
+        if existing:
+            continue
+        role = "job_seeker"
+        if has_legacy_role:
+            role = getattr(user, "role", None) or "job_seeker"
+        db.add(UserRole(user_id=user.id, role=role if role in {"job_seeker", "job_poster", "admin"} else "job_seeker"))
+    db.commit()
+
+    poster_roles = db.query(UserRole).filter(UserRole.role.in_(["job_poster", "admin"])).all()
+    for user_role in poster_roles:
+        existing_profile = db.query(RecruiterProfile).filter(RecruiterProfile.user_id == user_role.user_id).first()
+        if existing_profile:
+            continue
+        user = db.query(User).filter(User.id == user_role.user_id).first()
+        if not user:
+            continue
+        db.add(RecruiterProfile(
+            user_id=user.id,
+            contact_name=user.full_name or user.email,
+            organization_name=user.full_name or "N/A",
+        ))
+    db.commit()
