@@ -58,6 +58,14 @@ export default function AuthPage({
 
   const [socialError, setSocialError] = useState('');
 
+  const getCodeServiceError = async (res, fallback) => {
+    const data = await res.json().catch(() => ({}));
+    if (res.status === 404) {
+      return `Verification code endpoint was not found at ${CODE_API}. Make sure the authenticator API is running on that port, not another service.`;
+    }
+    return data.detail || fallback;
+  };
+
   const handleSocialLogin = async (endpoint, body) => {
     setSocialError('');
     try {
@@ -195,8 +203,8 @@ export default function AuthPage({
         body: JSON.stringify({ email })
       });
       if (!sendRes.ok) {
-        const errData = await sendRes.json().catch(() => ({}));
-        throw new Error(errData.detail || 'Could not send verification code. Try again.');
+        const message = await getCodeServiceError(sendRes, 'Could not send verification code. Try again.');
+        throw new Error(message);
       }
       const sendData = await sendRes.json().catch(() => ({}));
       setResendCooldown(Number.isFinite(sendData.expires_in) ? sendData.expires_in : 300);
@@ -299,7 +307,8 @@ export default function AuthPage({
         body: JSON.stringify({ email })
       });
       if (!res.ok) {
-        throw new Error(t('auth.resendFail'));
+        const message = await getCodeServiceError(res, t('auth.resendFail'));
+        throw new Error(message);
       }
       const data = await res.json().catch(() => ({}));
       setResendCooldown(Number.isFinite(data.expires_in) ? data.expires_in : 300);

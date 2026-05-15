@@ -3,8 +3,8 @@
     "home": "Home",
     "dashboard": "Dashboard",
     "cvGenerator": "CV Generator",
-    "courses": "Courses",
-    "tracks": "Tracks",
+    "courses": "Career Paths",
+    "tracks": "Work Pathways",
     "accessibilityFeatures": "Accessibility Features",
     "signIn": "Sign In",
     "getStarted": "Get Started",
@@ -44,7 +44,7 @@
     "heroTitleHighlight": "greatest asset",
     "heroSubtitle": "Skillable matches you to careers using your actual profile — disabilities included, never excluded.",
     "findMatch": "Find my career match",
-    "learningTracks": "Learning tracks",
+    "learningTracks": "Work pathways",
     "whatSkillableDoes": "What Skillable does",
     "dims": {
       "mobility": "Mobility",
@@ -72,40 +72,40 @@
     "simplifying": "Simplifying…",
     "features": {
       "matching": {
-        "tag": "Matching",
-        "title": "Career matching built around you",
-        "body": "Our algorithm scores every job across 4 accessibility dimensions — mobility, vision, hearing, and cognitive — then layers in your skills and experience to rank your best fits.",
-        "cta": "See your matches"
+        "tag": "Community",
+        "title": "Egyptians of every ability, side by side",
+        "body": "Skillable is for everyday Egyptian life: people with disabilities studying, working, travelling, and building independence with their families, friends, and communities around them.",
+        "cta": "Find my match"
       },
       "tracks": {
-        "tag": "Tracks",
-        "title": "Structured learning paths",
-        "body": "Frontend, Backend, Full Stack — each track is broken into phases with curated resources, skill checklists, and gap analysis that compares what you know to what you need.",
-        "cta": "Browse tracks"
+        "tag": "Skills",
+        "title": "Skills that work in the Egyptian market",
+        "body": "Build practical skills employers ask for in Egypt: Microsoft Office, Arabic and English communication, data entry, customer support chat, basic accounting, digital marketing, coding, design, and remote-work habits.",
+        "cta": "Browse skills"
       },
       "ai": {
-        "tag": "AI Assistant",
-        "title": "A career advisor, always on",
-        "body": "Ask about accessibility laws, interview prep, or how to explain a gap in your CV. Powered by Gemini — answers are concise, practical, and tuned for job seekers with disabilities.",
+        "tag": "Guidance",
+        "title": "Prepare for interviews with confidence",
+        "body": "Get help explaining your needs clearly, asking for reasonable accommodations, preparing a short self-introduction, and answering common interview questions in a way that focuses on ability and readiness.",
         "cta": "Try the assistant"
       },
       "textTools": {
-        "tag": "Text Tools",
-        "title": "Complex text made simple",
-        "body": "Paste any job description and get an Easy Read version — plain language, short sentences, no jargon. Useful for cognitive accessibility or just cutting through corporate speak.",
+        "tag": "Access",
+        "title": "Understand forms and job posts",
+        "body": "Paste a job post, training announcement, or government form and turn it into clear steps. Useful when wording is formal, crowded, or hard to follow.",
         "cta": "Try the simplifier"
       },
       "cv": {
-        "tag": "CV Builder",
-        "title": "A CV that speaks for itself",
-        "body": "Generate a clean, structured CV from your profile in one click. Download as PDF. No formatting headaches, no blank-page anxiety.",
+        "tag": "CV",
+        "title": "Show what you can do",
+        "body": "Create a clean CV that highlights strengths, training, tools you can use, languages, volunteering, and projects. Keep disability details optional and focus on skills, reliability, and fit.",
         "cta": "Build my CV"
       },
       "remote": {
-        "tag": "Remote work",
-        "title": "Location should never be a barrier",
-        "body": "We surface and prioritize remote and hybrid roles — because for many people with disabilities, proximity to an office is the first and biggest obstacle.",
-        "cta": "Explore remote jobs"
+        "tag": "Factories & employers",
+        "title": "Workplaces that can open real doors",
+        "body": "Many factories, call centers, retailers, offices, and service companies in Egypt can offer suitable roles for people with disabilities, from packaging and quality checks to chat support, data entry, design, and admin work.",
+        "cta": "Explore jobs"
       }
     }
   },
@@ -171,7 +171,7 @@
     "noPathsSubtitle": "Enroll in a career path and your progress will appear here.",
     "browseCareerPaths": "Browse career paths",
     "lookingForMore": "Looking for more?",
-    "lookingForMoreSubtitle": "Browse all available career paths and expand your skills.",
+    "lookingForMoreSubtitle": "Browse accessible work pathways and build practical job skills.",
     "browsePaths": "Browse paths",
     "next": "Next:",
     "status": {
@@ -186,11 +186,36 @@
     }
   },
   "tracks": {
-    "badge": "Learning Tracks",
-    "title": "Choose your path",
-    "subtitle": "Structured, step-by-step learning tracks designed to take you from zero to job-ready.",
-    "viewTrack": "View Track",
-    "more": "+{{count}} more"
+    "badge": "Accessible Work Pathways",
+    "title": "Choose work that fits your abilities",
+    "subtitle": "Practical Egyptian job pathways for people with disabilities, built around suitable workplaces, accommodations, and real skills employers ask for.",
+    "viewTrack": "View pathway",
+    "more": "+{{count}} more",
+    "loading": "Loading work pathways...",
+    "loadErrorTitle": "Unable to load work pathways",
+    "loadErrorBody": "Make sure the backend API is running on port 8000.",
+    "pathwayLoading": "Loading work pathway...",
+    "pathwayErrorTitle": "Unable to load work pathway",
+    "pathwayNotFound": "Work pathway not found",
+    "back": "Back to Work Pathways",
+    "phases": "{{count}} phases",
+    "roadmap": "Work Readiness Roadmap",
+    "requirements": "What you need to start",
+    "workplaces": "Places that may offer this work",
+    "realPlaces": "Real places in Egypt to check",
+    "openPlace": "Open",
+    "accessibilityFit": "Why this can fit disabled job seekers",
+    "gapTitle": "Skills gap analysis",
+    "gapBody": "Based on your profile — what you already have vs. what this pathway requires.",
+    "signInGap": "Sign in and complete your profile to see a personalised gap analysis.",
+    "signIn": "Sign in",
+    "completeSkills": "Complete your profile skills section to unlock gap analysis.",
+    "completeProfile": "Complete profile",
+    "ownedSkills": "You already know",
+    "missingSkills": "Still to learn",
+    "skillsBuild": "Skills you will build",
+    "resources": "Recommended resources",
+    "browseRelated": "Browse related job paths →"
   },
   "cv": {
     "signInRequired": "Sign in required",

@@ -642,10 +642,10 @@ export default function App() {
             <OnboardingPage theme={theme} themeMode={themeMode} setActiveTab={setActiveTab} API_BASE={API_BASE} />
           } />
           <Route path="/tracks" element={
-            <TracksPage theme={theme} themeMode={themeMode} />
+            <TracksPage theme={theme} themeMode={themeMode} API_BASE={API_BASE} />
           } />
           <Route path="/tracks/:trackId" element={
-            <TrackDetailPage theme={theme} themeMode={themeMode} currentUser={currentUser} />
+            <TrackDetailPage theme={theme} themeMode={themeMode} currentUser={currentUser} API_BASE={API_BASE} />
           } />
           <Route path="/accessibility-features" element={
             <AccessibilityFeaturesPage theme={theme} themeMode={themeMode} />

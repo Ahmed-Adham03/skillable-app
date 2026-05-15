@@ -1,18 +1,18 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
-  Bot, Briefcase, Sparkles, Globe, Send, ArrowRight,
+  Bot, Briefcase, Sparkles, Send, ArrowRight,
   ChevronLeft, ChevronRight, Map, FileText, Layers,
-  Brain, Eye, Ear, PersonStanding, Target, BookOpen
+  Brain, Eye, Ear, PersonStanding, Target, BookOpen, Factory
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 const FEATURE_META = [
-  { key: 'matching', Icon: Target, bg: 'linear-gradient(135deg,#0f0c29,#302b63,#5b21b6)', accent: '#8b5cf6', tab: 'careers' },
-  { key: 'tracks',   Icon: Layers,  bg: 'linear-gradient(135deg,#042f2e,#134e4a,#0f766e)', accent: '#14b8a6', tab: 'tracks' },
-  { key: 'ai',       Icon: Bot,     bg: 'linear-gradient(135deg,#1c0a00,#7c2d12,#c2410c)', accent: '#f97316', tab: 'home', scrollTo: 'ai' },
+  { key: 'matching', Icon: Target, bg: 'linear-gradient(135deg,#0f0c29,#302b63,#5b21b6)', accent: '#8b5cf6', tab: 'careers', image: '/dayoftheyear.jpg' },
+  { key: 'tracks',   Icon: Layers,  bg: 'linear-gradient(135deg,#042f2e,#134e4a,#0f766e)', accent: '#14b8a6', tab: 'tracks', image: '/People%20of%20Determination.jpg' },
+  { key: 'ai',       Icon: Bot,     bg: 'linear-gradient(135deg,#1c0a00,#7c2d12,#c2410c)', accent: '#f97316', tab: 'home', scrollTo: 'ai', image: '/condifenece.webp' },
   { key: 'textTools',Icon: BookOpen,bg: 'linear-gradient(135deg,#0c1445,#1e3a5f,#1d4ed8)', accent: '#3b82f6', tab: 'home', scrollTo: 'simplifier' },
-  { key: 'cv',       Icon: FileText,bg: 'linear-gradient(135deg,#1a0533,#4a1772,#7e22ce)', accent: '#a855f7', tab: 'cv-generator' },
-  { key: 'remote',   Icon: Globe,   bg: 'linear-gradient(135deg,#052e16,#14532d,#15803d)', accent: '#22c55e', tab: 'careers' },
+  { key: 'cv',       Icon: FileText,bg: 'linear-gradient(135deg,#1a0533,#4a1772,#7e22ce)', accent: '#a855f7', tab: 'cv-generator', image: '/workingonscreen.jpg' },
+  { key: 'remote',   Icon: Factory, bg: 'linear-gradient(135deg,#111827,#374151,#0f766e)', accent: '#f59e0b', tab: 'careers' },
 ];
 
 function FeatureCarousel({ themeMode, setActiveTab }) {
@@ -65,7 +65,13 @@ function FeatureCarousel({ themeMode, setActiveTab }) {
       {/* Card shell — background transitions smoothly */}
       <div
         className="rounded-3xl overflow-hidden cursor-grab active:cursor-grabbing"
-        style={{ background: f.bg, minHeight: 320, transition: 'background 0.5s ease' }}
+        style={{
+          background: f.image
+            ? `linear-gradient(90deg, rgba(8,13,28,0.72) 0%, rgba(8,13,28,0.48) 45%, rgba(8,13,28,0.12) 100%), url(${f.image}) center right / cover no-repeat`
+            : f.bg,
+          minHeight: 320,
+          transition: 'background 0.5s ease'
+        }}
         onMouseDown={onMouseDown}
         onMouseUp={onMouseUp}
         onTouchStart={onTouchStart}
@@ -79,19 +85,13 @@ function FeatureCarousel({ themeMode, setActiveTab }) {
 
         {/* Fading content layer */}
         <div
-          className="relative z-10 p-8 md:p-10 flex flex-col md:flex-row gap-8 items-start md:items-center"
+          className="relative z-10 p-6 md:px-7 md:py-10 flex flex-col md:flex-row gap-6 items-start md:items-center"
           style={{ opacity: visible ? 1 : 0, transition: 'opacity 0.28s ease' }}
         >
-          <div className="flex-shrink-0">
-            <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: `${f.accent}25`, border: `1px solid ${f.accent}40` }}>
-              <f.Icon size={26} style={{ color: f.accent }} />
-            </div>
-          </div>
-
           <div className="flex-1">
             <span className="text-[10px] font-black uppercase tracking-widest mb-2 block" style={{ color: f.accent }}>{f.tag}</span>
             <h3 className="text-xl md:text-2xl font-black text-white leading-snug mb-2">{f.title}</h3>
-            <p className="text-sm text-white/60 leading-relaxed max-w-xl">{f.body}</p>
+            <p className="text-sm text-white/75 leading-relaxed max-w-xl">{f.body}</p>
           </div>
 
           <button
