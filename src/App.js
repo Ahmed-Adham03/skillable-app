@@ -5,6 +5,7 @@ import i18n from './i18n';
 import CareersPage from './careers';
 import TopNav from './components/TopNav';
 import Footer from './components/Footer';
+import FloatingChat from './components/FloatingChat';
 import HomePage from './pages/HomePage';
 import AuthPage from './pages/AuthPage';
 import AccessibilityFeaturesPage from './pages/AccessibilityFeaturesPage';
@@ -407,9 +408,9 @@ export default function App() {
       </div>
 
       {/* Accessibility Bar */}
-      <div className={`relative z-50 px-6 py-2 flex justify-between items-center text-xs font-bold border-b transition-colors ${themeMode === 'contrast' ? 'bg-[#FFFF00] text-black border-black' : (themeMode === 'dark' ? 'bg-slate-900 border-slate-800 text-slate-400' : 'bg-white border-slate-100 text-slate-500')}`}>
+      <div className={`relative z-50 px-4 sm:px-6 py-2 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 text-xs font-bold border-b transition-colors ${themeMode === 'contrast' ? 'bg-[#FFFF00] text-black border-black' : (themeMode === 'dark' ? 'bg-slate-900 border-slate-800 text-slate-400' : 'bg-white border-slate-100 text-slate-500')}`}>
         <div className="flex items-center gap-2"><Accessibility size={14} aria-hidden="true" /><span>{t('accessibility.quickTools')}</span></div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-4 overflow-x-auto pb-1 sm:pb-0 max-w-full">
           <button onClick={activateHighContrast} className="hover:text-indigo-500 flex items-center gap-1"><Eye size={14} aria-hidden="true" /> {t('accessibility.contrast')}</button>
           <button
             onClick={() => {
@@ -496,6 +497,7 @@ export default function App() {
                 setSelectedJob(job);
                 setActiveTab('job-details');
               }}
+              setActiveTab={setActiveTab}
             />
           } />
           <Route path="/open-roles" element={
@@ -521,12 +523,22 @@ export default function App() {
             />
           } />
           <Route path="/open-roles/:roleId/apply" element={
-            <OpenRoleApplyPage
-              theme={theme}
-              themeMode={themeMode}
-              API_BASE={API_BASE}
-              currentUser={currentUser}
-            />
+            authLoading ? (
+              <div className="py-16 px-6 max-w-3xl mx-auto">
+                <div className={`p-8 rounded-3xl ${theme.card}`}>
+                  <p className={`text-sm font-bold ${theme.textSecondary}`}>Checking access...</p>
+                </div>
+              </div>
+            ) : currentUser ? (
+              <OpenRoleApplyPage
+                theme={theme}
+                themeMode={themeMode}
+                API_BASE={API_BASE}
+                currentUser={currentUser}
+              />
+            ) : (
+              <Navigate to="/login" replace />
+            )
           } />
           <Route path="/job-details" element={
             <JobDetailsPage
@@ -705,6 +717,18 @@ export default function App() {
           } />
         </Routes>
       </main>
+
+      {location.pathname !== '/' && location.pathname !== '/onboarding' && (
+        <FloatingChat
+          theme={theme}
+          themeMode={themeMode}
+          chatMessages={chatMessages}
+          chatInput={chatInput}
+          setChatInput={setChatInput}
+          isChatLoading={isChatLoading}
+          handleChatSend={handleChatSend}
+        />
+      )}
 
       {location.pathname !== '/onboarding' && <Footer theme={theme} themeMode={themeMode} setActiveTab={setActiveTab} />}
 

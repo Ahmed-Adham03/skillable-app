@@ -26,6 +26,7 @@ function FeatureCarousel({ themeMode, setActiveTab }) {
   const [active, setActive]   = useState(0);
   const [visible, setVisible] = useState(true);
   const [hovered, setHovered] = useState(false);
+  const [isPhone, setIsPhone] = useState(false);
   const startX  = useRef(0);
   const pending = useRef(null);
 
@@ -44,6 +45,14 @@ function FeatureCarousel({ themeMode, setActiveTab }) {
     return () => clearTimeout(t);
   }, [visible]);
 
+  useEffect(() => {
+    const media = window.matchMedia('(max-width: 640px)');
+    const sync = () => setIsPhone(media.matches);
+    sync();
+    media.addEventListener?.('change', sync);
+    return () => media.removeEventListener?.('change', sync);
+  }, []);
+
   const prev = () => changeTo((active - 1 + FEATURES.length) % FEATURES.length);
   const next = () => changeTo((active + 1) % FEATURES.length);
 
@@ -53,6 +62,7 @@ function FeatureCarousel({ themeMode, setActiveTab }) {
   const onTouchEnd   = (e) => { const dx = e.changedTouches[0].clientX - startX.current; if (Math.abs(dx) > 40) dx < 0 ? next() : prev(); };
 
   const f = FEATURES[active];
+  const imagePosition = isPhone && active !== 0 ? 'center center' : 'center right';
 
   return (
     <div
@@ -65,7 +75,7 @@ function FeatureCarousel({ themeMode, setActiveTab }) {
         className="rounded-3xl overflow-hidden cursor-grab active:cursor-grabbing"
         style={{
           background: f.image
-            ? `linear-gradient(90deg, rgba(8,13,28,0.72) 0%, rgba(8,13,28,0.48) 45%, rgba(8,13,28,0.12) 100%), url(${f.image}) center right / cover no-repeat`
+            ? `linear-gradient(90deg, rgba(8,13,28,0.72) 0%, rgba(8,13,28,0.48) 45%, rgba(8,13,28,0.12) 100%), url(${f.image}) ${imagePosition} / cover no-repeat`
             : f.bg,
           minHeight: 320,
           transition: 'background 0.5s ease'

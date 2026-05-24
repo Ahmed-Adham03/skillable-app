@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Building2, CheckCircle2, Clock, Layers, Mail, MapPin, Send, ShieldCheck, Sparkles } from 'lucide-react';
+import { ArrowLeft, Building2, CheckCircle2, Clock, Layers, LockKeyhole, Mail, MapPin, Send, ShieldCheck, Sparkles, UserPlus } from 'lucide-react';
 import { getJobLogo } from '../data/jobLogos';
 
 export default function OpenRoleDetailPage({ theme, themeMode, role, API_BASE, currentUser }) {
@@ -120,14 +120,41 @@ export default function OpenRoleDetailPage({ theme, themeMode, role, API_BASE, c
             <div className={`rounded-3xl p-6 ${isContrast ? 'border-2 border-[#FFFF00]' : isDark ? 'bg-indigo-600/20 border border-indigo-500/30' : 'bg-indigo-600 text-white'}`}>
               <h2 className="text-lg font-black mb-2">Ready to apply?</h2>
               <p className={`text-sm mb-5 ${isContrast ? 'text-white' : isDark ? 'text-indigo-100' : 'text-white/80'}`}>
-                This is a live open role, not a learning path. Send your info so the recruiter can contact you if there is a fit.
+                {currentUser
+                  ? 'This is a live open role, not a learning path. Send your info so the recruiter can contact you if there is a fit.'
+                  : 'You can browse this role now. Sign in or create an account to apply and share your contact information with the recruiter.'}
               </p>
-              <button
-                onClick={() => navigate(`/open-roles/${role.id}/apply`)}
-                className={`w-full py-3 rounded-xl font-black inline-flex justify-center items-center gap-2 ${isContrast ? 'bg-[#FFFF00] text-black' : isDark ? 'bg-indigo-500 text-white' : 'bg-white text-indigo-700'}`}
-              >
-                <Send size={16} /> Apply / contact
-              </button>
+              {currentUser ? (
+                <button
+                  onClick={() => navigate(`/open-roles/${role.id}/apply`)}
+                  className={`w-full py-3 rounded-xl font-black inline-flex justify-center items-center gap-2 ${isContrast ? 'bg-[#FFFF00] text-black' : isDark ? 'bg-indigo-500 text-white' : 'bg-white text-indigo-700'}`}
+                >
+                  <Send size={16} /> Apply / contact
+                </button>
+              ) : (
+                <div className="space-y-3">
+                  <button
+                    disabled
+                    className={`w-full py-3 rounded-xl font-black inline-flex justify-center items-center gap-2 cursor-not-allowed ${isContrast ? 'border border-white text-white' : 'bg-white/20 text-white/70'}`}
+                  >
+                    <LockKeyhole size={16} /> Apply locked
+                  </button>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      onClick={() => navigate('/login')}
+                      className={`py-2.5 rounded-xl font-black text-sm ${isContrast ? 'bg-[#FFFF00] text-black' : isDark ? 'bg-white text-indigo-700' : 'bg-white text-indigo-700'}`}
+                    >
+                      Sign in
+                    </button>
+                    <button
+                      onClick={() => navigate('/register')}
+                      className={`py-2.5 rounded-xl font-black text-sm inline-flex items-center justify-center gap-1.5 ${isContrast ? 'border border-white text-white' : 'bg-indigo-900/30 text-white'}`}
+                    >
+                      <UserPlus size={14} /> Sign up
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
             {canViewApplicants && (

@@ -1,7 +1,16 @@
-import React from 'react';
-import { Moon, Sun } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Menu, Moon, Sun, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
+
+const getInitials = (user) => {
+  const name = user?.full_name || '';
+  const email = user?.email || '';
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  if (parts.length > 1) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  return email ? email.slice(0, 2).toUpperCase() : 'SK';
+};
 
 export default function TopNav({
   theme,
@@ -23,38 +32,59 @@ export default function TopNav({
 }) {
   const { t, i18n } = useTranslation();
   const isRtl = i18n.dir() === 'rtl';
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const navItems = useMemo(() => ([
+    { key: 'home', label: t('nav.home') },
+    ...(currentUser ? [{ key: 'dashboard', label: t('nav.dashboard') }] : []),
+    ...(currentUser ? [{ key: 'cv-generator', label: t('nav.cvGenerator') }] : []),
+    { key: 'careers', label: t('nav.courses') },
+    { key: 'open-roles', label: t('nav.openRoles') },
+    { key: 'tracks', label: t('nav.tracks') },
+    ...((currentUser?.role === 'job_poster' || currentUser?.role === 'admin')
+      ? [{ key: 'post-job', label: t('nav.postJob') }]
+      : []),
+    { key: 'accessibility-features', label: t('nav.accessibilityFeatures') },
+  ]), [currentUser, t]);
+
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [activeTab]);
+
+  const goToTab = (tab) => {
+    setActiveTab(tab);
+    setIsMobileMenuOpen(false);
+  };
 
   return (
     <nav className={`sticky top-0 z-40 transition-all duration-300 ${theme.navBg}`} aria-label="Main">
-      <div className="container mx-auto px-6 h-20 flex justify-between items-center">
-        <button onClick={() => setActiveTab('home')} className="flex items-center gap-2 cursor-pointer group" aria-label={t('nav.goToHome')}>
-          <div className="p-1 rounded-xl transition-all">
+      <div className="container mx-auto px-4 sm:px-6 h-20 flex justify-between items-center gap-3">
+        <button onClick={() => goToTab('home')} className="flex items-center gap-2 cursor-pointer group min-w-0" aria-label={t('nav.goToHome')}>
+          <div className="p-1 rounded-xl transition-all flex-shrink-0">
             <img src="/SkillableLogo3BG0.png" alt="Skillable logo" className="w-11 h-11 object-contain" />
           </div>
-          <span className="text-2xl font-black">Skillable</span>
+          <span className="text-xl sm:text-2xl font-black truncate">Skillable</span>
         </button>
 
-        <div className="hidden md:flex items-center gap-8 font-bold text-sm">
-          <button onClick={() => setActiveTab('home')} className={`relative transition-colors hover:text-indigo-500 ${activeTab === 'home' ? theme.accent : theme.textSecondary}`}>{t('nav.home')}</button>
-          {currentUser && (
-            <button onClick={() => setActiveTab('dashboard')} className={`relative transition-colors hover:text-indigo-500 ${activeTab === 'dashboard' ? theme.accent : theme.textSecondary}`}>{t('nav.dashboard')}</button>
-          )}
-          {currentUser && (
-            <button onClick={() => setActiveTab('cv-generator')} className={`relative transition-colors hover:text-indigo-500 ${activeTab === 'cv-generator' ? theme.accent : theme.textSecondary}`}>{t('nav.cvGenerator')}</button>
-          )}
-          <button onClick={() => setActiveTab('careers')} className={`relative transition-colors hover:text-indigo-500 ${activeTab === 'careers' ? theme.accent : theme.textSecondary}`}>{t('nav.courses')}</button>
-          <button onClick={() => setActiveTab('open-roles')} className={`relative transition-colors hover:text-indigo-500 ${activeTab === 'open-roles' ? theme.accent : theme.textSecondary}`}>{t('nav.openRoles')}</button>
-          <button onClick={() => setActiveTab('tracks')} className={`relative transition-colors hover:text-indigo-500 ${activeTab === 'tracks' ? theme.accent : theme.textSecondary}`}>{t('nav.tracks')}</button>
-          {(currentUser?.role === 'job_poster' || currentUser?.role === 'admin') && (
-            <button onClick={() => setActiveTab('post-job')} className={`relative transition-colors hover:text-indigo-500 ${activeTab === 'post-job' ? theme.accent : theme.textSecondary}`}>{t('nav.postJob')}</button>
-          )}
-          <button onClick={() => setActiveTab('accessibility-features')} className={`relative transition-colors hover:text-indigo-500 ${activeTab === 'accessibility-features' ? theme.accent : theme.textSecondary}`}>{t('nav.accessibilityFeatures')}</button>
+        <div className="hidden lg:flex items-center gap-6 xl:gap-8 font-bold text-sm">
+          {navItems.map((item) => (
+            <button
+              key={item.key}
+              onClick={() => goToTab(item.key)}
+              className={`relative transition-colors hover:text-indigo-500 ${activeTab === item.key ? theme.accent : theme.textSecondary}`}
+            >
+              {item.label}
+            </button>
+          ))}
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-3">
           {themeMode !== 'contrast' && (
-            <button onClick={toggleTheme} className="p-2.5 rounded-full" aria-label="Darkmode">{themeMode === 'dark' ? <Sun size={20} aria-hidden="true" /> : <Moon size={20} aria-hidden="true" />}</button>
+            <button onClick={toggleTheme} className="p-2.5 rounded-full" aria-label="Darkmode">
+              {themeMode === 'dark' ? <Sun size={20} aria-hidden="true" /> : <Moon size={20} aria-hidden="true" />}
+            </button>
           )}
+
           {authLoading ? null : currentUser ? (
             <div className="relative" ref={profileRef}>
               <button
@@ -77,14 +107,7 @@ export default function TopNav({
                 className={`relative w-10 h-10 rounded-full flex items-center justify-center font-bold ${themeMode === 'contrast' ? 'bg-[#FFFF00] text-black' : 'bg-indigo-600 text-white'}`}
                 ref={profileButtonRef}
               >
-                {(() => {
-                  const name = currentUser?.full_name || '';
-                  const email = currentUser?.email || '';
-                  const parts = name.trim().split(/\s+/).filter(Boolean);
-                  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-                  if (parts.length > 1) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-                  return email ? email.slice(0, 2).toUpperCase() : 'SK';
-                })()}
+                {getInitials(currentUser)}
                 {hasProfileAlert && (
                   <span
                     className={`absolute -top-1 w-3 h-3 rounded-full bg-red-500 border border-white shadow ${isRtl ? '-left-1' : '-right-1'}`}
@@ -95,70 +118,63 @@ export default function TopNav({
               </button>
 
               <AnimatePresence>
-              {isProfileOpen && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.98, y: -4, filter: 'blur(3px)' }}
-                  animate={{ opacity: 1, scale: 1, y: 0, filter: 'blur(0px)' }}
-                  exit={{ opacity: 0, scale: 0.98, y: -4, filter: 'blur(2px)' }}
-                  transition={{ duration: 0.26, ease: [0.22, 1, 0.36, 1] }}
-                  style={{ transformOrigin: isRtl ? 'top left' : 'top right' }}
-                  className={`absolute ${isRtl ? 'left-0 text-right' : 'right-0'} mt-3 w-64 rounded-2xl p-4 shadow-xl ${theme.glass}`}
-                  role="menu"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Escape') {
-                      setIsProfileOpen(false);
-                      setTimeout(() => profileButtonRef.current?.focus(), 0);
-                    }
-                  }}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${themeMode === 'contrast' ? 'bg-[#FFFF00] text-black' : 'bg-indigo-600 text-white'}`}>
-                      {(() => {
-                        const name = currentUser?.full_name || '';
-                        const email = currentUser?.email || '';
-                        const parts = name.trim().split(/\s+/).filter(Boolean);
-                        if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-                        if (parts.length > 1) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-                        return email ? email.slice(0, 2).toUpperCase() : 'SK';
-                      })()}
-                    </div>
-                    <div className="min-w-0">
-                      <div className="text-sm font-bold">{currentUser?.full_name || 'Skillable'}</div>
-                      <div className={`text-xs break-all ${theme.textSecondary}`}>{currentUser?.email}</div>
-                    </div>
-                  </div>
-                  <div className="mt-4 space-y-2">
-                    {hasProfileAlert && (
-                      <div className={`rounded-xl p-3 text-xs font-semibold ${themeMode === 'contrast' ? 'border border-white' : 'border border-red-300 bg-red-50 text-red-700'}`}>
-                        {t('nav.profileIncompleteMsg')}
-                      </div>
-                    )}
-                    <button
-                      onClick={() => {
-                        setActiveTab('profile');
+                {isProfileOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.98, y: -4, filter: 'blur(3px)' }}
+                    animate={{ opacity: 1, scale: 1, y: 0, filter: 'blur(0px)' }}
+                    exit={{ opacity: 0, scale: 0.98, y: -4, filter: 'blur(2px)' }}
+                    transition={{ duration: 0.26, ease: [0.22, 1, 0.36, 1] }}
+                    style={{ transformOrigin: isRtl ? 'top left' : 'top right' }}
+                    className={`absolute ${isRtl ? 'left-0 text-right' : 'right-0'} mt-3 w-[calc(100vw-2rem)] max-w-72 rounded-2xl p-4 shadow-xl ${theme.glass}`}
+                    role="menu"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Escape') {
                         setIsProfileOpen(false);
-                      }}
-                      role="menuitem"
-                      className={`w-full py-2.5 rounded-xl font-bold text-sm ${theme.primaryBtn}`}
-                    >
-                      {t('nav.personalizeExperience')}
-                    </button>
-                    <button
-                      onClick={handleSignOut}
-                      ref={signOutButtonRef}
-                      role="menuitem"
-                      className={`w-full py-2.5 rounded-xl font-bold ${themeMode === 'contrast' ? 'bg-white text-black' : 'bg-slate-900 text-white'} `}
-                    >
-                      {t('nav.signOut')}
-                    </button>
-                  </div>
-                </motion.div>
-              )}
+                        setTimeout(() => profileButtonRef.current?.focus(), 0);
+                      }
+                    }}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${themeMode === 'contrast' ? 'bg-[#FFFF00] text-black' : 'bg-indigo-600 text-white'}`}>
+                        {getInitials(currentUser)}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-sm font-bold">{currentUser?.full_name || 'Skillable'}</div>
+                        <div className={`text-xs break-all ${theme.textSecondary}`}>{currentUser?.email}</div>
+                      </div>
+                    </div>
+                    <div className="mt-4 space-y-2">
+                      {hasProfileAlert && (
+                        <div className={`rounded-xl p-3 text-xs font-semibold ${themeMode === 'contrast' ? 'border border-white' : 'border border-red-300 bg-red-50 text-red-700'}`}>
+                          {t('nav.profileIncompleteMsg')}
+                        </div>
+                      )}
+                      <button
+                        onClick={() => {
+                          goToTab('profile');
+                          setIsProfileOpen(false);
+                        }}
+                        role="menuitem"
+                        className={`w-full py-2.5 rounded-xl font-bold text-sm ${theme.primaryBtn}`}
+                      >
+                        {t('nav.personalizeExperience')}
+                      </button>
+                      <button
+                        onClick={handleSignOut}
+                        ref={signOutButtonRef}
+                        role="menuitem"
+                        className={`w-full py-2.5 rounded-xl font-bold ${themeMode === 'contrast' ? 'bg-white text-black' : 'bg-slate-900 text-white'} `}
+                      >
+                        {t('nav.signOut')}
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
               </AnimatePresence>
 
               {showPersonalizeHint && !isProfileOpen && (
                 <div
-                  className={`absolute ${isRtl ? 'left-0 text-right' : 'right-0'} top-full mt-3 w-72 rounded-2xl p-4 shadow-xl ${theme.glass}`}
+                  className={`absolute ${isRtl ? 'left-0 text-right' : 'right-0'} top-full mt-3 w-[calc(100vw-2rem)] max-w-72 rounded-2xl p-4 shadow-xl ${theme.glass}`}
                   role="status"
                   aria-live="polite"
                 >
@@ -172,7 +188,7 @@ export default function TopNav({
                       type="button"
                       onClick={() => {
                         dismissPersonalizeHint();
-                        setActiveTab('profile');
+                        goToTab('profile');
                       }}
                       className={`px-3 py-2 rounded-lg text-xs font-bold ${theme.primaryBtn}`}
                     >
@@ -191,12 +207,62 @@ export default function TopNav({
             </div>
           ) : (
             <>
-              <button onClick={() => setActiveTab('login')} className={`px-5 py-2.5 rounded-xl font-bold border ${themeMode === 'contrast' ? 'border-white' : 'border-slate-700'}`}>{t('nav.signIn')}</button>
-              <button onClick={() => setActiveTab('register')} className={`px-6 py-2.5 rounded-xl font-bold ${theme.primaryBtn}`}>{t('nav.getStarted')}</button>
+              <button onClick={() => goToTab('login')} className={`hidden sm:inline-flex px-5 py-2.5 rounded-xl font-bold border ${themeMode === 'contrast' ? 'border-white' : 'border-slate-700'}`}>{t('nav.signIn')}</button>
+              <button onClick={() => goToTab('register')} className={`hidden sm:inline-flex px-6 py-2.5 rounded-xl font-bold ${theme.primaryBtn}`}>{t('nav.getStarted')}</button>
             </>
           )}
+
+          <button
+            type="button"
+            onClick={() => setIsMobileMenuOpen((prev) => !prev)}
+            className={`lg:hidden w-10 h-10 rounded-xl flex items-center justify-center border ${themeMode === 'contrast' ? 'border-[#FFFF00]' : themeMode === 'dark' ? 'border-white/10' : 'border-slate-200'}`}
+            aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
+            aria-expanded={isMobileMenuOpen}
+          >
+            {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
         </div>
       </div>
+
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2 }}
+            className={`lg:hidden mx-4 sm:mx-6 mb-4 rounded-3xl p-4 shadow-xl ${theme.glass}`}
+          >
+            <div className="grid gap-2">
+              {navItems.map((item) => (
+                <button
+                  key={item.key}
+                  onClick={() => goToTab(item.key)}
+                  className={`w-full px-4 py-3 rounded-2xl text-start font-black text-sm transition-colors ${activeTab === item.key ? theme.primaryBtn : themeMode === 'dark' ? 'hover:bg-white/10' : themeMode === 'contrast' ? 'border border-white' : 'hover:bg-slate-100'}`}
+                >
+                  {item.label}
+                </button>
+              ))}
+              {!authLoading && !currentUser && (
+                <div className="grid grid-cols-2 gap-2 pt-2">
+                  <button
+                    onClick={() => goToTab('login')}
+                    className={`px-4 py-3 rounded-2xl font-black text-sm border ${themeMode === 'contrast' ? 'border-white' : 'border-slate-300'}`}
+                  >
+                    {t('nav.signIn')}
+                  </button>
+                  <button
+                    onClick={() => goToTab('register')}
+                    className={`px-4 py-3 rounded-2xl font-black text-sm ${theme.primaryBtn}`}
+                  >
+                    {t('nav.getStarted')}
+                  </button>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </nav>
   );
 }

@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Briefcase, ArrowRight, Map, Search, MapPin, Banknote, Layers } from 'lucide-react';
+import { Briefcase, ArrowRight, Map, Search, MapPin, Banknote, Layers, ShieldCheck, Sparkles, UserPlus } from 'lucide-react';
 
-export default function CareerPage({ theme, themeMode, currentUser, onSelectJob }) {
+export default function CareerPage({ theme, themeMode, currentUser, onSelectJob, setActiveTab }) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
   const [status, setStatus] = useState('');
@@ -82,7 +82,31 @@ export default function CareerPage({ theme, themeMode, currentUser, onSelectJob 
         </p>
       </div>
 
+      {!currentUser && (
+        <div className="relative text-center py-8 md:py-12">
+          <div className={`mx-auto mb-6 w-20 h-20 rounded-[1.6rem] flex items-center justify-center ${themeMode === 'contrast' ? 'bg-[#FFFF00] text-black' : 'bg-indigo-600 text-white shadow-xl shadow-indigo-200'}`}>
+            <ShieldCheck size={34} />
+          </div>
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest mb-4 border border-indigo-500/20 text-indigo-500">
+            <Sparkles size={13} /> Personalized matching
+          </div>
+          <h3 className="text-3xl md:text-4xl font-black mb-3">Sign in or create an account to unlock career paths</h3>
+          <p className={`max-w-2xl mx-auto leading-relaxed mb-7 ${theme.textSecondary}`}>
+            Skillable builds matches from your accessibility needs, strengths, skills, and experience level, then explains which roles fit you best.
+          </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <button onClick={() => setActiveTab?.('register')} className={`px-7 py-3 rounded-2xl font-black inline-flex items-center gap-2 ${theme.primaryBtn}`}>
+              <UserPlus size={17} /> Sign up
+            </button>
+            <button onClick={() => setActiveTab?.('login')} className={`px-7 py-3 rounded-2xl font-black border ${themeMode === 'contrast' ? 'border-white' : themeMode === 'dark' ? 'border-white/20' : 'border-slate-300'}`}>
+              Sign in
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Search & Filter Bar */}
+      {currentUser && !isProfileIncomplete && (
       <div className={`mb-10 p-4 rounded-2xl flex flex-col md:flex-row gap-4 items-center ${theme.glass}`}>
         <div className="relative flex-1 w-full">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 opacity-40" size={20} aria-hidden="true" />
@@ -100,18 +124,10 @@ export default function CareerPage({ theme, themeMode, currentUser, onSelectJob 
           Generate New Path
         </button>
       </div>
+      )}
 
       {status && !isProfileIncomplete && (
         <div className={`mb-8 text-sm font-semibold ${theme.textSecondary}`}>{status}</div>
-      )}
-      {!currentUser && (
-        <div className={`mb-8 p-4 rounded-2xl ${theme.glass}`}>
-          <h3 className="text-lg font-black mb-2">Join to get your best matches</h3>
-          <p className={theme.textSecondary}>
-            Sign in or create an account to personalize your experience. We match careers by comparing your needs profile
-            (mobility, vision, hearing, cognitive) against job requirements, then rank results by fit and explain why.
-          </p>
-        </div>
       )}
       {currentUser && isProfileIncomplete && (
         <div className={`mb-8 p-4 rounded-2xl ${theme.glass}`}>
@@ -123,7 +139,7 @@ export default function CareerPage({ theme, themeMode, currentUser, onSelectJob 
         </div>
       )}
 
-      {(!currentUser || isProfileIncomplete) && (
+      {currentUser && isProfileIncomplete && (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 opacity-60 blur-[2px]">
         {[1, 2, 3].map((id) => (
           <div key={id} className={`group p-8 rounded-[2rem] flex flex-col h-full ${theme.card}`}>
