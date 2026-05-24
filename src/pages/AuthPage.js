@@ -24,7 +24,6 @@ export default function AuthPage({
   theme,
   themeMode,
   API_BASE,
-  OAUTH_REDIRECT_URI,
   setActiveTab,
   setCurrentUser,
   setLearningPlans,
@@ -103,28 +102,6 @@ export default function AuthPage({
   };
 
   const hasGoogleClientId = Boolean(process.env.REACT_APP_GOOGLE_CLIENT_ID);
-
-  const handleLinkedInLogin = () => {
-    const LINKEDIN_CLIENT_ID = process.env.REACT_APP_LINKEDIN_CLIENT_ID || '';
-    if (!LINKEDIN_CLIENT_ID) {
-      setSocialError('LinkedIn sign-in is not configured (missing REACT_APP_LINKEDIN_CLIENT_ID).');
-      return;
-    }
-    const redirectUri = encodeURIComponent(OAUTH_REDIRECT_URI || window.location.origin);
-    const url = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${LINKEDIN_CLIENT_ID}&redirect_uri=${redirectUri}&scope=openid%20profile%20email&state=linkedin`;
-    window.location.href = url;
-  };
-
-  const handleFacebookLogin = () => {
-    const FACEBOOK_APP_ID = process.env.REACT_APP_FACEBOOK_APP_ID || '';
-    if (!FACEBOOK_APP_ID) {
-      setSocialError('Facebook sign-in is not configured (missing REACT_APP_FACEBOOK_APP_ID).');
-      return;
-    }
-    const redirectUri = encodeURIComponent(OAUTH_REDIRECT_URI || window.location.origin);
-    const url = `https://www.facebook.com/v18.0/dialog/oauth?client_id=${FACEBOOK_APP_ID}&redirect_uri=${redirectUri}&scope=email,public_profile&state=facebook`;
-    window.location.href = url;
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -557,20 +534,20 @@ export default function AuthPage({
               <hr className={`flex-1 ${themeMode === 'contrast' ? 'border-white' : 'border-slate-300'}`} />
             </div>
 
-            <div className="grid grid-cols-3 gap-3 mt-4">
+            <div className="mt-4">
               {/* Google */}
               {hasGoogleClientId ? (
                 <GoogleLoginButton
                   onSuccess={(t) => handleSocialLogin('/auth/oauth/google', { id_token: t.access_token })}
                   onError={() => setSocialError('Google sign-in was cancelled or failed.')}
-                  className={`flex items-center justify-center gap-2 py-3 rounded-xl border font-semibold text-sm transition-opacity hover:opacity-80 ${themeMode === 'contrast' ? 'border-white text-white' : 'border-slate-300 text-slate-700 bg-white'}`}
+                  className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl border font-semibold text-sm transition-opacity hover:opacity-80 ${themeMode === 'contrast' ? 'border-white text-white' : 'border-slate-300 text-slate-700 bg-white'}`}
                 />
               ) : (
                 <button
                   type="button"
                   onClick={() => setSocialError('Google sign-in is not configured (missing REACT_APP_GOOGLE_CLIENT_ID).')}
                   aria-label="Sign in with Google (not configured)"
-                  className={`flex items-center justify-center gap-2 py-3 rounded-xl border font-semibold text-sm opacity-50 cursor-not-allowed ${themeMode === 'contrast' ? 'border-white text-white' : 'border-slate-300 text-slate-700 bg-white'}`}
+                  className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl border font-semibold text-sm opacity-50 cursor-not-allowed ${themeMode === 'contrast' ? 'border-white text-white' : 'border-slate-300 text-slate-700 bg-white'}`}
                 >
                   <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
                     <path fill="#4285F4" d="M46.1 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h12.4c-.5 2.8-2.1 5.2-4.5 6.8v5.6h7.3c4.3-3.9 6.9-9.7 6.9-16.4z"/>
@@ -581,32 +558,6 @@ export default function AuthPage({
                   Google
                 </button>
               )}
-
-              {/* LinkedIn */}
-              <button
-                type="button"
-                onClick={handleLinkedInLogin}
-                aria-label="Sign in with LinkedIn"
-                className={`flex items-center justify-center gap-2 py-3 rounded-xl border font-semibold text-sm transition-opacity hover:opacity-80 ${themeMode === 'contrast' ? 'border-white text-white' : 'border-slate-300 text-[#0A66C2] bg-white'}`}
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="#0A66C2" aria-hidden="true">
-                  <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
-                </svg>
-                LinkedIn
-              </button>
-
-              {/* Facebook */}
-              <button
-                type="button"
-                onClick={handleFacebookLogin}
-                aria-label="Sign in with Facebook"
-                className={`flex items-center justify-center gap-2 py-3 rounded-xl border font-semibold text-sm transition-opacity hover:opacity-80 ${themeMode === 'contrast' ? 'border-white text-white' : 'border-slate-300 text-[#1877F2] bg-white'}`}
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="#1877F2" aria-hidden="true">
-                  <path d="M24 12.073C24 5.404 18.627 0 12 0S0 5.404 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.97h-1.513c-1.491 0-1.956.93-1.956 1.874v2.25h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/>
-                </svg>
-                Facebook
-              </button>
             </div>
 
             {socialError && (

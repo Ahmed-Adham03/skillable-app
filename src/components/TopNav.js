@@ -21,7 +21,8 @@ export default function TopNav({
   dismissPersonalizeHint,
   hasProfileAlert
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isRtl = i18n.dir() === 'rtl';
 
   return (
     <nav className={`sticky top-0 z-40 transition-all duration-300 ${theme.navBg}`} aria-label="Main">
@@ -86,7 +87,7 @@ export default function TopNav({
                 })()}
                 {hasProfileAlert && (
                   <span
-                    className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-red-500 border border-white shadow"
+                    className={`absolute -top-1 w-3 h-3 rounded-full bg-red-500 border border-white shadow ${isRtl ? '-left-1' : '-right-1'}`}
                     aria-label="Profile incomplete"
                     title="Profile incomplete"
                   />
@@ -96,12 +97,12 @@ export default function TopNav({
               <AnimatePresence>
               {isProfileOpen && (
                 <motion.div
-                  initial={{ opacity: 0, scale: 0.95, y: -8 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.95, y: -8 }}
-                  transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-                  style={{ transformOrigin: 'top right' }}
-                  className={`absolute right-0 mt-3 w-64 rounded-2xl p-4 shadow-xl ${theme.glass}`}
+                  initial={{ opacity: 0, scale: 0.98, y: -4, filter: 'blur(3px)' }}
+                  animate={{ opacity: 1, scale: 1, y: 0, filter: 'blur(0px)' }}
+                  exit={{ opacity: 0, scale: 0.98, y: -4, filter: 'blur(2px)' }}
+                  transition={{ duration: 0.26, ease: [0.22, 1, 0.36, 1] }}
+                  style={{ transformOrigin: isRtl ? 'top left' : 'top right' }}
+                  className={`absolute ${isRtl ? 'left-0 text-right' : 'right-0'} mt-3 w-64 rounded-2xl p-4 shadow-xl ${theme.glass}`}
                   role="menu"
                   onKeyDown={(e) => {
                     if (e.key === 'Escape') {
@@ -121,9 +122,9 @@ export default function TopNav({
                         return email ? email.slice(0, 2).toUpperCase() : 'SK';
                       })()}
                     </div>
-                    <div>
+                    <div className="min-w-0">
                       <div className="text-sm font-bold">{currentUser?.full_name || 'Skillable'}</div>
-                      <div className={`text-xs ${theme.textSecondary}`}>{currentUser?.email}</div>
+                      <div className={`text-xs break-all ${theme.textSecondary}`}>{currentUser?.email}</div>
                     </div>
                   </div>
                   <div className="mt-4 space-y-2">
@@ -157,11 +158,11 @@ export default function TopNav({
 
               {showPersonalizeHint && !isProfileOpen && (
                 <div
-                  className={`absolute right-0 top-full mt-3 w-72 rounded-2xl p-4 shadow-xl ${theme.glass}`}
+                  className={`absolute ${isRtl ? 'left-0 text-right' : 'right-0'} top-full mt-3 w-72 rounded-2xl p-4 shadow-xl ${theme.glass}`}
                   role="status"
                   aria-live="polite"
                 >
-                  <div className="absolute -top-2 right-6 w-4 h-4 rotate-45 bg-inherit border-l border-t border-white/20" aria-hidden="true" />
+                  <div className={`absolute -top-2 w-4 h-4 rotate-45 bg-inherit border-l border-t border-white/20 ${isRtl ? 'left-6' : 'right-6'}`} aria-hidden="true" />
                   <p className="text-sm font-bold mb-2">{t('nav.letsPersonalize')}</p>
                   <p className={`text-xs mb-3 ${theme.textSecondary}`}>
                     {t('nav.completeProfileMsg')}

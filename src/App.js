@@ -42,7 +42,6 @@ export default function App() {
   }, [lang]);
   const API_BASE = process.env.REACT_APP_API_BASE || 'http://127.0.0.1:8000';
   const CODE_API = process.env.REACT_APP_CODE_API || 'http://127.0.0.1:9100';
-  const OAUTH_REDIRECT_URI = process.env.REACT_APP_OAUTH_REDIRECT_URI || window.location.origin;
   // --- Routing ---
   const navigate = useNavigate();
   const location = useLocation();
@@ -91,7 +90,6 @@ export default function App() {
     const saved = localStorage.getItem('skillable_reduced_motion');
     return saved === 'true';
   });
-  const [speechStatus, setSpeechStatus] = useState('');
   const [selectedJob, setSelectedJob] = useState(null);
   const [selectedOpenRole, setSelectedOpenRole] = useState(null);
   const [selectedPlanIndex, setSelectedPlanIndex] = useState(null);
@@ -110,17 +108,10 @@ export default function App() {
   }, [reducedMotion]);
 
   // Chat & AI Logic
-  const [chatMessages, setChatMessages] = useState([
-    { role: 'bot', text: 'Welcome to Skillable.\nI am your smart assistant for career analysis. How can I help you?' }
-  ]);
+  const [chatMessages, setChatMessages] = useState([]);
   const [chatInput, setChatInput] = useState('');
   const [isChatLoading, setIsChatLoading] = useState(false);
   const chatEndRef = useRef(null);
-
-  // Simplifier Logic
-  const [simplifyInput, setSimplifyInput] = useState('');
-  const [simplifiedText, setSimplifiedText] = useState('');
-  const [isSimplifying, setIsSimplifying] = useState(false);
 
   // --- Effects ---
   useEffect(() => {
@@ -190,46 +181,6 @@ export default function App() {
     document.documentElement.classList.toggle('reduce-motion', reducedMotion);
   }, [reducedMotion]);
 
-  // Handle OAuth redirect callbacks (LinkedIn, Facebook)
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const code = params.get('code');
-    const state = params.get('state');
-    if (!code || !['linkedin', 'facebook'].includes(state)) return;
-
-    // Clear the OAuth params from the URL immediately
-    navigate('/', { replace: true });
-
-    const endpoint = `${API_BASE}/auth/oauth/${state}`;
-    fetch(endpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code, redirect_uri: OAUTH_REDIRECT_URI }),
-    })
-      .then((res) => {
-        if (!res.ok) return res.json().then((d) => { throw new Error(d.detail || 'OAuth failed'); });
-        return res.json();
-      })
-      .then((data) => {
-        localStorage.setItem('skillable_token', data.access_token);
-        return fetch(`${API_BASE}/auth/me`, {
-          headers: { Authorization: `Bearer ${data.access_token}` },
-        });
-      })
-      .then((res) => (res.ok ? res.json() : null))
-      .then((me) => {
-        if (me) {
-          setCurrentUser(me);
-          setActiveTab('home');
-        }
-      })
-      .catch(() => {
-        // If OAuth callback fails, send to login page so user sees the error
-        setActiveTab('login');
-      });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   useEffect(() => {
     const token = localStorage.getItem('skillable_token');
     if (!token) return;
@@ -266,73 +217,42 @@ export default function App() {
   const increaseFont = () => setFontSize(prev => Math.min(prev + 10, 140));
   const decreaseFont = () => setFontSize(prev => Math.max(prev - 10, 90));
 
-  // --- API Call ---
-  const callGeminiAPI = async (payload, isChat = false) => {
-    const apiKey = process.env.REACT_APP_GEMINI_API_KEY || "AIzaSyB9yuEG9Z7RMVJwmaHwpM95uKDnmT2367M";
-
-    const systemPrompt = `أنت المساعد الذكي المدمج والخاص بمنصة "Skillable". أنت جزء من الموقع تتحدث مع المستخدم من داخله. تحلى باللطف الشديد، الإيجابية، ورد بنفس لغة المستخدم (عربي أو إنجليزي).
-تجنب تماماً أن تتحدث كأنك من خارج الموقع (لا تقل ابحث عن زر كذا أو اذهب لموقعنا)، بل قل "يمكنك عمل كذا من خلال موقعنا هنا". تجنب الترحيب في كل رسالة؛ رحب في أول رسالة فقط. 
-مهم جداً: لا تستخدم تنسيق Markdown أبداً (مثل ** أو * أو #). اجعل الإجابات سريعة ومختصرة، واستخدم أسطر جديدة واضحة (New lines) وإيموجيز (Emojis) لترتيب النقاط بدلاً من الشرطات أو النجوم لتكون القراءة مريحة جداً وسهلة.
-
-عن منصة Skillable:
-منصة تعتمد على الذكاء الاصطناعي لمساعدة ذوي الاحتياجات الخاصة (أصحاب الهمم) للحصول على المهارات المهنية المناسبة. حيث يدخل المستخدم نوع الإعاقة والمهارات التي يمتلكها أو يريدها، ليقترح النظام له مسارات تعليمية وتدريبات تفاعلية لتطوير مهاراته والاستعداد لسوق العمل.
-
-صفحات الموقع والمميزات التي يمكنك إرشاد المستخدم إليها (هي متوفرة أعلى واجهة الموقع دائماً):
-- الصفحة الرئيسية (Home): بها أداة مساعدة لتبسيط النصوص (Text Simplifier).
-- صفحة المسارات (Browse Paths): لاستكشاف مجالات العمل المتاحة والتسجيل فيها.
-- لوحة التحكم (Dashboard): تعرض تقدم نسبة الإنجاز في المسارات المنتسب إليها المستخدم.
-- إنشاء السيرة الذاتية (CV Generator): أداة ذكية بداخل موقعنا لعمل CV و Resume احترافي (يتطلب تسجيل الدخول).
-- الملف الشخصي (Profile): المكان الذي يدخل فيه المستخدم إعاقته وقدراته (البصرية، الحركية، السمعية، الإدراكية) كي نفهم حالته ونقدم التوصيات له.
-- أدوات الوصول (Accessibility Toolbar): شريط أعلى الموقع لتفعيل القارئ الصوتي (Speak Focus)، ألوان التباين (Contrast)، تغيير حجم الخط، وتقليل الحركة.`;
-
-    let requestBody = {};
-    if (isChat) {
-      // 1. Strip out any 'bot' messages at the beginning of the history
-      let validHistory = payload;
-      while (validHistory.length > 0 && validHistory[0].role === 'bot') {
-        validHistory = validHistory.slice(1);
-      }
-      
-      // 2. Format to strictly alternating roles
-      const formattedContents = [];
-      for (const msg of validHistory) {
-        const apiRole = msg.role === 'bot' ? 'model' : 'user';
-        if (formattedContents.length > 0 && formattedContents[formattedContents.length - 1].role === apiRole) {
-           formattedContents[formattedContents.length - 1].parts[0].text += '\n' + msg.text;
-        } else {
-           formattedContents.push({ role: apiRole, parts: [{ text: msg.text }] });
-        }
-      }
-
-      requestBody = {
-        systemInstruction: { parts: [{ text: systemPrompt }] },
-        contents: formattedContents.length > 0 ? formattedContents : [{ role: 'user', parts: [{ text: 'Hello' }] }]
-      };
-    } else {
-      requestBody = { contents: [{ parts: [{ text: payload }] }] };
-    }
+  const callChatAPI = async (messagesPayload) => {
+    const messages = messagesPayload.map((msg) => ({
+      role: msg.role === 'bot' ? 'assistant' : 'user',
+      content: msg.text,
+    }));
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 25000);
 
     try {
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(requestBody)
-        }
-      );
+      const response = await fetch(`${API_BASE}/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
+        body: JSON.stringify({
+          messages,
+          max_tokens: 1024,
+          temperature: 0.7,
+        }),
+      });
       const data = await response.json();
+
       if (!response.ok) {
-        console.error("Gemini API error:", data);
         if (response.status === 429) {
-           return "عذراً! وصلنا للحد الأقصى لعدد الرسائل المسموحة حالياً، يرجى الانتظار دقيقة واحدة والمحاولة مرة أخرى.";
+          return 'عذراً! وصلنا للحد الأقصى حالياً، يرجى الانتظار لحظة والمحاولة مرة أخرى 🙏';
         }
-        return "Sorry, I couldn't process that.";
+        return data.detail || "Sorry, I couldn't process that right now. Please try again.";
       }
-      return data.candidates?.[0]?.content?.parts?.[0]?.text || "Sorry, I couldn't process that.";
+
+      return data.choices?.[0]?.message?.content || "Sorry, I couldn't process that.";
     } catch (error) {
-      console.error("Gemini fetch error:", error);
-      return "Server connection error.";
+      if (error.name === 'AbortError') {
+        return 'AI response is taking too long. Please try again in a moment.';
+      }
+      return 'Server connection error. Please check the backend and try again.';
+    } finally {
+      clearTimeout(timeout);
     }
   };
 
@@ -344,17 +264,12 @@ export default function App() {
     setChatInput('');
     setIsChatLoading(true);
 
-    const response = await callGeminiAPI(newChatHistory, true);
-    setChatMessages(prev => [...prev, { role: 'bot', text: response }]);
-    setIsChatLoading(false);
-  };
-
-  const handleSimplify = async () => {
-    if (!simplifyInput.trim()) return;
-    setIsSimplifying(true);
-    const response = await callGeminiAPI(`Simplify this text: ${simplifyInput}`, false);
-    setSimplifiedText(response);
-    setIsSimplifying(false);
+    try {
+      const response = await callChatAPI(newChatHistory);
+      setChatMessages(prev => [...prev, { role: 'bot', text: response }]);
+    } finally {
+      setIsChatLoading(false);
+    }
   };
 
   // --- Theme Logic ---
@@ -563,11 +478,6 @@ export default function App() {
             <HomePage
               theme={theme}
               themeMode={themeMode}
-              simplifyInput={simplifyInput}
-              setSimplifyInput={setSimplifyInput}
-              simplifiedText={simplifiedText}
-              isSimplifying={isSimplifying}
-              handleSimplify={handleSimplify}
               chatMessages={chatMessages}
               chatInput={chatInput}
               setChatInput={setChatInput}
@@ -757,7 +667,6 @@ export default function App() {
               themeMode={themeMode}
               API_BASE={API_BASE}
               CODE_API={CODE_API}
-              OAUTH_REDIRECT_URI={OAUTH_REDIRECT_URI}
               setActiveTab={setActiveTab}
               setCurrentUser={setCurrentUser}
               setLearningPlans={setLearningPlans}
@@ -773,7 +682,6 @@ export default function App() {
               themeMode={themeMode}
               API_BASE={API_BASE}
               CODE_API={CODE_API}
-              OAUTH_REDIRECT_URI={OAUTH_REDIRECT_URI}
               setActiveTab={setActiveTab}
               setCurrentUser={setCurrentUser}
               setLearningPlans={setLearningPlans}
@@ -786,11 +694,6 @@ export default function App() {
             <HomePage
               theme={theme}
               themeMode={themeMode}
-              simplifyInput={simplifyInput}
-              setSimplifyInput={setSimplifyInput}
-              simplifiedText={simplifiedText}
-              isSimplifying={isSimplifying}
-              handleSimplify={handleSimplify}
               chatMessages={chatMessages}
               chatInput={chatInput}
               setChatInput={setChatInput}

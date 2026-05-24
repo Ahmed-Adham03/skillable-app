@@ -7,6 +7,7 @@ from app.api.routes.oauth import router as oauth_router
 from app.api.routes.info import router as info_router
 from app.api.routes.work_pathways import router as work_pathways_router
 from app.api.routes.open_jobs import router as open_jobs_router
+from app.api.routes.chat import router as chat_router
 from app.models import user  # noqa: F401
 from app.models import user_role  # noqa: F401
 from app.models import recruiter  # noqa: F401
@@ -47,6 +48,7 @@ app.include_router(oauth_router)
 app.include_router(info_router)
 app.include_router(work_pathways_router)
 app.include_router(open_jobs_router)
+app.include_router(chat_router)
 
 @app.get("/")
 def root():

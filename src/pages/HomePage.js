@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import {
   Bot, Briefcase, Sparkles, Send, ArrowRight,
   ChevronLeft, ChevronRight, Map, FileText, Layers,
-  Brain, Eye, Ear, PersonStanding, Target, BookOpen, Factory
+  Brain, Eye, Ear, PersonStanding, Target
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
@@ -10,9 +10,7 @@ const FEATURE_META = [
   { key: 'matching', Icon: Target, bg: 'linear-gradient(135deg,#0f0c29,#302b63,#5b21b6)', accent: '#8b5cf6', tab: 'careers', image: '/dayoftheyear.jpg' },
   { key: 'tracks',   Icon: Layers,  bg: 'linear-gradient(135deg,#042f2e,#134e4a,#0f766e)', accent: '#14b8a6', tab: 'tracks', image: '/People%20of%20Determination.jpg' },
   { key: 'ai',       Icon: Bot,     bg: 'linear-gradient(135deg,#1c0a00,#7c2d12,#c2410c)', accent: '#f97316', tab: 'home', scrollTo: 'ai', image: '/condifenece.webp' },
-  { key: 'textTools',Icon: BookOpen,bg: 'linear-gradient(135deg,#0c1445,#1e3a5f,#1d4ed8)', accent: '#3b82f6', tab: 'home', scrollTo: 'simplifier' },
   { key: 'cv',       Icon: FileText,bg: 'linear-gradient(135deg,#1a0533,#4a1772,#7e22ce)', accent: '#a855f7', tab: 'cv-generator', image: '/workingonscreen.jpg' },
-  { key: 'remote',   Icon: Factory, bg: 'linear-gradient(135deg,#111827,#374151,#0f766e)', accent: '#f59e0b', tab: 'careers' },
 ];
 
 function FeatureCarousel({ themeMode, setActiveTab }) {
@@ -143,7 +141,6 @@ function FeatureCarousel({ themeMode, setActiveTab }) {
 
 export default function HomePage({
   theme, themeMode,
-  simplifyInput, setSimplifyInput, simplifiedText, isSimplifying, handleSimplify,
   chatMessages, chatInput, setChatInput, isChatLoading, handleChatSend, chatEndRef,
   setActiveTab,
 }) {
@@ -246,25 +243,25 @@ export default function HomePage({
 
       {/* ── AI Tools ── */}
       <section id="ai" className="py-16 container mx-auto px-6">
-        <div className="grid lg:grid-cols-2 gap-6">
+        <div className="max-w-5xl mx-auto">
 
           {/* Chat */}
-          <div className={`rounded-3xl flex flex-col overflow-hidden border ${themeMode === 'dark' ? 'bg-white/5 border-white/10' : 'bg-white border-slate-100 shadow-sm'}`} style={{ minHeight: 480 }}>
-            <div className={`px-6 py-4 flex items-center gap-3 border-b ${themeMode === 'dark' ? 'border-white/10' : 'border-slate-100'}`}>
-              <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: '#6366f118' }}>
-                <Bot size={16} className="text-indigo-400" />
+          <div className={`rounded-3xl flex flex-col overflow-hidden border ${themeMode === 'dark' ? 'bg-white/5 border-white/10' : 'bg-white border-slate-100 shadow-sm'}`} style={{ minHeight: 620 }}>
+            <div className={`px-7 py-5 flex items-center gap-4 border-b ${themeMode === 'dark' ? 'border-white/10' : 'border-slate-100'}`}>
+              <div className="w-10 h-10 rounded-2xl flex items-center justify-center" style={{ background: '#6366f118' }}>
+                <Bot size={18} className="text-indigo-400" />
               </div>
               <div>
-                <p className="text-sm font-black">{t('home.aiTitle')}</p>
-                <p className="text-xs opacity-40">{t('home.aiSubtitle')}</p>
+                <p className="text-base font-black">{t('home.aiTitle')}</p>
+                <p className="text-sm opacity-50">{t('home.aiSubtitle')}</p>
               </div>
               <div className="ml-auto flex items-center gap-1.5">
                 <div className="w-2 h-2 rounded-full bg-emerald-400" />
                 <span className="text-xs opacity-50">{t('home.aiOnline')}</span>
               </div>
             </div>
-            <div className="flex-1 px-5 py-4 overflow-y-auto space-y-3">
-              {chatMessages.length === 0 && (
+            <div className="flex-1 px-6 md:px-8 py-6 overflow-y-auto space-y-4">
+              {chatMessages.length === 0 && !isChatLoading && (
                 <div className="h-full flex items-center justify-center">
                   <p className={`text-sm text-center max-w-[200px] leading-relaxed ${theme.textSecondary}`}>
                     {t('home.aiEmptyMsg')}
@@ -274,7 +271,8 @@ export default function HomePage({
               {chatMessages.map((msg, i) => (
                 <div key={i} className={`flex ${msg.role === 'bot' ? 'justify-start' : 'justify-end'}`}>
                   <div
-                    className={`px-4 py-3 rounded-2xl max-w-[80%] text-sm leading-relaxed whitespace-pre-wrap
+                    dir="auto"
+                    className={`px-5 py-3.5 rounded-2xl max-w-[88%] md:max-w-[72%] text-sm leading-relaxed whitespace-pre-wrap
                       ${msg.role === 'bot'
                         ? themeMode === 'dark' ? 'bg-white/10' : 'bg-slate-100'
                         : 'bg-indigo-600 text-white'}`}
@@ -283,60 +281,37 @@ export default function HomePage({
                   </div>
                 </div>
               ))}
+              {isChatLoading && (
+                <div className="flex justify-start">
+                  <div className={`px-5 py-3.5 rounded-2xl text-sm ${themeMode === 'dark' ? 'bg-white/10' : 'bg-slate-100'}`}>
+                    <span className="inline-flex gap-1">
+                      <span className="w-2 h-2 rounded-full bg-indigo-400 animate-bounce" style={{ animationDelay: '0ms' }} />
+                      <span className="w-2 h-2 rounded-full bg-indigo-400 animate-bounce" style={{ animationDelay: '150ms' }} />
+                      <span className="w-2 h-2 rounded-full bg-indigo-400 animate-bounce" style={{ animationDelay: '300ms' }} />
+                    </span>
+                  </div>
+                </div>
+              )}
               <div ref={chatEndRef} />
             </div>
-            <div className={`px-4 py-3 border-t flex gap-2 ${themeMode === 'dark' ? 'border-white/10' : 'border-slate-100'}`}>
+            <div className={`px-5 md:px-7 py-5 border-t flex gap-3 ${themeMode === 'dark' ? 'border-white/10' : 'border-slate-100'}`}>
               <input
-                className={`flex-1 px-4 py-2.5 rounded-xl text-sm outline-none transition-all ${theme.input}`}
+                dir="auto"
+                className={`flex-1 px-5 py-3 rounded-2xl text-sm outline-none transition-all ${theme.input}`}
                 value={chatInput}
                 onChange={(e) => setChatInput(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleChatSend(); } }}
+                onKeyDown={(e) => { if (e.key === 'Enter' && !isChatLoading) { e.preventDefault(); handleChatSend(); } }}
                 placeholder={t('home.aiPlaceholder')}
+                disabled={isChatLoading}
               />
               <button
                 onClick={handleChatSend}
-                className={`px-4 py-2.5 rounded-xl flex items-center justify-center ${theme.primaryBtn}`}
+                disabled={isChatLoading || !chatInput.trim()}
+                className={`px-5 py-3 rounded-2xl flex items-center justify-center transition-opacity ${isChatLoading ? 'opacity-50 cursor-not-allowed' : ''} ${theme.primaryBtn}`}
               >
                 <Send size={16} />
               </button>
             </div>
-          </div>
-
-          {/* Simplifier */}
-          <div id="simplifier" className={`rounded-3xl p-7 flex flex-col gap-5 border ${themeMode === 'dark' ? 'bg-white/5 border-white/10' : 'bg-white border-slate-100 shadow-sm'}`}>
-            <div>
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: '#3b82f618' }}>
-                  <BookOpen size={16} className="text-blue-400" />
-                </div>
-                <p className="text-sm font-black">{t('home.textSimplifier')}</p>
-              </div>
-              <p className={`text-sm leading-relaxed ${theme.textSecondary}`}>
-                {t('home.simplifierSubtitle')}
-              </p>
-            </div>
-
-            <textarea
-              className={`flex-1 w-full px-4 py-3 rounded-2xl text-sm outline-none resize-none transition-all ${theme.input}`}
-              style={{ minHeight: 160 }}
-              value={simplifyInput}
-              onChange={(e) => setSimplifyInput(e.target.value)}
-              placeholder={t('home.simplifyPlaceholder')}
-            />
-
-            <button
-              onClick={handleSimplify}
-              disabled={isSimplifying || !simplifyInput.trim()}
-              className={`px-7 py-3 rounded-xl font-bold text-sm self-start transition-all disabled:opacity-50 ${theme.primaryBtn}`}
-            >
-              {isSimplifying ? t('home.simplifying') : t('home.simplifyBtn')}
-            </button>
-
-            {simplifiedText && (
-              <div className={`p-5 rounded-2xl border-l-4 text-sm leading-relaxed ${themeMode === 'dark' ? 'bg-emerald-500/10 border-emerald-500 text-emerald-300' : 'bg-emerald-50 border-emerald-500 text-emerald-800'}`}>
-                {simplifiedText}
-              </div>
-            )}
           </div>
         </div>
       </section>

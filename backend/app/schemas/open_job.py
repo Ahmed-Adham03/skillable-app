@@ -56,7 +56,7 @@ class JobApplicationCreate(BaseModel):
     applicant_email: str = Field(..., min_length=5, max_length=255, pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
     phone_number: str = Field(default="N/A", max_length=80)
     motivation: str = Field(..., min_length=20, max_length=3000)
-    skills: list[str] = Field(default_factory=list)
+    skills: list = Field(default_factory=list)
     accessibility_notes: str = Field(default="N/A", max_length=3000)
     cv_link: str = Field(default="N/A", max_length=500)
 

@@ -3,6 +3,45 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, BriefcaseBusiness, CheckCircle2, Mail, Plus, Send, ShieldCheck, X } from 'lucide-react';
 import { getJobLogo } from '../data/jobLogos';
 
+const skillToText = (skill) => {
+  if (typeof skill === 'string') return skill.trim();
+  if (skill && typeof skill === 'object') {
+    return String(skill.name || skill.label || skill.title || skill.value || '').trim();
+  }
+  return String(skill || '').trim();
+};
+
+const cleanSkills = (skills) => {
+  const seen = new Set();
+  const cleaned = [];
+  (Array.isArray(skills) ? skills : []).forEach((skill) => {
+    const value = skillToText(skill).slice(0, 60);
+    const key = value.toLowerCase();
+    if (value && !seen.has(key) && cleaned.length < 30) {
+      seen.add(key);
+      cleaned.push(value);
+    }
+  });
+  return cleaned;
+};
+
+const formatErrorDetail = (detail) => {
+  if (!detail) return '';
+  if (typeof detail === 'string') return detail;
+  if (Array.isArray(detail)) {
+    return detail
+      .map((item) => {
+        if (typeof item === 'string') return item;
+        const field = Array.isArray(item.loc) ? item.loc.filter((part) => part !== 'body').join('.') : '';
+        return [field, item.msg].filter(Boolean).join(': ');
+      })
+      .filter(Boolean)
+      .join(' ');
+  }
+  if (typeof detail === 'object') return detail.message || detail.msg || JSON.stringify(detail);
+  return String(detail);
+};
+
 export default function OpenRoleApplyPage({ theme, themeMode, API_BASE, currentUser }) {
   const { roleId } = useParams();
   const navigate = useNavigate();
@@ -18,7 +57,7 @@ export default function OpenRoleApplyPage({ theme, themeMode, API_BASE, currentU
     accessibility_notes: '',
     cv_link: '',
   });
-  const [appSkills, setAppSkills] = useState(Array.isArray(currentUser?.skills) ? currentUser.skills : []);
+  const [appSkills, setAppSkills] = useState(cleanSkills(currentUser?.skills));
   const [skillInput, setSkillInput] = useState('');
   const [status, setStatus] = useState('');
   const [error, setError] = useState('');
@@ -38,11 +77,13 @@ export default function OpenRoleApplyPage({ theme, themeMode, API_BASE, currentU
   }, [API_BASE, roleId]);
 
   const payload = useMemo(() => ({
-    ...application,
-    phone_number: application.phone_number || 'N/A',
-    accessibility_notes: application.accessibility_notes || 'N/A',
-    cv_link: application.cv_link || 'N/A',
-    skills: appSkills,
+    applicant_name: application.applicant_name.trim(),
+    applicant_email: application.applicant_email.trim(),
+    motivation: application.motivation.trim(),
+    phone_number: application.phone_number.trim() || 'N/A',
+    accessibility_notes: application.accessibility_notes.trim() || 'N/A',
+    cv_link: application.cv_link.trim() || 'N/A',
+    skills: cleanSkills(appSkills),
   }), [application, appSkills]);
 
   const update = (key) => (event) => {
@@ -67,7 +108,7 @@ export default function OpenRoleApplyPage({ theme, themeMode, API_BASE, currentU
         body: JSON.stringify(payload),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.detail || 'Could not send your application.');
+      if (!res.ok) throw new Error(formatErrorDetail(data.detail) || 'Could not send your application.');
       setSent(true);
       setStatus('Application sent. The recruiter can now review your contact info, skills, and notes.');
       setApplication((prev) => ({ ...prev, motivation: '', accessibility_notes: '', cv_link: '' }));
@@ -142,7 +183,8 @@ export default function OpenRoleApplyPage({ theme, themeMode, API_BASE, currentU
 
               <label className="block space-y-2">
                 <span className="text-sm font-black">Why do you want to join?</span>
-                <textarea required rows={6} value={application.motivation} onChange={update('motivation')} className={`w-full px-4 py-3 rounded-xl border ${theme.input}`} placeholder="Tell the recruiter why this role fits your goals, experience, and strengths." />
+                <textarea required minLength={20} rows={6} value={application.motivation} onChange={update('motivation')} className={`w-full px-4 py-3 rounded-xl border ${theme.input}`} placeholder="Tell the recruiter why this role fits your goals, experience, and strengths." />
+                <p className={`text-xs font-bold ${theme.textSecondary}`}>Write at least 20 characters so the recruiter has enough context.</p>
               </label>
 
               <div>

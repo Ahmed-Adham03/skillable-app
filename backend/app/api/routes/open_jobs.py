@@ -12,13 +12,13 @@ from app.schemas.open_job import JobApplicationCreate, JobApplicationOut, OpenJo
 router = APIRouter(prefix="/open-jobs", tags=["open-jobs"])
 
 
-def _clean_skills(skills: list[str]) -> list[str]:
+def _clean_skills(skills: list) -> list[str]:
     cleaned = []
     seen = set()
     for skill in skills:
-        if not isinstance(skill, str):
-            continue
-        value = skill.strip()[:60]
+        if isinstance(skill, dict):
+            skill = skill.get("name") or skill.get("label") or skill.get("title") or skill.get("value") or ""
+        value = str(skill).strip()[:60]
         key = value.lower()
         if value and key not in seen:
             cleaned.append(value)
