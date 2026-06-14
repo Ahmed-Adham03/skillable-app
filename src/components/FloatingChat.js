@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Bot, MessageCircle, Send, X } from 'lucide-react';
+import { Bot, MessageCircle, Mic, Send, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 
@@ -11,6 +11,10 @@ export default function FloatingChat({
   setChatInput,
   isChatLoading,
   handleChatSend,
+  isVoiceListening,
+  isVoiceSupported,
+  voiceError,
+  toggleVoiceInput,
 }) {
   const { t, i18n } = useTranslation();
   const [open, setOpen] = useState(false);
@@ -112,6 +116,16 @@ export default function FloatingChat({
               />
               <button
                 type="button"
+                onClick={toggleVoiceInput}
+                disabled={!isVoiceSupported || isChatLoading}
+                className={`w-12 h-12 rounded-2xl flex items-center justify-center border transition-all ${isVoiceListening ? 'bg-red-500 text-white border-red-500 animate-pulse' : themeMode === 'dark' ? 'border-white/10 hover:bg-white/10' : themeMode === 'contrast' ? 'border-[#FFFF00]' : 'border-slate-200 hover:bg-slate-50'} ${!isVoiceSupported || isChatLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                aria-label={isVoiceListening ? 'Stop voice input' : 'Start voice input'}
+                title={isVoiceSupported ? (isVoiceListening ? 'Recording...' : 'Voice input') : 'Voice input is not supported in this browser'}
+              >
+                <Mic size={16} />
+              </button>
+              <button
+                type="button"
                 onClick={handleChatSend}
                 disabled={isChatLoading || !chatInput.trim()}
                 className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-opacity ${isChatLoading || !chatInput.trim() ? 'opacity-50 cursor-not-allowed' : ''} ${theme.primaryBtn}`}
@@ -120,6 +134,11 @@ export default function FloatingChat({
                 <Send size={16} />
               </button>
             </div>
+            {(isVoiceListening || voiceError) && (
+              <div className={`px-4 pb-3 -mt-1 text-xs font-bold ${isVoiceListening ? 'text-red-500' : 'text-amber-500'}`}>
+                {isVoiceListening ? 'Recording and transcribing... Arabic or English works.' : voiceError}
+              </div>
+            )}
           </motion.section>
         )}
       </AnimatePresence>

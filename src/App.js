@@ -23,6 +23,9 @@ import OpenRolesPage from './pages/OpenRolesPage';
 import OpenRoleDetailPage from './pages/OpenRoleDetailPage';
 import OpenRoleApplyPage from './pages/OpenRoleApplyPage';
 import { Eye, Accessibility, Volume2, Languages } from 'lucide-react';
+import { buildLearningPlan } from './data/learningCatalog';
+import useSpeechInput from './hooks/useSpeechInput';
+import { canPostJobs, normalizeRole } from './auth/roles';
 
 export default function App() {
   const { t } = useTranslation();
@@ -73,11 +76,20 @@ export default function App() {
   const activeTab = location.pathname.startsWith('/open-roles')
     ? 'open-roles'
     : PATH_TO_TAB[location.pathname] ?? 'home';
-  const setActiveTab = (tab) => navigate(TAB_TO_PATH[tab] ?? '/');
+  const setActiveTab = (tab) => {
+    if (tab === 'post-job' && !canPostJobs(currentUser)) {
+      navigate('/open-roles');
+      return;
+    }
+    navigate(TAB_TO_PATH[tab] ?? '/');
+  };
 
   // --- State Management ---
   const [themeMode, setThemeMode] = useState('light');
-  const [fontSize, setFontSize] = useState(100);
+  const [fontSize, setFontSize] = useState(() => {
+    const saved = Number(localStorage.getItem('skillable_font_size') || 100);
+    return Number.isFinite(saved) ? Math.min(Math.max(saved, 90), 140) : 100;
+  });
   const [scrolled, setScrolled] = useState(false);
   const [speakOnFocus, setSpeakOnFocus] = useState(() => {
     const saved = localStorage.getItem('skillable_speak_focus');
@@ -108,11 +120,27 @@ export default function App() {
     localStorage.setItem('skillable_reduced_motion', String(reducedMotion));
   }, [reducedMotion]);
 
+  useEffect(() => {
+    localStorage.setItem('skillable_font_size', String(fontSize));
+    document.documentElement.style.setProperty('--skillable-font-scale', String(fontSize / 100));
+  }, [fontSize]);
+
   // Chat & AI Logic
   const [chatMessages, setChatMessages] = useState([]);
   const [chatInput, setChatInput] = useState('');
   const [isChatLoading, setIsChatLoading] = useState(false);
   const chatEndRef = useRef(null);
+  const {
+    isListening: isVoiceListening,
+    isSupported: isVoiceSupported,
+    speechError: voiceError,
+    toggleListening: toggleVoiceInput,
+    setCurrentText: setCurrentVoiceText,
+  } = useSpeechInput({ lang, setText: setChatInput, API_BASE });
+
+  useEffect(() => {
+    setCurrentVoiceText(chatInput);
+  }, [chatInput, setCurrentVoiceText]);
 
   // --- Effects ---
   useEffect(() => {
@@ -215,8 +243,50 @@ export default function App() {
   // --- Theme Controls ---
   const toggleTheme = () => setThemeMode(prev => prev === 'light' ? 'dark' : 'light');
   const activateHighContrast = () => setThemeMode(prev => prev === 'contrast' ? 'light' : 'contrast');
-  const increaseFont = () => setFontSize(prev => Math.min(prev + 10, 140));
-  const decreaseFont = () => setFontSize(prev => Math.max(prev - 10, 90));
+  const increaseFont = () => setFontSize(prev => Math.min(prev + 15, 145));
+  const decreaseFont = () => setFontSize(prev => Math.max(prev - 15, 85));
+
+  const runChatAction = (action) => {
+    if (!action || typeof action !== 'object') return '';
+    const allowedTabs = new Set([
+      'home', 'careers', 'open-roles', 'tracks', 'dashboard',
+      'profile', 'cv-generator', 'accessibility-features', 'login', 'register'
+    ]);
+
+    if (action.type === 'navigate' && allowedTabs.has(action.target)) {
+      setActiveTab(action.target);
+      return lang === 'ar' ? 'تمام، فتحتها لك.' : 'Done, I opened that for you.';
+    }
+
+    if (action.type === 'accessibility') {
+      if (action.target === 'dark-mode') {
+        setThemeMode('dark');
+        return lang === 'ar' ? 'تمام، فعلت الوضع الداكن.' : 'Done, I turned on dark mode.';
+      }
+      if (action.target === 'contrast') {
+        activateHighContrast();
+        return lang === 'ar' ? 'تمام، غيرت وضع التباين.' : 'Done, I changed the contrast mode.';
+      }
+      if (action.target === 'increase-font') {
+        increaseFont();
+        return lang === 'ar' ? 'تمام، كبرت الخط.' : 'Done, I increased the font size.';
+      }
+      if (action.target === 'decrease-font') {
+        decreaseFont();
+        return lang === 'ar' ? 'تمام، صغرت الخط.' : 'Done, I decreased the font size.';
+      }
+      if (action.target === 'toggle-language') {
+        toggleLanguage();
+        return lang === 'ar' ? 'تمام، غيرت اللغة.' : 'Done, I switched the language.';
+      }
+      if (action.target === 'reduce-motion') {
+        setReducedMotion(true);
+        return lang === 'ar' ? 'تمام، قللت الحركة.' : 'Done, I reduced motion.';
+      }
+    }
+
+    return '';
+  };
 
   const callChatAPI = async (messagesPayload) => {
     const messages = messagesPayload.map((msg) => ({
@@ -241,17 +311,18 @@ export default function App() {
 
       if (!response.ok) {
         if (response.status === 429) {
-          return 'عذراً! وصلنا للحد الأقصى حالياً، يرجى الانتظار لحظة والمحاولة مرة أخرى 🙏';
+          return { content: 'عذراً! وصلنا للحد الأقصى حالياً، يرجى الانتظار لحظة والمحاولة مرة أخرى 🙏' };
         }
-        return data.detail || "Sorry, I couldn't process that right now. Please try again.";
+        return { content: data.detail || "Sorry, I couldn't process that right now. Please try again." };
       }
 
-      return data.choices?.[0]?.message?.content || "Sorry, I couldn't process that.";
+      const content = data.choices?.[0]?.message?.content || "Sorry, I couldn't process that.";
+      return { content, action: data.action || null };
     } catch (error) {
       if (error.name === 'AbortError') {
-        return 'AI response is taking too long. Please try again in a moment.';
+        return { content: 'AI response is taking too long. Please try again in a moment.' };
       }
-      return 'Server connection error. Please check the backend and try again.';
+      return { content: 'Server connection error. Please check the backend and try again.' };
     } finally {
       clearTimeout(timeout);
     }
@@ -267,7 +338,11 @@ export default function App() {
 
     try {
       const response = await callChatAPI(newChatHistory);
-      setChatMessages(prev => [...prev, { role: 'bot', text: response }]);
+      const actionConfirmation = runChatAction(response.action);
+      const botText = actionConfirmation
+        ? `${response.content}\n\n${actionConfirmation}`
+        : response.content;
+      setChatMessages(prev => [...prev, { role: 'bot', text: botText }]);
     } finally {
       setIsChatLoading(false);
     }
@@ -338,7 +413,7 @@ export default function App() {
     })
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
-        if (data) setCurrentUser(data);
+        if (data) setCurrentUser({ ...data, role: normalizeRole(data.role) });
         setAuthLoading(false);
       })
       .catch(() => { setAuthLoading(false); });
@@ -391,7 +466,7 @@ export default function App() {
   };
 
   return (
-    <div className={`min-h-screen transition-colors duration-500 font-sans ${theme.appBg} ${theme.textPrimary}`} style={{ fontSize: `${fontSize}%` }}>
+    <div className={`skillable-app-shell min-h-screen transition-colors duration-500 font-sans ${theme.appBg} ${theme.textPrimary}`}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800;900&family=Inter:wght@300;400;600;700;800&display=swap');
         :root { font-family: ${lang === 'ar' ? "'Cairo', sans-serif" : "'Inter', sans-serif"}; }
@@ -442,7 +517,11 @@ export default function App() {
           >
             {reducedMotion ? t('accessibility.reduceMotionOn') : t('accessibility.reduceMotionOff')}
           </button>
-          <div className="flex gap-1"><button onClick={decreaseFont} className="px-2">A-</button><button onClick={increaseFont} className="px-2">A+</button></div>
+          <div className="flex gap-1 items-center">
+            <button onClick={decreaseFont} className="px-2" aria-label="Decrease font size">A-</button>
+            <span className="tabular-nums opacity-70">{fontSize}%</span>
+            <button onClick={increaseFont} className="px-2" aria-label="Increase font size">A+</button>
+          </div>
           <button
             onClick={toggleLanguage}
             className="hover:text-indigo-500 flex items-center gap-1 border rounded px-2 py-0.5"
@@ -486,6 +565,10 @@ export default function App() {
               handleChatSend={handleChatSend}
               chatEndRef={chatEndRef}
               setActiveTab={setActiveTab}
+              isVoiceListening={isVoiceListening}
+              isVoiceSupported={isVoiceSupported}
+              voiceError={voiceError}
+              toggleVoiceInput={toggleVoiceInput}
             />
           } />
           <Route path="/careers" element={
@@ -551,18 +634,7 @@ export default function App() {
                 setLearningPlans((prev) => {
                   const exists = prev.find((p) => p.jobtitle === job.jobtitle);
                   if (exists) return prev;
-                  const next = [
-                    ...prev,
-                    {
-                      jobtitle: job.jobtitle,
-                      summary: job.summary || '',
-                      details: job.details || '',
-                      roadmap: job.roadmap || [],
-                      videos: job.videos || [],
-                      sources: job.sources || [],
-                      progress: (job.roadmap || []).map(() => false)
-                    }
-                  ];
+                  const next = [...prev, buildLearningPlan(job)];
                   persistLearningPlans(next);
                   return next;
                 });
@@ -588,7 +660,7 @@ export default function App() {
               </div>
             ) : !currentUser ? (
               <Navigate to="/login" replace />
-            ) : currentUser.role !== 'job_poster' && currentUser.role !== 'admin' ? (
+            ) : !canPostJobs(currentUser) ? (
               <Navigate to="/open-roles" replace />
             ) : (
               <PostJobPage
@@ -713,6 +785,10 @@ export default function App() {
               handleChatSend={handleChatSend}
               chatEndRef={chatEndRef}
               setActiveTab={setActiveTab}
+              isVoiceListening={isVoiceListening}
+              isVoiceSupported={isVoiceSupported}
+              voiceError={voiceError}
+              toggleVoiceInput={toggleVoiceInput}
             />
           } />
         </Routes>
@@ -727,6 +803,10 @@ export default function App() {
           setChatInput={setChatInput}
           isChatLoading={isChatLoading}
           handleChatSend={handleChatSend}
+          isVoiceListening={isVoiceListening}
+          isVoiceSupported={isVoiceSupported}
+          voiceError={voiceError}
+          toggleVoiceInput={toggleVoiceInput}
         />
       )}
 

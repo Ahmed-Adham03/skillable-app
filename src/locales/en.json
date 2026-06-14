@@ -19,7 +19,11 @@
     "later": "Later",
     "letsPersonalize": "Let's get personalized",
     "completeProfileMsg": "Complete your profile so Skillable can recommend better career matches for you.",
-    "goToHome": "Go to home"
+    "goToHome": "Go to home",
+    "roleJobSeeker": "Job seeker",
+    "roleJobPoster": "Job poster",
+    "roleJobSeekerShort": "Seeker",
+    "roleJobPosterShort": "Poster"
   },
   "accessibility": {
     "quickTools": "Quick accessibility tools",

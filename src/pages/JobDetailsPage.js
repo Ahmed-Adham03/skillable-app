@@ -2,9 +2,10 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, MapPin, BookOpen, CheckCircle2,
-  Zap, ChevronRight, Target, Layers
+  Zap, ChevronRight, Target, Layers, ExternalLink
 } from 'lucide-react';
 import { getJobLogo } from '../data/jobLogos';
+import { getCourseResources, getLearningVideos } from '../data/learningCatalog';
 
 export default function JobDetailsPage({ theme, themeMode, job, setActiveTab, onEnroll }) {
   const navigate = useNavigate();
@@ -27,6 +28,8 @@ export default function JobDetailsPage({ theme, themeMode, job, setActiveTab, on
   const roadmap  = job.roadmap     || [];
   const skills   = job.skills      || [];
   const reasons  = job.why_matched || [];
+  const resources = getCourseResources(job);
+  const videos = getLearningVideos(job);
   const logo = getJobLogo(job.logo_key);
   const LogoIcon = logo.Icon;
 
@@ -206,6 +209,47 @@ export default function JobDetailsPage({ theme, themeMode, job, setActiveTab, on
                   Learning resource
                 </h3>
                 <p className={`text-xs leading-relaxed ${theme.textSecondary}`}>{job.learning_resource}</p>
+              </div>
+            )}
+
+            {resources.length > 0 && (
+              <div className={`rounded-2xl p-6 ${theme.card}`}>
+                <h3 className="font-black text-sm mb-4 flex items-center gap-2">
+                  <BookOpen size={15} className={isContrast ? 'text-[#FFFF00]' : 'text-indigo-500'} aria-hidden="true" />
+                  Course resources
+                </h3>
+                <div className="space-y-3">
+                  {resources.map((resource) => (
+                    <a
+                      key={`${resource.provider}-${resource.url}`}
+                      href={resource.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className={`block p-4 rounded-2xl border transition-colors ${isContrast ? 'border-white hover:border-[#FFFF00]' : isDark ? 'border-white/10 hover:border-indigo-400/50 bg-white/5' : 'border-slate-200 hover:border-indigo-300 bg-slate-50'}`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-black">{resource.provider}</p>
+                          <p className={`text-xs mt-1 leading-relaxed ${theme.textSecondary}`}>{resource.label}</p>
+                          {resource.note && <p className={`text-[11px] mt-2 ${theme.textSecondary}`}>{resource.note}</p>}
+                        </div>
+                        <ExternalLink size={14} className="flex-shrink-0 opacity-60" />
+                      </div>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {videos.length > 0 && (
+              <div className={`rounded-2xl p-6 ${theme.card}`}>
+                <h3 className="font-black text-sm mb-2 flex items-center gap-2">
+                  <Target size={15} className={isContrast ? 'text-[#FFFF00]' : 'text-indigo-500'} aria-hidden="true" />
+                  Suggested video support
+                </h3>
+                <p className={`text-xs leading-relaxed ${theme.textSecondary}`}>
+                  After enrolling, Skillable will list helpful external videos beside your roadmap. Study on the original platform, then return here to mark checkpoints complete.
+                </p>
               </div>
             )}
           </div>

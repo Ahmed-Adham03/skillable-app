@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import {
   Bot, Briefcase, Sparkles, Send, ArrowRight,
   ChevronLeft, ChevronRight, Map, FileText, Layers,
-  Brain, Eye, Ear, PersonStanding, Target
+  Brain, Eye, Ear, PersonStanding, Target, Mic
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
@@ -153,6 +153,7 @@ export default function HomePage({
   theme, themeMode,
   chatMessages, chatInput, setChatInput, isChatLoading, handleChatSend, chatEndRef,
   setActiveTab,
+  isVoiceListening, isVoiceSupported, voiceError, toggleVoiceInput,
 }) {
   const { t } = useTranslation();
   const DIMS = [
@@ -315,6 +316,16 @@ export default function HomePage({
                 disabled={isChatLoading}
               />
               <button
+                type="button"
+                onClick={toggleVoiceInput}
+                disabled={!isVoiceSupported || isChatLoading}
+                className={`px-4 py-3 rounded-2xl flex items-center justify-center transition-all border ${isVoiceListening ? 'bg-red-500 text-white border-red-500 animate-pulse' : themeMode === 'dark' ? 'border-white/10 hover:bg-white/10' : 'border-slate-200 hover:bg-slate-50'} ${!isVoiceSupported || isChatLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                aria-label={isVoiceListening ? 'Stop voice input' : 'Start voice input'}
+                title={isVoiceSupported ? (isVoiceListening ? 'Recording...' : 'Voice input') : 'Voice input is not supported in this browser'}
+              >
+                <Mic size={16} />
+              </button>
+              <button
                 onClick={handleChatSend}
                 disabled={isChatLoading || !chatInput.trim()}
                 className={`px-5 py-3 rounded-2xl flex items-center justify-center transition-opacity ${isChatLoading ? 'opacity-50 cursor-not-allowed' : ''} ${theme.primaryBtn}`}
@@ -322,6 +333,11 @@ export default function HomePage({
                 <Send size={16} />
               </button>
             </div>
+            {(isVoiceListening || voiceError) && (
+              <div className={`px-7 pb-4 -mt-2 text-xs font-bold ${isVoiceListening ? 'text-red-500' : 'text-amber-500'}`}>
+                {isVoiceListening ? 'Recording and transcribing... speak in Arabic or English.' : voiceError}
+              </div>
+            )}
           </div>
         </div>
       </section>

@@ -1,5 +1,8 @@
-from sqlalchemy import Column, Integer, String, DateTime, func, JSON
+from sqlalchemy import Column, Integer, String, DateTime, func, JSON, Text
+from sqlalchemy.dialects.mysql import LONGTEXT
 from app.db.session import Base
+
+ProfileImageType = Text().with_variant(LONGTEXT, "mysql")
 
 
 class User(Base):
@@ -9,6 +12,7 @@ class User(Base):
     full_name = Column(String(255), nullable=True)
     email = Column(String(255), unique=True, index=True, nullable=False)
     password_hash = Column(String(255), nullable=False)
+    profile_image = Column(ProfileImageType, nullable=True)
     phone_number = Column(String(50), nullable=False, default="N/A")
     address = Column(String(255), nullable=False, default="N/A")
     mobility = Column(String(100), nullable=False, default="N/A")

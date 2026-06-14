@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Menu, Moon, Sun, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
+import { canPostJobs, normalizeRole, ROLES } from '../auth/roles';
 
 const getInitials = (user) => {
   const name = user?.full_name || '';
@@ -11,6 +12,24 @@ const getInitials = (user) => {
   if (parts.length > 1) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
   return email ? email.slice(0, 2).toUpperCase() : 'SK';
 };
+
+function UserAvatar({ user, className, imageClassName = '', fallbackClassName = '' }) {
+  if (user?.profile_image) {
+    return (
+      <img
+        src={user.profile_image}
+        alt=""
+        className={`${className} ${imageClassName} object-cover`}
+      />
+    );
+  }
+
+  return (
+    <span className={`${className} ${fallbackClassName}`}>
+      {getInitials(user)}
+    </span>
+  );
+}
 
 export default function TopNav({
   theme,
@@ -33,6 +52,27 @@ export default function TopNav({
   const { t, i18n } = useTranslation();
   const isRtl = i18n.dir() === 'rtl';
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const role = normalizeRole(currentUser?.role);
+  const roleLabel = role === ROLES.JOB_POSTER ? t('nav.roleJobPoster') : t('nav.roleJobSeeker');
+  const roleShortLabel = role === ROLES.JOB_POSTER ? t('nav.roleJobPosterShort') : t('nav.roleJobSeekerShort');
+  const avatarTone = role === ROLES.JOB_POSTER
+    ? themeMode === 'contrast'
+      ? 'bg-[#FFFF00] text-black border border-white'
+      : 'bg-emerald-600 text-white'
+    : themeMode === 'contrast'
+      ? 'bg-[#FFFF00] text-black border border-white'
+      : 'bg-indigo-600 text-white';
+  const roleChipTone = role === ROLES.JOB_POSTER
+    ? themeMode === 'contrast'
+      ? 'border border-[#FFFF00] text-[#FFFF00]'
+      : themeMode === 'dark'
+        ? 'bg-emerald-500/15 text-emerald-200 border border-emerald-400/20'
+        : 'bg-emerald-50 text-emerald-700 border border-emerald-100'
+    : themeMode === 'contrast'
+      ? 'border border-[#FFFF00] text-[#FFFF00]'
+      : themeMode === 'dark'
+        ? 'bg-indigo-500/15 text-indigo-200 border border-indigo-400/20'
+        : 'bg-indigo-50 text-indigo-700 border border-indigo-100';
 
   const navItems = useMemo(() => ([
     { key: 'home', label: t('nav.home') },
@@ -41,7 +81,7 @@ export default function TopNav({
     { key: 'careers', label: t('nav.courses') },
     { key: 'open-roles', label: t('nav.openRoles') },
     { key: 'tracks', label: t('nav.tracks') },
-    ...((currentUser?.role === 'job_poster' || currentUser?.role === 'admin')
+    ...(canPostJobs(currentUser)
       ? [{ key: 'post-job', label: t('nav.postJob') }]
       : []),
     { key: 'accessibility-features', label: t('nav.accessibilityFeatures') },
@@ -58,27 +98,27 @@ export default function TopNav({
 
   return (
     <nav className={`sticky top-0 z-40 transition-all duration-300 ${theme.navBg}`} aria-label="Main">
-      <div className="container mx-auto px-4 sm:px-6 h-20 flex justify-between items-center gap-3">
-        <button onClick={() => goToTab('home')} className="flex items-center gap-2 cursor-pointer group min-w-0" aria-label={t('nav.goToHome')}>
+      <div className="container mx-auto px-4 sm:px-6 h-20 flex items-center gap-3">
+        <button onClick={() => goToTab('home')} className="flex items-center gap-2 cursor-pointer group min-w-0 flex-shrink-0" aria-label={t('nav.goToHome')}>
           <div className="p-1 rounded-xl transition-all flex-shrink-0">
-            <img src="/SkillableLogo3BG0.png" alt="Skillable logo" className="w-11 h-11 object-contain" />
+            <img src="/SkillableLogo3BG0.png" alt="Skillable logo" className="w-10 h-10 xl:w-11 xl:h-11 object-contain" />
           </div>
-          <span className="text-xl sm:text-2xl font-black truncate">Skillable</span>
+          <span className="text-xl xl:text-2xl font-black truncate">Skillable</span>
         </button>
 
-        <div className="hidden lg:flex items-center gap-6 xl:gap-8 font-bold text-sm">
+        <div className="hidden xl:flex flex-1 min-w-0 items-center justify-center gap-5 2xl:gap-8 font-bold text-sm">
           {navItems.map((item) => (
             <button
               key={item.key}
               onClick={() => goToTab(item.key)}
-              className={`relative transition-colors hover:text-indigo-500 ${activeTab === item.key ? theme.accent : theme.textSecondary}`}
+              className={`relative whitespace-nowrap transition-colors hover:text-indigo-500 ${activeTab === item.key ? theme.accent : theme.textSecondary}`}
             >
               {item.label}
             </button>
           ))}
         </div>
 
-        <div className="flex items-center gap-2 sm:gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0 ms-auto xl:ms-0">
           {themeMode !== 'contrast' && (
             <button onClick={toggleTheme} className="p-2.5 rounded-full" aria-label="Darkmode">
               {themeMode === 'dark' ? <Sun size={20} aria-hidden="true" /> : <Moon size={20} aria-hidden="true" />}
@@ -103,18 +143,25 @@ export default function TopNav({
                 }}
                 aria-haspopup="menu"
                 aria-expanded={isProfileOpen}
-                aria-label="Account menu"
-                className={`relative w-10 h-10 rounded-full flex items-center justify-center font-bold ${themeMode === 'contrast' ? 'bg-[#FFFF00] text-black' : 'bg-indigo-600 text-white'}`}
+                aria-label={`${t('nav.accountMenu')}: ${roleLabel}`}
+                className={`relative h-10 rounded-full flex items-center gap-2 font-bold max-w-[9rem] ${themeMode === 'contrast' ? 'border border-[#FFFF00] bg-black text-[#FFFF00]' : themeMode === 'dark' ? 'bg-white/5 text-white border border-white/10' : 'bg-white text-slate-900 border border-slate-200 shadow-sm'} ${isRtl ? 'pl-2 pr-1' : 'pl-1 pr-2'}`}
                 ref={profileButtonRef}
               >
-                {getInitials(currentUser)}
-                {hasProfileAlert && (
-                  <span
-                    className={`absolute -top-1 w-3 h-3 rounded-full bg-red-500 border border-white shadow ${isRtl ? '-left-1' : '-right-1'}`}
-                    aria-label="Profile incomplete"
-                    title="Profile incomplete"
+                <span className="relative w-8 h-8 rounded-full flex-shrink-0">
+                  <UserAvatar
+                    user={currentUser}
+                    className="w-8 h-8 rounded-full"
+                    fallbackClassName={`flex items-center justify-center text-xs ${avatarTone}`}
                   />
-                )}
+                  {hasProfileAlert && (
+                    <span
+                      className={`absolute -top-1 w-3 h-3 rounded-full bg-red-500 border border-white shadow ${isRtl ? '-left-1' : '-right-1'}`}
+                      aria-label="Profile incomplete"
+                      title="Profile incomplete"
+                    />
+                  )}
+                </span>
+                <span className="hidden 2xl:block truncate text-xs">{roleShortLabel}</span>
               </button>
 
               <AnimatePresence>
@@ -135,12 +182,17 @@ export default function TopNav({
                     }}
                   >
                     <div className="flex items-center gap-3">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${themeMode === 'contrast' ? 'bg-[#FFFF00] text-black' : 'bg-indigo-600 text-white'}`}>
-                        {getInitials(currentUser)}
-                      </div>
+                      <UserAvatar
+                        user={currentUser}
+                        className="w-10 h-10 rounded-full flex-shrink-0"
+                        fallbackClassName={`flex items-center justify-center font-bold ${avatarTone}`}
+                      />
                       <div className="min-w-0">
                         <div className="text-sm font-bold">{currentUser?.full_name || 'Skillable'}</div>
                         <div className={`text-xs break-all ${theme.textSecondary}`}>{currentUser?.email}</div>
+                        <div className={`mt-2 inline-flex px-2.5 py-1 rounded-full text-[0.68rem] font-black uppercase tracking-wide ${roleChipTone}`}>
+                          {roleLabel}
+                        </div>
                       </div>
                     </div>
                     <div className="mt-4 space-y-2">
@@ -215,7 +267,7 @@ export default function TopNav({
           <button
             type="button"
             onClick={() => setIsMobileMenuOpen((prev) => !prev)}
-            className={`lg:hidden w-10 h-10 rounded-xl flex items-center justify-center border ${themeMode === 'contrast' ? 'border-[#FFFF00]' : themeMode === 'dark' ? 'border-white/10' : 'border-slate-200'}`}
+            className={`xl:hidden w-10 h-10 rounded-xl flex items-center justify-center border ${themeMode === 'contrast' ? 'border-[#FFFF00]' : themeMode === 'dark' ? 'border-white/10' : 'border-slate-200'}`}
             aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
             aria-expanded={isMobileMenuOpen}
           >
@@ -231,7 +283,7 @@ export default function TopNav({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.2 }}
-            className={`lg:hidden mx-4 sm:mx-6 mb-4 rounded-3xl p-4 shadow-xl ${theme.glass}`}
+            className={`xl:hidden mx-4 sm:mx-6 mb-4 rounded-3xl p-4 shadow-xl ${theme.glass}`}
           >
             <div className="grid gap-2">
               {navItems.map((item) => (

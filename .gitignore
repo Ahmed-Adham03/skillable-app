@@ -7,12 +7,16 @@
 
 # testing
 /coverage
+__pycache__/
+*.py[cod]
 
 # production
 /build
 
 # misc
 .DS_Store
+backend/.env
+authenticatorApi/data/*.db
 .env.local
 .env.development.local
 .env.test.local

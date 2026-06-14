@@ -26,6 +26,38 @@ _pending: dict = {}
 _PENDING_TTL = 600  # 10 minutes
 
 
+def _normalize_role(role: str | None) -> str:
+    return "job_poster" if role == "job_poster" else "job_seeker"
+
+
+def _normalize_profile_image(value: str | None) -> str | None:
+    if value is None:
+        return None
+    value = value.strip()
+    if not value:
+        return None
+    if len(value) > 7_000_000:
+        raise HTTPException(status_code=400, detail="Profile picture is too large. Please choose an image under 5 MB.")
+    allowed_prefixes = (
+        "data:image/png;base64,",
+        "data:image/jpeg;base64,",
+        "data:image/webp;base64,",
+        "data:image/gif;base64,",
+    )
+    if not value.startswith(allowed_prefixes):
+        raise HTTPException(status_code=400, detail="Profile picture must be a PNG, JPG, WebP, or GIF image.")
+    return value
+
+
+def _user_out(db: Session, user: User) -> dict:
+    if user.learning_plans is None:
+        user.learning_plans = []
+    role = db.query(UserRole).filter(UserRole.user_id == user.id).first()
+    data = UserOut.model_validate(user).model_dump()
+    data["role"] = _normalize_role(role.role if role else None)
+    return data
+
+
 def _clean_pending():
     now = int(time.time())
     expired = [k for k, v in _pending.items() if now - v["created_at"] > _PENDING_TTL]
@@ -61,7 +93,7 @@ def initiate_register(payload: UserCreate, db: Session = Depends(get_db)):
     existing = db.query(User).filter(User.email == payload.email).first()
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered.")
-    role = payload.role if payload.role in {"job_seeker", "job_poster"} else "job_seeker"
+    role = _normalize_role(payload.role)
 
     _pending[payload.email] = {
         "full_name": payload.full_name or "",
@@ -110,7 +142,7 @@ def complete_register(payload: CompleteRegister, db: Session = Depends(get_db)):
     db.add(user)
     db.commit()
     db.refresh(user)
-    db.add(UserRole(user_id=user.id, role=pending.get("role", "job_seeker")))
+    db.add(UserRole(user_id=user.id, role=_normalize_role(pending.get("role"))))
     if pending.get("role") == "job_poster":
         db.add(RecruiterProfile(
             user_id=user.id,
@@ -139,12 +171,7 @@ def login(payload: UserLogin, db: Session = Depends(get_db)):
 
 @router.get("/me", response_model=UserOut)
 def me(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    if current_user.learning_plans is None:
-        current_user.learning_plans = []
-    role = db.query(UserRole).filter(UserRole.user_id == current_user.id).first()
-    data = UserOut.model_validate(current_user).model_dump()
-    data["role"] = role.role if role else "job_seeker"
-    return data
+    return _user_out(db, current_user)
 
 
 @router.get("/learning-plans", response_model=list)
@@ -205,6 +232,8 @@ def update_profile(
     cleaned_skills = list({s.strip()[:60] for s in raw_skills if isinstance(s, str) and s.strip()})[:30]
 
     current_user.full_name        = full_name
+    if "profile_image" in payload.model_fields_set:
+        current_user.profile_image = _normalize_profile_image(payload.profile_image)
     current_user.phone_number     = phone_number
     current_user.address          = address
     current_user.mobility         = normalize(payload.mobility)
@@ -216,4 +245,4 @@ def update_profile(
 
     db.commit()
     db.refresh(current_user)
-    return current_user
+    return _user_out(db, current_user)

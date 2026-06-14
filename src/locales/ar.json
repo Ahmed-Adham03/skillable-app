@@ -19,7 +19,11 @@
     "later": "لاحقاً",
     "letsPersonalize": "هيا نخصص تجربتك",
     "completeProfileMsg": "أكمل ملفك الشخصي لتتمكن سكيلابل من اقتراح مسارات مهنية أفضل لك.",
-    "goToHome": "الذهاب إلى الرئيسية"
+    "goToHome": "الذهاب إلى الرئيسية",
+    "roleJobSeeker": "باحث عن عمل",
+    "roleJobPoster": "ناشر وظائف",
+    "roleJobSeekerShort": "باحث",
+    "roleJobPosterShort": "ناشر"
   },
   "accessibility": {
     "quickTools": "أدوات إمكانية الوصول السريعة",

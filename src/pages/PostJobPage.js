@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { CheckCircle2, ClipboardList, Edit3, Lock, MailCheck, Plus, RotateCcw, Send, ShieldCheck, Sparkles, Users, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { JOB_LOGOS } from '../data/jobLogos';
+import { canPostJobs } from '../auth/roles';
 
 const LEVELS = [
   { value: 'Beginner friendly', labelKey: 'beginner' },
@@ -42,7 +43,7 @@ export default function PostJobPage({ theme, themeMode, API_BASE, currentUser, s
   const [jobsStatus, setJobsStatus] = useState('');
   const [editingJobId, setEditingJobId] = useState(null);
 
-  const isPoster = currentUser?.role === 'job_poster' || currentUser?.role === 'admin';
+  const isPoster = canPostJobs(currentUser);
   const token = localStorage.getItem('skillable_token');
   const textMuted = themeMode === 'dark' ? 'text-slate-300' : themeMode === 'contrast' ? 'text-white' : 'text-slate-700';
 

@@ -6,6 +6,7 @@ class UserOut(BaseModel):
     full_name: str | None = None
     email: EmailStr
     role: str = "job_seeker"
+    profile_image: str | None = None
     phone_number: str
     address: str
     mobility: str

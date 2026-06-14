@@ -2,7 +2,8 @@ import React, { useEffect, useState, useRef } from 'react';
 import {
   User, Phone, MapPin, X, Plus,
   CheckCircle, AlertCircle, Eye, Ear, Brain,
-  PersonStanding, Pencil, Lock, Heart, Sparkles, Globe, ShieldCheck
+  PersonStanding, Pencil, Lock, Heart, Sparkles, Globe, ShieldCheck,
+  Camera, Trash2
 } from 'lucide-react';
 
 const GOVERNORATES = [
@@ -131,6 +132,7 @@ export default function ProfilePage({
   speakOnFocus, speechEnabled, speakText,
 }) {
   const [fullName,        setFullName]        = useState('N/A');
+  const [profileImage,    setProfileImage]    = useState(null);
   const [phoneNumber,     setPhoneNumber]     = useState('');
   const [address,         setAddress]         = useState('N/A');
   const [needsMap,        setNeedsMap]        = useState({ mobility: 'N/A', vision: 'N/A', hearing: 'N/A', cognitive: 'N/A' });
@@ -142,6 +144,7 @@ export default function ProfilePage({
   const [isSaving,        setIsSaving]        = useState(false);
   const [isEditingName,   setIsEditingName]   = useState(false);
   const skillInputRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     if (!currentUser) return;
@@ -151,6 +154,7 @@ export default function ProfilePage({
       return v;
     };
     setFullName(currentUser.full_name || 'N/A');
+    setProfileImage(currentUser.profile_image || null);
     setPhoneNumber(currentUser.phone_number === 'N/A' ? '' : (currentUser.phone_number || ''));
     setAddress(currentUser.address || 'N/A');
     setNeedsMap({
@@ -184,6 +188,33 @@ export default function ProfilePage({
 
   const removeSkill = (s) => setSkills((prev) => prev.filter((x) => x !== s));
 
+  const handlePictureChange = (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    const allowedTypes = ['image/png', 'image/jpeg', 'image/webp', 'image/gif'];
+    if (!allowedTypes.includes(file.type)) {
+      setError('Choose a PNG, JPG, WebP, or GIF image.');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Profile picture must be under 5 MB.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = typeof reader.result === 'string' ? reader.result : '';
+      if (!result.startsWith('data:image/')) {
+        setError('Could not read that image. Please try another picture.');
+        return;
+      }
+      setError('');
+      setProfileImage(result);
+    };
+    reader.onerror = () => setError('Could not read that image. Please try another picture.');
+    reader.readAsDataURL(file);
+  };
+
   const handleSkillKey = (e) => {
     if (e.key === 'Enter') { e.preventDefault(); addSkill(); }
     if (e.key === 'Backspace' && !skillInput && skills.length) removeSkill(skills[skills.length - 1]);
@@ -202,7 +233,7 @@ export default function ProfilePage({
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({
           full_name: fullName, phone_number: phoneNumber || 'N/A', address,
-          ...needsMap, experience_level: experienceLevel, skills,
+          profile_image: profileImage, ...needsMap, experience_level: experienceLevel, skills,
         }),
       });
       if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.detail || 'Update failed.'); }
@@ -313,11 +344,44 @@ export default function ProfilePage({
       {/* ── Top strip: avatar + name + completion ── */}
       <div className={`mb-8 p-6 rounded-3xl flex flex-col sm:flex-row items-center sm:items-start gap-6 ${cardClass}`}>
         {/* Avatar */}
-        <div
-          className="w-20 h-20 rounded-2xl flex items-center justify-center text-2xl font-black text-white flex-shrink-0"
-          style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}
-        >
-          {initials}
+        <div className="flex flex-col items-center gap-2 flex-shrink-0">
+          <div
+            className="w-20 h-20 rounded-2xl overflow-hidden flex items-center justify-center text-2xl font-black text-white"
+            style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}
+          >
+            {profileImage ? (
+              <img src={profileImage} alt="Profile" className="w-full h-full object-cover" />
+            ) : (
+              initials
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/png,image/jpeg,image/webp,image/gif"
+              className="hidden"
+              onChange={handlePictureChange}
+            />
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black border ${themeMode === 'dark' ? 'border-white/15 hover:border-indigo-300' : 'border-slate-200 hover:border-indigo-300'}`}
+            >
+              <Camera size={12} />
+              Change pic
+            </button>
+            {profileImage && (
+              <button
+                type="button"
+                onClick={() => setProfileImage(null)}
+                aria-label="Remove profile picture"
+                className={`w-8 h-8 rounded-lg flex items-center justify-center border text-red-500 ${themeMode === 'dark' ? 'border-white/15 hover:border-red-300' : 'border-slate-200 hover:border-red-300'}`}
+              >
+                <Trash2 size={13} />
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Name + email */}

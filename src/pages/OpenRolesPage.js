@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { ArrowRight, BriefcaseBusiness, Building2, Clock, Layers, MapPin, Search } from 'lucide-react';
 import { getJobLogo } from '../data/jobLogos';
+import { canPostJobs } from '../auth/roles';
 
 export default function OpenRolesPage({ theme, themeMode, API_BASE, currentUser, onSelectRole, setActiveTab }) {
   const [roles, setRoles] = useState([]);
@@ -9,7 +10,7 @@ export default function OpenRolesPage({ theme, themeMode, API_BASE, currentUser,
   const [status, setStatus] = useState('Loading open roles...');
   const isDark = themeMode === 'dark';
   const isContrast = themeMode === 'contrast';
-  const canShareRole = currentUser?.role === 'job_poster' || currentUser?.role === 'admin';
+  const canShareRole = canPostJobs(currentUser);
 
   useEffect(() => {
     setStatus('Loading open roles...');

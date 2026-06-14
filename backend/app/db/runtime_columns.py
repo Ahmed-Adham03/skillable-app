@@ -13,6 +13,15 @@ def ensure_runtime_records(db: Session):
     has_legacy_role = "role" in user_columns
     table_names = set(inspector.get_table_names())
 
+    if User.__tablename__ in table_names and "profile_image" not in user_columns:
+        column_type = "LONGTEXT" if db.bind.dialect.name == "mysql" else "TEXT"
+        db.execute(text(f"ALTER TABLE users ADD COLUMN profile_image {column_type} NULL"))
+        db.commit()
+        user_columns.add("profile_image")
+    elif User.__tablename__ in table_names and "profile_image" in user_columns and db.bind.dialect.name == "mysql":
+        db.execute(text("ALTER TABLE users MODIFY COLUMN profile_image LONGTEXT NULL"))
+        db.commit()
+
     if OpenJob.__tablename__ in table_names:
         open_job_columns = {column["name"] for column in inspector.get_columns(OpenJob.__tablename__)}
         if "contact_email" not in open_job_columns:
@@ -30,10 +39,15 @@ def ensure_runtime_records(db: Session):
         role = "job_seeker"
         if has_legacy_role:
             role = getattr(user, "role", None) or "job_seeker"
-        db.add(UserRole(user_id=user.id, role=role if role in {"job_seeker", "job_poster", "admin"} else "job_seeker"))
+        db.add(UserRole(user_id=user.id, role=role if role == "job_poster" else "job_seeker"))
     db.commit()
 
-    poster_roles = db.query(UserRole).filter(UserRole.role.in_(["job_poster", "admin"])).all()
+    invalid_roles = db.query(UserRole).filter(~UserRole.role.in_(["job_seeker", "job_poster"])).all()
+    for user_role in invalid_roles:
+        user_role.role = "job_seeker"
+    db.commit()
+
+    poster_roles = db.query(UserRole).filter(UserRole.role == "job_poster").all()
     for user_role in poster_roles:
         existing_profile = db.query(RecruiterProfile).filter(RecruiterProfile.user_id == user_role.user_id).first()
         if existing_profile:

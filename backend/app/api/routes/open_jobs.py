@@ -30,18 +30,18 @@ def _clean_skills(skills: list) -> list[str]:
 
 def _current_role(db: Session, user: User) -> str:
     role = db.query(UserRole).filter(UserRole.user_id == user.id).first()
-    return role.role if role else "job_seeker"
+    return "job_poster" if role and role.role == "job_poster" else "job_seeker"
 
 
 def _require_poster(db: Session, user: User) -> str:
     current_role = _current_role(db, user)
-    if current_role not in {"job_poster", "admin"}:
+    if current_role != "job_poster":
         raise HTTPException(status_code=403, detail="Only job posters can manage open jobs.")
     return current_role
 
 
-def _require_job_owner(job: OpenJob, current_role: str, user: User):
-    if current_role != "admin" and job.created_by_id != user.id:
+def _require_job_owner(job: OpenJob, user: User):
+    if job.created_by_id != user.id:
         raise HTTPException(status_code=403, detail="Only the recruiter who posted this job can edit it.")
 
 
@@ -60,10 +60,9 @@ def list_my_open_jobs(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    current_role = _require_poster(db, current_user)
+    _require_poster(db, current_user)
     query = db.query(OpenJob)
-    if current_role != "admin":
-        query = query.filter(OpenJob.created_by_id == current_user.id)
+    query = query.filter(OpenJob.created_by_id == current_user.id)
     return query.order_by(OpenJob.created_at.desc(), OpenJob.id.desc()).all()
 
 
@@ -85,9 +84,9 @@ def create_open_job(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    current_role = _require_poster(db, current_user)
+    _require_poster(db, current_user)
     recruiter = db.query(RecruiterProfile).filter(RecruiterProfile.user_id == current_user.id).first()
-    if not recruiter and current_role == "job_poster":
+    if not recruiter:
         recruiter = RecruiterProfile(
             user_id=current_user.id,
             contact_name=current_user.full_name or current_user.email,
@@ -124,11 +123,11 @@ def update_open_job(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    current_role = _require_poster(db, current_user)
+    _require_poster(db, current_user)
     job = db.query(OpenJob).filter(OpenJob.id == job_id).first()
     if not job:
         raise HTTPException(status_code=404, detail="Open role not found.")
-    _require_job_owner(job, current_role, current_user)
+    _require_job_owner(job, current_user)
 
     data = payload.model_dump(exclude_unset=True)
     if "title" in data:
@@ -202,7 +201,9 @@ def list_open_job_applications(
         raise HTTPException(status_code=404, detail="Open role not found.")
 
     current_role = _current_role(db, current_user)
-    _require_job_owner(job, current_role, current_user)
+    if current_role != "job_poster":
+        raise HTTPException(status_code=403, detail="Only job posters can view applications.")
+    _require_job_owner(job, current_user)
 
     return (
         db.query(JobApplication)

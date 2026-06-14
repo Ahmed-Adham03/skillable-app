@@ -3,6 +3,7 @@ from pydantic import BaseModel
 
 class ProfileUpdate(BaseModel):
     full_name:        str | None  = None
+    profile_image:    str | None  = None
     phone_number:     str | None  = None
     address:          str | None  = None
     mobility:         str | None  = None

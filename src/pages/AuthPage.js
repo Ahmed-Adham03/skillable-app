@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useGoogleLogin } from '@react-oauth/google';
 import { User, Sparkles, CheckCircle, Users, Award, Bot } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { normalizeRole } from '../auth/roles';
 
 // Isolated component so useGoogleLogin only mounts when a clientId exists
 function GoogleLoginButton({ onSuccess, onError, className }) {
@@ -85,7 +86,7 @@ export default function AuthPage({
       });
       const me = await meRes.json().catch(() => null);
       if (me) {
-        setCurrentUser(me);
+        setCurrentUser({ ...me, role: normalizeRole(me.role) });
         if (setLearningPlans) {
           fetch(`${API_BASE}/auth/learning-plans`, {
             headers: { Authorization: `Bearer ${data.access_token}` },
@@ -256,7 +257,7 @@ export default function AuthPage({
       });
       const me = await meRes.json().catch(() => null);
       if (me) {
-        setCurrentUser(me);
+        setCurrentUser({ ...me, role: normalizeRole(me.role) });
         if (setLearningPlans) {
           fetch(`${API_BASE}/auth/learning-plans`, {
             headers: { Authorization: `Bearer ${token}` }

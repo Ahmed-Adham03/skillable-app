@@ -9,8 +9,12 @@ email-validator==2.2.0
 python-dotenv==1.0.1
 python-multipart==0.0.9
 httpx==0.28.1
+faster-whisper==1.2.1
 
 #python -m venv .venv
 #source .venv/bin/activate
 #pip install -r requirements.txt
 #uvicorn app.main:app --reload --port 8000
+#code generator : 9100
+#skill matching : 9000
+

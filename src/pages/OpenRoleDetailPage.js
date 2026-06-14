@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Building2, CheckCircle2, Clock, Layers, LockKeyhole, Mail, MapPin, Send, ShieldCheck, Sparkles, UserPlus } from 'lucide-react';
 import { getJobLogo } from '../data/jobLogos';
+import { canPostJobs } from '../auth/roles';
 
 export default function OpenRoleDetailPage({ theme, themeMode, role, API_BASE, currentUser }) {
   const navigate = useNavigate();
@@ -11,7 +12,7 @@ export default function OpenRoleDetailPage({ theme, themeMode, role, API_BASE, c
   const [applicants, setApplicants] = useState([]);
   const [applicantsStatus, setApplicantsStatus] = useState('');
   const token = localStorage.getItem('skillable_token');
-  const canViewApplicants = Boolean(role && currentUser && (currentUser.role === 'admin' || role.created_by_id === currentUser.id));
+  const canViewApplicants = Boolean(role && canPostJobs(currentUser) && role.created_by_id === currentUser.id);
 
   useEffect(() => {
     if (!canViewApplicants || !token) return;
