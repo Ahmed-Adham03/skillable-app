@@ -15,12 +15,13 @@ from app.core.config import (
 )
 from app.core.security import create_access_token, get_password_hash
 from app.models.user import User
+from app.models.user_role import UserRole
+from app.models.recruiter import RecruiterProfile
 from app.schemas.auth import Token
 
 router = APIRouter(prefix="/auth/oauth", tags=["oauth"])
 
-
-def _find_or_create_user(db: Session, email: str, full_name: str) -> User:
+def _find_or_create_user(db: Session, email: str, full_name: str, role: str = "job_seeker") -> User:
     user = db.query(User).filter(User.email == email).first()
     if not user:
         user = User(
@@ -38,6 +39,16 @@ def _find_or_create_user(db: Session, email: str, full_name: str) -> User:
         db.add(user)
         db.commit()
         db.refresh(user)
+        
+        normalized_role = "job_poster" if role == "job_poster" else "job_seeker"
+        db.add(UserRole(user_id=user.id, role=normalized_role))
+        if normalized_role == "job_poster":
+            db.add(RecruiterProfile(
+                user_id=user.id,
+                contact_name=full_name or email.split("@")[0],
+                organization_name=full_name or "N/A",
+            ))
+        db.commit()
     return user
 
 
@@ -45,6 +56,7 @@ def _find_or_create_user(db: Session, email: str, full_name: str) -> User:
 
 class GooglePayload(BaseModel):
     id_token: str
+    role: str | None = "job_seeker"
 
 
 @router.post("/google", response_model=Token)
@@ -69,7 +81,7 @@ def google_login(payload: GooglePayload, db: Session = Depends(get_db)):
     if not email:
         raise HTTPException(status_code=400, detail="Google account has no email.")
 
-    user = _find_or_create_user(db, email, info.get("name", ""))
+    user = _find_or_create_user(db, email, info.get("name", ""), role=payload.role or "job_seeker")
     return Token(access_token=create_access_token(subject=user.email))
 
 
@@ -78,6 +90,7 @@ def google_login(payload: GooglePayload, db: Session = Depends(get_db)):
 class LinkedInPayload(BaseModel):
     code: str
     redirect_uri: str
+    role: str | None = "job_seeker"
 
 
 @router.post("/linkedin", response_model=Token)
@@ -120,7 +133,7 @@ def linkedin_login(payload: LinkedInPayload, db: Session = Depends(get_db)):
     if not email:
         raise HTTPException(status_code=400, detail="LinkedIn account has no email. Enable the 'email' scope.")
 
-    user = _find_or_create_user(db, email, info.get("name", ""))
+    user = _find_or_create_user(db, email, info.get("name", ""), role=payload.role or "job_seeker")
     return Token(access_token=create_access_token(subject=user.email))
 
 
@@ -129,6 +142,7 @@ def linkedin_login(payload: LinkedInPayload, db: Session = Depends(get_db)):
 class FacebookPayload(BaseModel):
     code: str
     redirect_uri: str
+    role: str | None = "job_seeker"
 
 
 @router.post("/facebook", response_model=Token)
@@ -172,5 +186,5 @@ def facebook_login(payload: FacebookPayload, db: Session = Depends(get_db)):
             detail="Facebook account has no email. Ensure the 'email' permission is granted.",
         )
 
-    user = _find_or_create_user(db, email, profile.get("name", ""))
+    user = _find_or_create_user(db, email, profile.get("name", ""), role=payload.role or "job_seeker")
     return Token(access_token=create_access_token(subject=user.email))

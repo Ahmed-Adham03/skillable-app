@@ -834,7 +834,7 @@ export default function AuthPage({
               {/* Google */}
               {hasGoogleClientId ? (
                 <GoogleLoginButton
-                  onSuccess={(t) => handleSocialLogin('/auth/oauth/google', { id_token: t.access_token })}
+                  onSuccess={(t) => handleSocialLogin('/auth/oauth/google', { id_token: t.access_token, role: accountRole })}
                   onError={() => setSocialError('Google sign-in was cancelled or failed.')}
                   className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl border font-semibold text-sm transition-opacity hover:opacity-80 ${themeMode === 'contrast' ? 'border-white text-white' : 'border-slate-300 text-slate-700 bg-white'}`}
                 />

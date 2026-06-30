@@ -2,6 +2,7 @@ import os
 import hashlib
 import socket
 import tempfile
+import logging
 from pathlib import Path
 
 import httpx
@@ -16,7 +17,7 @@ router = APIRouter(prefix="/chat", tags=["chat"])
 OPENROUTER_URL = os.getenv("OPENROUTER_URL", "https://openrouter.ai/api/v1/chat/completions")
 AGENTROUTER_URL = os.getenv("AGENTROUTER_URL", "https://agentrouter.org/v1/chat/completions")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash").strip()
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-1.5-flash").strip()
 CHAT_PROVIDER = os.getenv("CHAT_PROVIDER", "").strip().lower()
 if not CHAT_PROVIDER:
     CHAT_PROVIDER = "gemini" if GEMINI_API_KEY else ("openrouter" if os.getenv("OPENROUTER_API_KEY") else "agentrouter")
@@ -127,6 +128,7 @@ async def call_openai_compatible_provider(
     }
     response = await post_chat_request(url, headers, body)
     if response.status_code != 200:
+        logging.error(f"Provider {provider} failed with status {response.status_code}: {response.text}")
         return None
     return response.json()
 
@@ -161,6 +163,7 @@ async def call_gemini_provider(
     async with httpx.AsyncClient(timeout=CHAT_TIMEOUT_SECONDS) as client:
         response = await client.post(url, headers={"Content-Type": "application/json"}, json=body)
     if response.status_code != 200:
+        logging.error(f"Gemini failed with status {response.status_code}: {response.text}")
         return None
 
     data = response.json()
@@ -452,19 +455,19 @@ def build_local_chat_response(messages: list[dict], site_action: dict | None = N
 
 SYSTEM_PROMPT = """You are "Skillable AI" — the friendly, built-in smart assistant of the Skillable platform. You live INSIDE the website and chat with users directly.
 
-LANGUAGE RULES
+CRITICAL LANGUAGE RULES:
 
-Always reply in the same language the user writes in.
-Arabic message -> reply fully in friendly casual Egyptian Arabic.
-English message -> reply fully in English.
-Mixed Arabic + English -> reply in Egyptian Arabic.
+1. DETECT the primary language of the user's message before responding.
+2. If the user's message is ENTIRELY or PRIMARILY in English (e.g., "hi", "hello", "how are you"): YOU MUST REPLY ENTIRELY IN ENGLISH. Do NOT use Arabic.
+3. If the user's message is in Arabic, or a mix of Arabic and English: YOU MUST REPLY IN EGYPTIAN ARABIC, but keep technical terms and job titles in English (e.g. "Software Engineer", "Frontend", "CV").
+4. Never mix Arabic into an English response.
 
 PERSONALITY
 
 Be warm, positive, encouraging, and empathetic.
 You are talking to People of Determination.
 Be extremely supportive, friendly, and motivational.
-Be supportive and never patronizing.
+Be supportive and never patronizing. NEVER use phrases like "يا بطل" (champion/hero) or similar patronizing encouragement words. Treat them completely normally and respectfully.
 Use a warm, casual, friendly Egyptian dialect as if you are a close friend.
 Show genuine care for their problems and feelings.
 
@@ -616,10 +619,14 @@ async def chat_completions(payload: ChatRequest):
     messages.extend({"role": msg.role, "content": msg.content} for msg in payload.messages)
     site_action = detect_site_action(messages)
 
+    logging.error(f"Starting chat completions. Providers: {provider_order()}")
+
     for provider in provider_order():
         if not provider_has_key(provider):
+            logging.error(f"Provider {provider} does not have a key.")
             continue
         try:
+            logging.error(f"Trying provider {provider}...")
             if provider == "gemini":
                 data = await call_gemini_provider(messages, payload.max_tokens, payload.temperature)
             elif provider in {"openrouter", "agentrouter"}:
@@ -632,7 +639,9 @@ async def chat_completions(payload: ChatRequest):
                 )
             else:
                 data = None
-        except (httpx.TimeoutException, httpx.RequestError, ValueError):
+            logging.error(f"Provider {provider} returned data: {data}")
+        except Exception as e:
+            logging.error(f"Provider {provider} threw exception: {repr(e)}")
             data = None
 
         if data:
@@ -641,4 +650,5 @@ async def chat_completions(payload: ChatRequest):
             data["provider"] = provider
             return data
 
+    logging.error("All providers failed. Falling back to local response.")
     return build_local_chat_response(messages, site_action)
