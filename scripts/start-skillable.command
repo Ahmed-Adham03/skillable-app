@@ -139,7 +139,7 @@ write_runner \
   "frontend.command" \
   "Skillable Frontend :3000" \
   "$ROOT_DIR" \
-  "BROWSER=none HOST=0.0.0.0 npm start" \
+  "FORCE_COLOR=1 BROWSER=none HOST=0.0.0.0 npm start" \
   "http://localhost:3000" \
   "$RUN_DIR/logs/frontend.log"
 
@@ -147,7 +147,7 @@ write_runner \
   "backend.command" \
   "Skillable Backend :8000" \
   "$ROOT_DIR/backend" \
-  "source .venv/bin/activate && uvicorn app.main:app --reload --host 0.0.0.0 --port 8000" \
+  "source .venv/bin/activate && uvicorn app.main:app --reload --host 0.0.0.0 --port 8000 --use-colors" \
   "http://127.0.0.1:8000" \
   "$RUN_DIR/logs/backend.log"
 
@@ -155,7 +155,7 @@ write_runner \
   "authenticator.command" \
   "Skillable Authenticator :9100" \
   "$ROOT_DIR/authenticatorApi" \
-  "source .venv/bin/activate && uvicorn app.main:app --reload --host 0.0.0.0 --port 9100" \
+  "source .venv/bin/activate && uvicorn app.main:app --reload --host 0.0.0.0 --port 9100 --use-colors" \
   "http://127.0.0.1:9100" \
   "$RUN_DIR/logs/authenticator.log"
 
@@ -163,7 +163,7 @@ write_runner \
   "matching.command" \
   "Skillable Matching :9000" \
   "$ROOT_DIR/skillMatchingApi" \
-  "source .venv/bin/activate && uvicorn app.main:app --reload --host 0.0.0.0 --port 9000" \
+  "source .venv/bin/activate && uvicorn app.main:app --reload --host 0.0.0.0 --port 9000 --use-colors" \
   "http://127.0.0.1:9000" \
   "$RUN_DIR/logs/matching.log"
 

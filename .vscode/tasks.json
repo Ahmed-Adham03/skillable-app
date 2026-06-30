@@ -5,10 +5,10 @@
       "label": "Skillable: Start All",
       "dependsOrder": "parallel",
       "dependsOn": [
-        "Skillable: Frontend :3000",
-        "Skillable: Backend :8000",
-        "Skillable: Authenticator :9100",
-        "Skillable: Matching :9000"
+        "Skillable Frontend UI :3000",
+        "Skillable Main API :8000",
+        "Skillable Auth Codes :9100",
+        "Skillable Matching API :9000"
       ],
       "group": {
         "kind": "build",
@@ -17,50 +17,70 @@
       "problemMatcher": []
     },
     {
-      "label": "Skillable: Frontend :3000",
+      "label": "Skillable Frontend UI :3000",
       "type": "shell",
       "command": "${workspaceFolder}/scripts/run-skillable-service.command frontend",
       "isBackground": true,
+      "icon": {
+        "id": "browser",
+        "color": "terminal.ansiBlue"
+      },
       "presentation": {
         "reveal": "always",
         "panel": "dedicated",
-        "group": "skillable"
+        "clear": true,
+        "showReuseMessage": false
       },
       "problemMatcher": []
     },
     {
-      "label": "Skillable: Backend :8000",
+      "label": "Skillable Main API :8000",
       "type": "shell",
       "command": "${workspaceFolder}/scripts/run-skillable-service.command backend",
       "isBackground": true,
+      "icon": {
+        "id": "server-process",
+        "color": "terminal.ansiGreen"
+      },
       "presentation": {
         "reveal": "always",
         "panel": "dedicated",
-        "group": "skillable"
+        "clear": true,
+        "showReuseMessage": false
       },
       "problemMatcher": []
     },
     {
-      "label": "Skillable: Authenticator :9100",
+      "label": "Skillable Auth Codes :9100",
       "type": "shell",
       "command": "${workspaceFolder}/scripts/run-skillable-service.command authenticator",
       "isBackground": true,
+      "icon": {
+        "id": "key",
+        "color": "terminal.ansiYellow"
+      },
       "presentation": {
         "reveal": "always",
         "panel": "dedicated",
-        "group": "skillable"
+        "clear": true,
+        "showReuseMessage": false
       },
       "problemMatcher": []
     },
     {
-      "label": "Skillable: Matching :9000",
+      "label": "Skillable Matching API :9000",
       "type": "shell",
       "command": "${workspaceFolder}/scripts/run-skillable-service.command matching",
       "isBackground": true,
+      "icon": {
+        "id": "symbol-event",
+        "color": "terminal.ansiMagenta"
+      },
       "presentation": {
         "reveal": "always",
         "panel": "dedicated",
-        "group": "skillable"
+        "clear": true,
+        "showReuseMessage": false
       },
       "problemMatcher": []
     },
@@ -70,8 +90,7 @@
       "command": "${workspaceFolder}/scripts/start-skillable.command --check",
       "presentation": {
         "reveal": "always",
-        "panel": "dedicated",
-        "group": "skillable"
+        "panel": "dedicated"
       },
       "problemMatcher": []
     }

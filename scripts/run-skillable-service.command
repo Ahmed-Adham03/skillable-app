@@ -21,6 +21,25 @@ require_executable() {
   [[ -x "$1" ]] || fail "Missing executable: $1"
 }
 
+print_banner() {
+  local title="$1"
+  local url="$2"
+  local log_file="$3"
+  local color="$4"
+  local reset="\\033[0m"
+  local bold="\\033[1m"
+
+  printf "\\033]0;%s\\007" "$title"
+  printf "${color}${bold}"
+  echo "============================================================"
+  echo "$title"
+  echo "URL: $url"
+  echo "Log: $log_file"
+  echo "============================================================"
+  printf "${reset}"
+  echo ""
+}
+
 kill_port() {
   local port="$1"
   local pids
@@ -45,8 +64,8 @@ case "$SERVICE" in
     require_file "$ROOT_DIR/package-lock.json"
     kill_port 3000
     cd "$ROOT_DIR"
-    echo "Starting Skillable Frontend on http://localhost:3000"
-    BROWSER=none HOST=0.0.0.0 npm start 2>&1 | tee "$LOG_DIR/frontend.log"
+    print_banner "Skillable Frontend UI :3000" "http://localhost:3000" "$LOG_DIR/frontend.log" "\\033[34m"
+    FORCE_COLOR=1 BROWSER=none HOST=0.0.0.0 npm start 2>&1 | tee "$LOG_DIR/frontend.log"
     exit "${pipestatus[1]}"
     ;;
 
@@ -55,9 +74,9 @@ case "$SERVICE" in
     require_executable "$ROOT_DIR/backend/.venv/bin/uvicorn"
     kill_port 8000
     cd "$ROOT_DIR/backend"
-    echo "Starting Skillable Backend on http://127.0.0.1:8000"
+    print_banner "Skillable Main API :8000" "http://127.0.0.1:8000" "$LOG_DIR/backend.log" "\\033[32m"
     source .venv/bin/activate
-    uvicorn app.main:app --reload --host 0.0.0.0 --port 8000 2>&1 | tee "$LOG_DIR/backend.log"
+    uvicorn app.main:app --reload --host 0.0.0.0 --port 8000 --use-colors 2>&1 | tee "$LOG_DIR/backend.log"
     exit "${pipestatus[1]}"
     ;;
 
@@ -66,9 +85,9 @@ case "$SERVICE" in
     require_executable "$ROOT_DIR/authenticatorApi/.venv/bin/uvicorn"
     kill_port 9100
     cd "$ROOT_DIR/authenticatorApi"
-    echo "Starting Skillable Authenticator on http://127.0.0.1:9100"
+    print_banner "Skillable Auth Codes :9100" "http://127.0.0.1:9100" "$LOG_DIR/authenticator.log" "\\033[33m"
     source .venv/bin/activate
-    uvicorn app.main:app --reload --host 0.0.0.0 --port 9100 2>&1 | tee "$LOG_DIR/authenticator.log"
+    uvicorn app.main:app --reload --host 0.0.0.0 --port 9100 --use-colors 2>&1 | tee "$LOG_DIR/authenticator.log"
     exit "${pipestatus[1]}"
     ;;
 
@@ -77,9 +96,9 @@ case "$SERVICE" in
     require_executable "$ROOT_DIR/skillMatchingApi/.venv/bin/uvicorn"
     kill_port 9000
     cd "$ROOT_DIR/skillMatchingApi"
-    echo "Starting Skillable Matching on http://127.0.0.1:9000"
+    print_banner "Skillable Matching API :9000" "http://127.0.0.1:9000" "$LOG_DIR/matching.log" "\\033[35m"
     source .venv/bin/activate
-    uvicorn app.main:app --reload --host 0.0.0.0 --port 9000 2>&1 | tee "$LOG_DIR/matching.log"
+    uvicorn app.main:app --reload --host 0.0.0.0 --port 9000 --use-colors 2>&1 | tee "$LOG_DIR/matching.log"
     exit "${pipestatus[1]}"
     ;;
 
