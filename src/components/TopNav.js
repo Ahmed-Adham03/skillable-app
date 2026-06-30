@@ -99,10 +99,7 @@ export default function TopNav({
   return (
     <nav className={`sticky top-0 z-40 transition-all duration-300 ${theme.navBg}`} aria-label="Main">
       <div className="container mx-auto px-4 sm:px-6 h-20 flex items-center gap-3">
-        <button onClick={() => goToTab('home')} className="flex items-center gap-2 cursor-pointer group min-w-0 flex-shrink-0" aria-label={t('nav.goToHome')}>
-          <div className="p-1 rounded-xl transition-all flex-shrink-0">
-            <img src="/SkillableLogo3BG0.png" alt="Skillable logo" className="w-10 h-10 xl:w-11 xl:h-11 object-contain" />
-          </div>
+        <button onClick={() => goToTab('home')} className="flex items-center cursor-pointer group min-w-0 flex-shrink-0" aria-label={t('nav.goToHome')}>
           <span className="text-xl xl:text-2xl font-black truncate">Skillable</span>
         </button>
 

@@ -20,6 +20,9 @@
   },
   "scripts": {
     "start": "react-scripts start",
+    "dev:all": "scripts/start-skillable.command",
+    "dev:terminal": "scripts/start-skillable.command",
+    "dev:check": "scripts/start-skillable.command --check",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"

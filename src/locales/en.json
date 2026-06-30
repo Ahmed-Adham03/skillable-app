@@ -66,6 +66,78 @@
       "02": { "title": "Get matched", "body": "Our algorithm scores every career across disability accommodation, skill overlap, and experience fit." },
       "03": { "title": "Start learning", "body": "Pick a track, follow the roadmap, fill skill gaps with curated resources — at your own pace." }
     },
+    "realWorld": {
+      "badge": "Built for real journeys",
+      "title": "Career support that starts with the person, not the limitation",
+      "body": "Skillable brings profile building, accessible career matching, learning pathways, open roles, and CV preparation into one clear experience. The goal is simple: help people understand where they fit, what skills to build, and how to take the next practical step.",
+      "imageTag": "Inclusive by design",
+      "imageText": "Support for people, families, educators, and inclusive employers working toward fairer opportunities."
+    },
+    "impact": {
+      "values": {
+        "accessible": "100%",
+        "dimensions": "4",
+        "pathways": "5+"
+      },
+      "labels": {
+        "accessible": "Designed around accessibility from the first screen",
+        "dimensions": "Accessibility dimensions considered in matching",
+        "pathways": "Practical work pathways with guided next steps"
+      }
+    },
+    "today": {
+      "badge": "What users can do today",
+      "title": "A complete path from profile to opportunity",
+      "body": "The landing page should make it obvious that Skillable is not only a chatbot. It is a career platform with matching, preparation, learning, and job discovery working together.",
+      "match": { "title": "Discover suitable careers", "body": "Compare your skills, experience, and accessibility needs against career paths that make sense for you." },
+      "learn": { "title": "Follow work pathways", "body": "Use structured steps and resources to prepare for practical roles in the Egyptian market." },
+      "cv": { "title": "Create a focused CV", "body": "Build a resume that highlights skills, training, projects, tools, and strengths." },
+      "roles": { "title": "Explore open roles", "body": "Browse opportunities and understand what employers are asking for before applying." }
+    },
+    "inclusion": {
+      "badge": "Accessibility layer",
+      "title": "Accessibility is part of the workflow, not a separate extra",
+      "body": "Skillable keeps accessibility visible across the experience: profile fields, matching logic, interface controls, bilingual content, and guidance that helps users communicate needs clearly and confidently."
+    },
+    "accessPoints": {
+      "profile": "Profile fields cover mobility, vision, hearing, cognitive needs, skills, and experience.",
+      "matching": "Career matching considers accessibility fit alongside skills and experience.",
+      "tools": "Interface tools support contrast, font size, reduced motion, and speech focus.",
+      "language": "Arabic and English support helps users move through the platform comfortably."
+    },
+    "vision": {
+      "badge": "Our vision",
+      "title": "From graduation project to national inclusion initiative",
+      "body": "Skillable is designed with a long-term vision: to become a nonprofit initiative that improves how persons with disabilities access career guidance, skills, and employment opportunities. The aim is not only to build a platform, but to support a more organized and inclusive pathway from ability to work.",
+      "statementTitle": "Institutional ambition",
+      "statementBody": "Our future goal is to collaborate with governmental entities, universities, civil society organizations, and inclusive employers so Skillable can scale responsibly across Egypt and support people in different governorates.",
+      "pillars": {
+        "policy": {
+          "title": "Government collaboration",
+          "body": "Work with public-sector and institutional partners to align the platform with national inclusion and employment priorities."
+        },
+        "partnership": {
+          "title": "Shared ecosystem",
+          "body": "Connect job seekers, educators, recruiters, and support organizations around one accessible career journey."
+        },
+        "scale": {
+          "title": "Nationwide reach",
+          "body": "Expand beyond a single university project into a service that can support People of Determination across Egypt."
+        }
+      }
+    },
+    "audiences": {
+      "seekers": {
+        "title": "For job seekers",
+        "body": "Skillable helps users understand their strengths, prepare a profile, build a CV, explore career paths, and move toward roles that fit their abilities and needs.",
+        "cta": "Start with career paths"
+      },
+      "employers": {
+        "title": "For inclusive employers",
+        "body": "Recruiters and organizations can post open roles, describe requirements clearly, and connect with candidates who are preparing for suitable opportunities.",
+        "cta": "Explore open roles"
+      }
+    },
     "aiTitle": "Skillable AI",
     "aiSubtitle": "Ask me anything about your career",
     "aiOnline": "Online",
@@ -167,7 +239,19 @@
     "codeSent": "Enter the 6-digit code sent to your email.",
     "signedIn": "Signed in successfully.",
     "resendFail": "Unable to resend code.",
-    "newCodeSent": "A new code has been sent."
+    "newCodeSent": "A new code has been sent.",
+    "sendResetCode": "Send reset code",
+    "backToSignIn": "Back to sign in",
+    "passwordResetCode": "Password reset code",
+    "passwordResetCodeSent": "Enter the password reset code sent to your email.",
+    "passwordResetVerified": "Code verified. Choose a new password.",
+    "newPassword": "New password",
+    "confirmNewPassword": "Confirm new password",
+    "changePassword": "Change password",
+    "passwordChanged": "Password has been changed. You can sign in now.",
+    "emailNotRegistered": "This email is not registered.",
+    "passwordResetSendFail": "Unable to send password reset code.",
+    "passwordResetFail": "Unable to change password."
   },
   "dashboard": {
     "title": "Your learning journey",

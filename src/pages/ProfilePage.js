@@ -5,6 +5,7 @@ import {
   PersonStanding, Pencil, Lock, Heart, Sparkles, Globe, ShieldCheck,
   Camera, Trash2
 } from 'lucide-react';
+import { getAuthToken } from '../auth/session';
 
 const GOVERNORATES = [
   'N/A','Cairo','Giza','Alexandria','Dakahlia','Red Sea','Beheira',
@@ -224,7 +225,7 @@ export default function ProfilePage({
     e.preventDefault();
     setError(''); setStatus('');
     setIsSaving(true);
-    const token = localStorage.getItem('skillable_token');
+    const token = getAuthToken();
     if (!token) { setError('Sign in to save your profile.'); setIsSaving(false); return; }
     if (phoneNumber && phoneNumber.length !== 11) { setError('Phone number must be exactly 11 digits.'); setIsSaving(false); return; }
     try {

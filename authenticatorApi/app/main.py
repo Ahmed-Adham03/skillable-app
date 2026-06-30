@@ -54,6 +54,10 @@ def init_db():
         conn.execute("ALTER TABLE codes ADD COLUMN email TEXT NOT NULL DEFAULT ''")
     except sqlite3.OperationalError:
         pass
+    try:
+        conn.execute("ALTER TABLE codes ADD COLUMN purpose TEXT NOT NULL DEFAULT 'verification'")
+    except sqlite3.OperationalError:
+        pass
     conn.commit()
     conn.close()
 
@@ -62,22 +66,22 @@ def generate_code() -> str:
     return f"{random.randint(0, 999999):06d}"
 
 
-def insert_code(email: str, code: str):
+def insert_code(email: str, code: str, purpose: str):
     conn = sqlite3.connect(DB_PATH)
     conn.execute(
-        "INSERT INTO codes (code, email, created_at, used) VALUES (?, ?, ?, 0)",
-        (code, email, int(time.time()))
+        "INSERT INTO codes (code, email, purpose, created_at, used) VALUES (?, ?, ?, ?, 0)",
+        (code, email, purpose, int(time.time()))
     )
     conn.commit()
     conn.close()
 
 
-def get_latest_code(email: str) -> Optional[tuple]:
+def get_latest_code(email: str, purpose: str = "verification") -> Optional[tuple]:
     conn = sqlite3.connect(DB_PATH)
     cur = conn.cursor()
     cur.execute(
-        "SELECT id, code, email, created_at, used FROM codes WHERE email = ? ORDER BY id DESC LIMIT 1",
-        (email,)
+        "SELECT id, code, email, purpose, created_at, used FROM codes WHERE email = ? AND purpose = ? ORDER BY id DESC LIMIT 1",
+        (email, purpose)
     )
     row = cur.fetchone()
     conn.close()
@@ -94,7 +98,7 @@ def mark_used(code_id: int):
 def is_valid(row) -> bool:
     if not row:
         return False
-    _, _, _, created_at, used = row
+    _, _, _, _, created_at, used = row
     if used:
         return False
     return (int(time.time()) - created_at) <= CODE_TTL_SECONDS
@@ -103,10 +107,16 @@ def is_valid(row) -> bool:
 class ValidateRequest(BaseModel):
     email: EmailStr
     code: str
+    purpose: str = "verification"
 
 
 class SendRequest(BaseModel):
     email: EmailStr
+    purpose: str = "verification"
+
+
+def normalize_purpose(purpose: str | None) -> str:
+    return "password_reset" if purpose == "password_reset" else "verification"
 
 
 @app.on_event("startup")
@@ -129,33 +139,41 @@ def health():
 
 
 @app.get("/current")
-def current_code(email: EmailStr):
-    row = get_latest_code(email)
+def current_code(email: EmailStr, purpose: str = "verification"):
+    row = get_latest_code(email, normalize_purpose(purpose))
     if not row:
         return {"code": None, "expires_in": 0, "used": False}
     if row and not is_valid(row):
         return {"code": None, "expires_in": 0, "used": False}
-    _, code, _, created_at, used = row
+    _, code, _, _, created_at, used = row
     expires_in = max(0, CODE_TTL_SECONDS - (int(time.time()) - created_at))
     return {"code": code, "expires_in": expires_in, "used": bool(used)}
 
 
-def invalidate_codes(email: str):
+def invalidate_codes(email: str, purpose: str = "verification"):
     conn = sqlite3.connect(DB_PATH)
-    conn.execute("UPDATE codes SET used = 1 WHERE email = ?", (email,))
+    conn.execute("UPDATE codes SET used = 1 WHERE email = ? AND purpose = ?", (email, purpose))
     conn.commit()
     conn.close()
 
 
-def send_email(to_email: str, code: str):
+def send_email(to_email: str, code: str, purpose: str = "verification"):
     if not BREVO_API_KEY or not BREVO_SENDER_EMAIL:
         raise RuntimeError("Brevo API is not configured.")
-    subject = "Your Skillable verification code"
-    body = (
-        f"Your Skillable verification code is: {code}\n\n"
-        f"This code expires in {CODE_TTL_SECONDS // 60} minutes.\n"
-        f"If you did not request this, ignore this email."
-    )
+    if purpose == "password_reset":
+        subject = "Your Skillable password reset code"
+        body = (
+            f"Your password reset code is: {code}\n\n"
+            f"This code expires in {CODE_TTL_SECONDS // 60} minutes.\n"
+            f"If you did not request a password reset, ignore this email."
+        )
+    else:
+        subject = "Your Skillable verification code"
+        body = (
+            f"Your Skillable verification code is: {code}\n\n"
+            f"This code expires in {CODE_TTL_SECONDS // 60} minutes.\n"
+            f"If you did not request this, ignore this email."
+        )
     payload = {
         "sender": {"name": BREVO_SENDER_NAME, "email": BREVO_SENDER_EMAIL},
         "to": [{"email": to_email}],
@@ -186,22 +204,23 @@ def send_email(to_email: str, code: str):
 
 @app.post("/send")
 def send_code(payload: SendRequest):
+    purpose = normalize_purpose(payload.purpose)
     code = generate_code()
-    invalidate_codes(payload.email)
-    insert_code(payload.email, code)
+    invalidate_codes(payload.email, purpose)
+    insert_code(payload.email, code, purpose)
     try:
-        send_email(payload.email, code)
+        send_email(payload.email, code, purpose)
     except RuntimeError as e:
         logger.error("Email delivery failed for %s: %s", payload.email, e)
         # Invalidate the code we just inserted so the DB stays clean
-        invalidate_codes(payload.email)
+        invalidate_codes(payload.email, purpose)
         raise HTTPException(status_code=503, detail="Could not send verification email. Please try again.")
     return {"sent": True, "expires_in": CODE_TTL_SECONDS}
 
 
 @app.post("/validate")
 def validate(payload: ValidateRequest):
-    row = get_latest_code(payload.email)
+    row = get_latest_code(payload.email, normalize_purpose(payload.purpose))
     if not row or not is_valid(row) or row[1] != payload.code:
         return {"valid": False}
     mark_used(row[0])

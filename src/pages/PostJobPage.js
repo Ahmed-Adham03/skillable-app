@@ -3,6 +3,7 @@ import { CheckCircle2, ClipboardList, Edit3, Lock, MailCheck, Plus, RotateCcw, S
 import { useTranslation } from 'react-i18next';
 import { JOB_LOGOS } from '../data/jobLogos';
 import { canPostJobs } from '../auth/roles';
+import { getAuthToken } from '../auth/session';
 
 const LEVELS = [
   { value: 'Beginner friendly', labelKey: 'beginner' },
@@ -44,7 +45,7 @@ export default function PostJobPage({ theme, themeMode, API_BASE, currentUser, s
   const [editingJobId, setEditingJobId] = useState(null);
 
   const isPoster = canPostJobs(currentUser);
-  const token = localStorage.getItem('skillable_token');
+  const token = getAuthToken();
   const textMuted = themeMode === 'dark' ? 'text-slate-300' : themeMode === 'contrast' ? 'text-white' : 'text-slate-700';
 
   const update = (key) => (e) => setForm((prev) => ({ ...prev, [key]: e.target.value }));

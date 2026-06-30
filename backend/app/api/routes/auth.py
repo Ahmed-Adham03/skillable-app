@@ -11,7 +11,10 @@ from app.core.security import get_password_hash, verify_password, create_access_
 from app.models.user import User
 from app.models.user_role import UserRole
 from app.models.recruiter import RecruiterProfile
-from app.schemas.auth import UserCreate, CompleteRegister, UserLogin, Token
+from app.schemas.auth import (
+    UserCreate, CompleteRegister, UserLogin, Token,
+    PasswordResetRequest, PasswordResetVerify, PasswordResetComplete,
+)
 from app.schemas.user import UserOut
 from app.schemas.profile import ProfileUpdate
 
@@ -24,6 +27,8 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 # ---------------------------------------------------------------------------
 _pending: dict = {}
 _PENDING_TTL = 600  # 10 minutes
+_password_reset_pending: dict = {}
+_PASSWORD_RESET_TTL = 600
 
 
 def _normalize_role(role: str | None) -> str:
@@ -63,14 +68,20 @@ def _clean_pending():
     expired = [k for k, v in _pending.items() if now - v["created_at"] > _PENDING_TTL]
     for k in expired:
         del _pending[k]
+    expired_resets = [
+        k for k, v in _password_reset_pending.items()
+        if now - v["created_at"] > _PASSWORD_RESET_TTL
+    ]
+    for k in expired_resets:
+        del _password_reset_pending[k]
 
 
-def _validate_code(email: str, code: str) -> bool:
+def _validate_code(email: str, code: str, purpose: str = "verification") -> bool:
     """Call the authenticator service to validate a code. Returns True if valid."""
     try:
         res = http_requests.post(
             f"{CODE_API_URL}/validate",
-            json={"email": email, "code": code},
+            json={"email": email, "code": code, "purpose": purpose},
             timeout=10,
         )
         if not res.ok:
@@ -78,6 +89,28 @@ def _validate_code(email: str, code: str) -> bool:
         return res.json().get("valid", False)
     except http_requests.RequestException:
         return False
+
+
+def _send_password_reset_code(email: str) -> bool:
+    try:
+        res = http_requests.post(
+            f"{CODE_API_URL}/send",
+            json={"email": email, "purpose": "password_reset"},
+            timeout=10,
+        )
+        return res.ok
+    except http_requests.RequestException:
+        return False
+
+
+def _validate_password_strength(password: str):
+    has_min = len(password) >= 8
+    has_special = any(not ch.isalnum() for ch in password)
+    if not has_min or not has_special:
+        raise HTTPException(
+            status_code=400,
+            detail="Password must be at least 8 characters and contain a special character.",
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -167,6 +200,50 @@ def login(payload: UserLogin, db: Session = Depends(get_db)):
         raise HTTPException(status_code=401, detail="Invalid email or password")
     token = create_access_token(subject=user.email)
     return Token(access_token=token)
+
+
+@router.post("/password-reset/request")
+def request_password_reset(payload: PasswordResetRequest, db: Session = Depends(get_db)):
+    _clean_pending()
+    user = db.query(User).filter(User.email == payload.email).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="This email is not registered.")
+    if not _send_password_reset_code(payload.email):
+        raise HTTPException(status_code=503, detail="Could not send password reset email. Please try again.")
+    return {"sent": True}
+
+
+@router.post("/password-reset/verify")
+def verify_password_reset(payload: PasswordResetVerify, db: Session = Depends(get_db)):
+    _clean_pending()
+    user = db.query(User).filter(User.email == payload.email).first()
+    if not user or not _validate_code(payload.email, payload.code, "password_reset"):
+        raise HTTPException(status_code=400, detail="Invalid or expired password reset code.")
+
+    _password_reset_pending[payload.email] = {"created_at": int(time.time())}
+    return {"verified": True}
+
+
+@router.post("/password-reset/complete")
+def complete_password_reset(payload: PasswordResetComplete, db: Session = Depends(get_db)):
+    _clean_pending()
+    pending = _password_reset_pending.get(payload.email)
+    if not pending:
+        raise HTTPException(status_code=400, detail="Password reset session expired. Please request a new code.")
+    if int(time.time()) - pending["created_at"] > _PASSWORD_RESET_TTL:
+        del _password_reset_pending[payload.email]
+        raise HTTPException(status_code=400, detail="Password reset session expired. Please request a new code.")
+
+    _validate_password_strength(payload.password)
+    user = db.query(User).filter(User.email == payload.email).first()
+    if not user:
+        del _password_reset_pending[payload.email]
+        raise HTTPException(status_code=400, detail="Password reset session expired. Please request a new code.")
+
+    user.password_hash = get_password_hash(payload.password)
+    db.commit()
+    del _password_reset_pending[payload.email]
+    return {"changed": True}
 
 
 @router.get("/me", response_model=UserOut)

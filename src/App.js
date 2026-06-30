@@ -22,22 +22,27 @@ import PostJobPage from './pages/PostJobPage';
 import OpenRolesPage from './pages/OpenRolesPage';
 import OpenRoleDetailPage from './pages/OpenRoleDetailPage';
 import OpenRoleApplyPage from './pages/OpenRoleApplyPage';
-import { Eye, Accessibility, Volume2, Languages } from 'lucide-react';
+import { Eye, Accessibility, Volume2, Languages, ArrowUp } from 'lucide-react';
 import { buildLearningPlan } from './data/learningCatalog';
 import useSpeechInput from './hooks/useSpeechInput';
 import { canPostJobs, normalizeRole } from './auth/roles';
+import { clearAuthToken, getAuthToken } from './auth/session';
 
 export default function App() {
   const { t } = useTranslation();
   const [lang, setLang] = useState(localStorage.getItem('skillable_lang') || 'en');
 
-  const toggleLanguage = () => {
-    const next = lang === 'en' ? 'ar' : 'en';
+  const setAppLanguage = (next) => {
     setLang(next);
     i18n.changeLanguage(next);
     localStorage.setItem('skillable_lang', next);
     document.documentElement.dir = next === 'ar' ? 'rtl' : 'ltr';
     document.documentElement.lang = next;
+  };
+
+  const toggleLanguage = () => {
+    const next = lang === 'en' ? 'ar' : 'en';
+    setAppLanguage(next);
   };
 
   useEffect(() => {
@@ -91,6 +96,7 @@ export default function App() {
     return Number.isFinite(saved) ? Math.min(Math.max(saved, 90), 140) : 100;
   });
   const [scrolled, setScrolled] = useState(false);
+  const [showScrollTop, setShowScrollTop] = useState(false);
   const [speakOnFocus, setSpeakOnFocus] = useState(() => {
     const saved = localStorage.getItem('skillable_speak_focus');
     return saved === 'true';
@@ -144,7 +150,11 @@ export default function App() {
 
   // --- Effects ---
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 20);
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 20);
+      setShowScrollTop(window.scrollY > 560);
+    };
+    handleScroll();
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
@@ -211,7 +221,7 @@ export default function App() {
   }, [reducedMotion]);
 
   useEffect(() => {
-    const token = localStorage.getItem('skillable_token');
+    const token = getAuthToken();
     if (!token) return;
     fetch(`${API_BASE}/auth/learning-plans`, {
       headers: { Authorization: `Bearer ${token}` }
@@ -222,7 +232,7 @@ export default function App() {
   }, [API_BASE]);
 
   const persistLearningPlans = (plans) => {
-    const token = localStorage.getItem('skillable_token');
+    const token = getAuthToken();
     if (!token) return;
     fetch(`${API_BASE}/auth/learning-plans`, {
       method: 'PUT',
@@ -235,10 +245,14 @@ export default function App() {
   };
 
   useEffect(() => {
-    if (chatMessages.length <= 1) return;
-    const container = chatEndRef.current?.parentElement;
-    if (container) container.scrollTop = container.scrollHeight;
-  }, [chatMessages]);
+    if (!chatMessages.length && !isChatLoading) return;
+    requestAnimationFrame(() => {
+      const container = chatEndRef.current?.parentElement;
+      if (container) {
+        container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
+      }
+    });
+  }, [chatMessages, isChatLoading]);
 
   // --- Theme Controls ---
   const toggleTheme = () => setThemeMode(prev => prev === 'light' ? 'dark' : 'light');
@@ -259,13 +273,17 @@ export default function App() {
     }
 
     if (action.type === 'accessibility') {
+      if (action.target === 'light-mode') {
+        setThemeMode('light');
+        return lang === 'ar' ? 'تمام، رجعت الوضع الفاتح.' : 'Done, I switched back to light mode.';
+      }
       if (action.target === 'dark-mode') {
         setThemeMode('dark');
         return lang === 'ar' ? 'تمام، فعلت الوضع الداكن.' : 'Done, I turned on dark mode.';
       }
-      if (action.target === 'contrast') {
-        activateHighContrast();
-        return lang === 'ar' ? 'تمام، غيرت وضع التباين.' : 'Done, I changed the contrast mode.';
+      if (action.target === 'contrast' || action.target === 'contrast-mode') {
+        setThemeMode('contrast');
+        return lang === 'ar' ? 'تمام، فعلت التباين العالي.' : 'Done, I turned on high contrast.';
       }
       if (action.target === 'increase-font') {
         increaseFont();
@@ -275,6 +293,18 @@ export default function App() {
         decreaseFont();
         return lang === 'ar' ? 'تمام، صغرت الخط.' : 'Done, I decreased the font size.';
       }
+      if (action.target === 'font-reset') {
+        setFontSize(100);
+        return lang === 'ar' ? 'تمام، رجعت حجم الخط الطبيعي.' : 'Done, I reset the font size.';
+      }
+      if (action.target === 'language-ar') {
+        setAppLanguage('ar');
+        return lang === 'ar' ? 'تمام، حولت اللغة للعربي.' : 'Done, I switched the language to Arabic.';
+      }
+      if (action.target === 'language-en') {
+        setAppLanguage('en');
+        return lang === 'ar' ? 'تمام، حولت اللغة للإنجليزي.' : 'Done, I switched the language to English.';
+      }
       if (action.target === 'toggle-language') {
         toggleLanguage();
         return lang === 'ar' ? 'تمام، غيرت اللغة.' : 'Done, I switched the language.';
@@ -282,6 +312,28 @@ export default function App() {
       if (action.target === 'reduce-motion') {
         setReducedMotion(true);
         return lang === 'ar' ? 'تمام، قللت الحركة.' : 'Done, I reduced motion.';
+      }
+      if (action.target === 'motion-on') {
+        setReducedMotion(false);
+        return lang === 'ar' ? 'تمام، رجعت الحركة.' : 'Done, I turned animations back on.';
+      }
+      if (action.target === 'speak-focus-on') {
+        setSpeechEnabled(true);
+        setSpeakOnFocus(true);
+        return lang === 'ar' ? 'تمام، فعلت القراءة عند التركيز.' : 'Done, I turned Speak Focus on.';
+      }
+      if (action.target === 'speak-focus-off') {
+        setSpeakOnFocus(false);
+        return lang === 'ar' ? 'تمام، أوقفت القراءة عند التركيز.' : 'Done, I turned Speak Focus off.';
+      }
+      if (action.target === 'speech-on') {
+        setSpeechEnabled(true);
+        return lang === 'ar' ? 'تمام، فعلت الصوت.' : 'Done, I enabled speech.';
+      }
+      if (action.target === 'speech-off') {
+        setSpeechEnabled(false);
+        setSpeakOnFocus(false);
+        return lang === 'ar' ? 'تمام، أوقفت الصوت.' : 'Done, I turned speech off.';
       }
     }
 
@@ -406,7 +458,7 @@ export default function App() {
   const hasProfileAlert = Boolean(currentUser && isProfileIncomplete(currentUser));
 
   useEffect(() => {
-    const token = localStorage.getItem('skillable_token');
+    const token = getAuthToken();
     if (!token) { setAuthLoading(false); return; }
     fetch(`${API_BASE}/auth/me`, {
       headers: { Authorization: `Bearer ${token}` }
@@ -458,7 +510,7 @@ export default function App() {
   }, [isProfileOpen]);
 
   const handleSignOut = () => {
-    localStorage.removeItem('skillable_token');
+    clearAuthToken();
     setCurrentUser(null);
     setIsProfileOpen(false);
     setShowPersonalizeHint(false);
@@ -808,6 +860,17 @@ export default function App() {
           voiceError={voiceError}
           toggleVoiceInput={toggleVoiceInput}
         />
+      )}
+
+      {showScrollTop && location.pathname !== '/onboarding' && (
+        <button
+          type="button"
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          className={`fixed z-[65] bottom-24 ${lang === 'ar' ? 'left-5' : 'right-5'} w-12 h-12 rounded-2xl flex items-center justify-center shadow-2xl border transition-all hover:-translate-y-1 ${themeMode === 'contrast' ? 'bg-[#FFFF00] text-black border-black' : themeMode === 'dark' ? 'bg-slate-900/90 text-white border-white/10 hover:bg-slate-800' : 'bg-white/95 text-slate-900 border-slate-200 hover:bg-slate-50'}`}
+          aria-label="Scroll to top"
+        >
+          <ArrowUp size={20} strokeWidth={2.5} />
+        </button>
       )}
 
       {location.pathname !== '/onboarding' && <Footer theme={theme} themeMode={themeMode} setActiveTab={setActiveTab} />}

@@ -3,6 +3,7 @@ import { useGoogleLogin } from '@react-oauth/google';
 import { User, Sparkles, CheckCircle, Users, Award, Bot } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { normalizeRole } from '../auth/roles';
+import { saveAuthToken } from '../auth/session';
 
 // Isolated component so useGoogleLogin only mounts when a clientId exists
 function GoogleLoginButton({ onSuccess, onError, className }) {
@@ -56,6 +57,9 @@ export default function AuthPage({
   const [pendingToken, setPendingToken] = useState('');
   const [resendCooldown, setResendCooldown] = useState(0);
   const [isNewUser, setIsNewUser] = useState(false);
+  const [keepSignedIn, setKeepSignedIn] = useState(false);
+  const [resetPassword, setResetPassword] = useState('');
+  const [resetConfirmPassword, setResetConfirmPassword] = useState('');
 
   const [socialError, setSocialError] = useState('');
 
@@ -80,7 +84,7 @@ export default function AuthPage({
         throw new Error(d.detail || 'Sign-in failed.');
       }
       const data = await res.json();
-      localStorage.setItem('skillable_token', data.access_token);
+      saveAuthToken(data.access_token, keepSignedIn);
       const meRes = await fetch(`${API_BASE}/auth/me`, {
         headers: { Authorization: `Bearer ${data.access_token}` },
       });
@@ -103,6 +107,42 @@ export default function AuthPage({
   };
 
   const hasGoogleClientId = Boolean(process.env.REACT_APP_GOOGLE_CLIENT_ID);
+
+  const resetCodeInputs = () => setCodeInput(['', '', '', '', '', '']);
+
+  const startPasswordReset = () => {
+    setFormError('');
+    setFormSuccess('');
+    setFieldErrors({});
+    resetCodeInputs();
+    setResetPassword('');
+    setResetConfirmPassword('');
+    setStep('reset-email');
+  };
+
+  const returnToSignIn = () => {
+    setFormError('');
+    setFieldErrors({});
+    setStep('credentials');
+  };
+
+  const validateNewPassword = (nextPassword, nextConfirmPassword) => {
+    const hasMin = nextPassword.length >= 8;
+    const hasSpecial = /[^A-Za-z0-9]/.test(nextPassword);
+    const emailLower = (email || '').toLowerCase();
+    const passwordLower = nextPassword.toLowerCase();
+    const containsEmail = emailLower && passwordLower.includes(emailLower);
+
+    if (!hasMin || !hasSpecial || containsEmail) {
+      const messages = [];
+      if (!hasMin) messages.push('at least 8 characters');
+      if (!hasSpecial) messages.push('a special character');
+      if (containsEmail) messages.push('not include your email');
+      return `Password must contain ${messages.join(', ')}.`;
+    }
+    if (nextPassword !== nextConfirmPassword) return t('auth.passwordsMismatch');
+    return '';
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -206,6 +246,105 @@ export default function AuthPage({
     }
   };
 
+  const handlePasswordResetRequest = async (e) => {
+    e.preventDefault();
+    setFormError('');
+    setFormSuccess('');
+    setFieldErrors({});
+    if (!email) {
+      setFormError(t('auth.emailRequired'));
+      setFieldErrors({ email: t('auth.emailRequired') });
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const res = await fetch(`${API_BASE}/auth/password-reset/request`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(res.status === 404 ? t('auth.emailNotRegistered') : (data.detail || t('auth.passwordResetSendFail')));
+      }
+      resetCodeInputs();
+      setStep('reset-code');
+      setFormSuccess(t('auth.passwordResetCodeSent'));
+    } catch (err) {
+      setFormError(err.message || t('auth.passwordResetSendFail'));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handlePasswordResetCodeSubmit = async (e) => {
+    e.preventDefault();
+    setFormError('');
+    setFormSuccess('');
+    const code = codeInput.join('');
+    if (code.length !== 6) {
+      setFormError(t('auth.codeEnterSix'));
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const res = await fetch(`${API_BASE}/auth/password-reset/verify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, code })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.detail || t('auth.codeInvalid'));
+      setStep('reset-password');
+      setFormSuccess(t('auth.passwordResetVerified'));
+    } catch (err) {
+      setFormError(err.message || t('auth.codeInvalid'));
+      resetCodeInputs();
+      setTimeout(() => codeRefs.current[0]?.focus(), 0);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handlePasswordResetComplete = async (e) => {
+    e.preventDefault();
+    setFormError('');
+    setFormSuccess('');
+    setFieldErrors({});
+    const passwordError = validateNewPassword(resetPassword, resetConfirmPassword);
+    if (passwordError) {
+      setFormError(passwordError);
+      setFieldErrors({
+        password: passwordError,
+        confirmPassword: resetPassword !== resetConfirmPassword ? t('auth.passwordsMismatch') : ''
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const res = await fetch(`${API_BASE}/auth/password-reset/complete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password: resetPassword })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.detail || t('auth.passwordResetFail'));
+      setPassword('');
+      setResetPassword('');
+      setResetConfirmPassword('');
+      resetCodeInputs();
+      setStep('credentials');
+      setFormSuccess(t('auth.passwordChanged'));
+    } catch (err) {
+      setFormError(err.message || t('auth.passwordResetFail'));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleCodeSubmit = async (e) => {
     e.preventDefault();
     setFormError('');
@@ -251,7 +390,7 @@ export default function AuthPage({
         }
       }
 
-      localStorage.setItem('skillable_token', token);
+      saveAuthToken(token, keepSignedIn);
       const meRes = await fetch(`${API_BASE}/auth/me`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -298,8 +437,9 @@ export default function AuthPage({
   };
 
   useEffect(() => {
-    if (step !== 'code') return;
-    if (codeInput.join('').length === 6) handleCodeSubmit({ preventDefault: () => {} });
+    if (codeInput.join('').length !== 6) return;
+    if (step === 'code') handleCodeSubmit({ preventDefault: () => {} });
+    if (step === 'reset-code') handlePasswordResetCodeSubmit({ preventDefault: () => {} });
   }, [codeInput]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
@@ -323,7 +463,154 @@ export default function AuthPage({
             <h1 className="text-4xl lg:text-5xl font-black mb-4">{title}</h1>
             <p className={`mb-8 ${theme.textSecondary}`}>{subtitle}</p>
 
-            {step === 'code' ? (
+            {step === 'reset-email' ? (
+              <form className="space-y-5" onSubmit={handlePasswordResetRequest}>
+                <div className="space-y-2">
+                  <label className="text-sm font-bold" htmlFor={`${variant}-reset-email`}>{t('auth.emailAddress')}</label>
+                  <input
+                    id={`${variant}-reset-email`}
+                    aria-invalid={Boolean(fieldErrors.email)}
+                    aria-describedby={fieldErrors.email ? `${variant}-reset-email-error` : undefined}
+                    className={`w-full p-4 rounded-xl border ${theme.input}`}
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
+                  {fieldErrors.email && (
+                    <div id={`${variant}-reset-email-error`} className="text-xs text-red-500 font-semibold">
+                      {fieldErrors.email}
+                    </div>
+                  )}
+                </div>
+                {formError && <div role="alert" className="text-sm text-red-500 font-semibold">{t('auth.errorPrefix')}{formError}</div>}
+                {formSuccess && <div role="status" className="text-sm text-green-600 font-semibold">{formSuccess}</div>}
+                <button type="submit" className={`w-full py-4 rounded-xl font-bold ${theme.primaryBtn}`}>
+                  {isSubmitting ? t('auth.pleaseWait') : t('auth.sendResetCode')}
+                </button>
+                <button
+                  type="button"
+                  onClick={returnToSignIn}
+                  className={`w-full py-3 rounded-xl font-bold border ${themeMode === 'contrast' ? 'border-white' : 'border-slate-700'}`}
+                >
+                  {t('auth.backToSignIn')}
+                </button>
+              </form>
+            ) : step === 'reset-code' ? (
+              <form className="space-y-5" onSubmit={handlePasswordResetCodeSubmit}>
+                <div className="space-y-3">
+                  <label className="text-sm font-bold">{t('auth.passwordResetCode')}</label>
+                  <div className="flex gap-3 justify-center">
+                    {codeInput.map((digit, i) => (
+                      <input
+                        key={i}
+                        ref={(el) => (codeRefs.current[i] = el)}
+                        className={`w-12 h-14 text-center text-xl font-bold rounded-xl border ${theme.input}`}
+                        value={digit}
+                        inputMode="numeric"
+                        maxLength={1}
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/\D/g, '').slice(-1);
+                          const next = [...codeInput];
+                          next[i] = val;
+                          setCodeInput(next);
+                          if (val && i < 5) codeRefs.current[i + 1]?.focus();
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Backspace' && !codeInput[i] && i > 0) {
+                            codeRefs.current[i - 1]?.focus();
+                          }
+                        }}
+                        onPaste={(e) => {
+                          e.preventDefault();
+                          const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+                          const next = [...codeInput];
+                          pasted.split('').forEach((ch, j) => { next[j] = ch; });
+                          setCodeInput(next);
+                          const focusIdx = Math.min(pasted.length, 5);
+                          codeRefs.current[focusIdx]?.focus();
+                        }}
+                      />
+                    ))}
+                  </div>
+                </div>
+                {formError && <div role="alert" className="text-sm text-red-500 font-semibold">{t('auth.errorPrefix')}{formError}</div>}
+                {formSuccess && <div role="status" className="text-sm text-green-600 font-semibold">{formSuccess}</div>}
+                <button type="submit" className={`w-full py-4 rounded-xl font-bold ${theme.primaryBtn}`}>
+                  {isSubmitting ? t('auth.pleaseWait') : t('auth.verifyCode')}
+                </button>
+                <button
+                  type="button"
+                  onClick={handlePasswordResetRequest}
+                  className={`w-full py-3 rounded-xl font-bold border ${themeMode === 'contrast' ? 'border-white' : 'border-slate-700'}`}
+                >
+                  {t('auth.resendCode')}
+                </button>
+              </form>
+            ) : step === 'reset-password' ? (
+              <form className="space-y-5" onSubmit={handlePasswordResetComplete}>
+                <div className="space-y-2">
+                  <label className="text-sm font-bold" htmlFor={`${variant}-new-password`}>{t('auth.newPassword')}</label>
+                  <div className="relative">
+                    <input
+                      id={`${variant}-new-password`}
+                      aria-invalid={Boolean(fieldErrors.password)}
+                      aria-describedby={fieldErrors.password ? `${variant}-new-password-error` : undefined}
+                      className={`w-full p-4 pr-24 rounded-xl border ${theme.input}`}
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="••••••••"
+                      value={resetPassword}
+                      onChange={(e) => setResetPassword(e.target.value)}
+                    />
+                    <button
+                      type="button"
+                      aria-label={showPassword ? t('auth.hide') : t('auth.show')}
+                      onClick={() => setShowPassword((prev) => !prev)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold opacity-70"
+                    >
+                      {showPassword ? t('auth.hide') : t('auth.show')}
+                    </button>
+                  </div>
+                  {fieldErrors.password && (
+                    <div id={`${variant}-new-password-error`} className="text-xs text-red-500 font-semibold">
+                      {fieldErrors.password}
+                    </div>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-bold" htmlFor={`${variant}-confirm-new-password`}>{t('auth.confirmNewPassword')}</label>
+                  <div className="relative">
+                    <input
+                      id={`${variant}-confirm-new-password`}
+                      aria-invalid={Boolean(fieldErrors.confirmPassword)}
+                      aria-describedby={fieldErrors.confirmPassword ? `${variant}-confirm-new-password-error` : undefined}
+                      className={`w-full p-4 pr-24 rounded-xl border ${theme.input}`}
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      placeholder="••••••••"
+                      value={resetConfirmPassword}
+                      onChange={(e) => setResetConfirmPassword(e.target.value)}
+                    />
+                    <button
+                      type="button"
+                      aria-label={showConfirmPassword ? t('auth.hide') : t('auth.show')}
+                      onClick={() => setShowConfirmPassword((prev) => !prev)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold opacity-70"
+                    >
+                      {showConfirmPassword ? t('auth.hide') : t('auth.show')}
+                    </button>
+                  </div>
+                  {fieldErrors.confirmPassword && (
+                    <div id={`${variant}-confirm-new-password-error`} className="text-xs text-red-500 font-semibold">
+                      {fieldErrors.confirmPassword}
+                    </div>
+                  )}
+                </div>
+                {formError && <div role="alert" className="text-sm text-red-500 font-semibold">{t('auth.errorPrefix')}{formError}</div>}
+                {formSuccess && <div role="status" className="text-sm text-green-600 font-semibold">{formSuccess}</div>}
+                <button type="submit" className={`w-full py-4 rounded-xl font-bold ${theme.primaryBtn}`}>
+                  {isSubmitting ? t('auth.pleaseWait') : t('auth.changePassword')}
+                </button>
+              </form>
+            ) : step === 'code' ? (
               <form className="space-y-5" onSubmit={handleCodeSubmit}>
                 <div className="space-y-3">
                   <label className="text-sm font-bold">{t('auth.authenticatorCode')}</label>
@@ -512,11 +799,19 @@ export default function AuthPage({
               )}
 
               <div className="flex items-center justify-between text-sm">
-                <label className="flex items-center gap-2 font-semibold">
-                  <input type="checkbox" className="w-4 h-4 accent-indigo-500" />
+                <label className="flex items-center gap-2 font-semibold" htmlFor={`${variant}-keep-signed-in`}>
+                  <input
+                    id={`${variant}-keep-signed-in`}
+                    type="checkbox"
+                    className="w-4 h-4 accent-indigo-500"
+                    checked={keepSignedIn}
+                    onChange={(e) => setKeepSignedIn(e.target.checked)}
+                  />
                   {t('auth.keepSignedIn')}
                 </label>
-                <button type="button" className={`font-bold ${theme.accent}`}>{t('auth.forgotPassword')}</button>
+                {isLogin && (
+                  <button type="button" onClick={startPasswordReset} className={`font-bold ${theme.accent}`}>{t('auth.forgotPassword')}</button>
+                )}
               </div>
 
               {formError && <div role="alert" className="text-sm text-red-500 font-semibold">{t('auth.errorPrefix')}{formError}</div>}

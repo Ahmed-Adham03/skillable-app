@@ -4,6 +4,7 @@ import {
   Briefcase, Compass, GraduationCap, HeartHandshake, Rocket,
   Check, ArrowRight, ArrowLeft, ChevronRight,
 } from 'lucide-react';
+import { getAuthToken } from '../auth/session';
 
 const QUESTIONS = [
   {
@@ -93,7 +94,7 @@ export default function OnboardingPage({ theme, themeMode, setActiveTab, API_BAS
   const [selected, setSelected] = useState(null);
   const [completing, setCompleting] = useState(false);
 
-  const token = localStorage.getItem('skillable_token');
+  const token = getAuthToken();
   const current = QUESTIONS[currentStep];
   const colors = STEP_COLORS[currentStep];
   const isDark = themeMode === 'dark';

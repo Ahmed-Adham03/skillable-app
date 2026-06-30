@@ -1,0 +1,79 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Skillable: Start All",
+      "dependsOrder": "parallel",
+      "dependsOn": [
+        "Skillable: Frontend :3000",
+        "Skillable: Backend :8000",
+        "Skillable: Authenticator :9100",
+        "Skillable: Matching :9000"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Skillable: Frontend :3000",
+      "type": "shell",
+      "command": "${workspaceFolder}/scripts/run-skillable-service.command frontend",
+      "isBackground": true,
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "skillable"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Skillable: Backend :8000",
+      "type": "shell",
+      "command": "${workspaceFolder}/scripts/run-skillable-service.command backend",
+      "isBackground": true,
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "skillable"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Skillable: Authenticator :9100",
+      "type": "shell",
+      "command": "${workspaceFolder}/scripts/run-skillable-service.command authenticator",
+      "isBackground": true,
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "skillable"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Skillable: Matching :9000",
+      "type": "shell",
+      "command": "${workspaceFolder}/scripts/run-skillable-service.command matching",
+      "isBackground": true,
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "skillable"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Skillable: Preflight Check",
+      "type": "shell",
+      "command": "${workspaceFolder}/scripts/start-skillable.command --check",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "skillable"
+      },
+      "problemMatcher": []
+    }
+  ]
+}
