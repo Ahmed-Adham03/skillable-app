@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import get_db, get_current_user
 from app.core.config import CODE_API_URL  # used for validate only
+from app.core.field_encryption import SENSITIVE_PROFILE_FIELDS, decrypt_field, encrypt_field
 from app.core.security import get_password_hash, verify_password, create_access_token
 from app.models.user import User
 from app.models.user_role import UserRole
@@ -59,6 +60,8 @@ def _user_out(db: Session, user: User) -> dict:
         user.learning_plans = []
     role = db.query(UserRole).filter(UserRole.user_id == user.id).first()
     data = UserOut.model_validate(user).model_dump()
+    for field in SENSITIVE_PROFILE_FIELDS:
+        data[field] = decrypt_field(data.get(field))
     data["role"] = _normalize_role(role.role if role else None)
     return data
 
@@ -186,7 +189,7 @@ def complete_register(payload: CompleteRegister, db: Session = Depends(get_db)):
     del _pending[payload.email]
 
     token = create_access_token(subject=user.email)
-    return Token(access_token=token)
+    return Token(access_token=token, is_new_user=True)
 
 
 # ---------------------------------------------------------------------------
@@ -311,12 +314,12 @@ def update_profile(
     current_user.full_name        = full_name
     if "profile_image" in payload.model_fields_set:
         current_user.profile_image = _normalize_profile_image(payload.profile_image)
-    current_user.phone_number     = phone_number
-    current_user.address          = address
-    current_user.mobility         = normalize(payload.mobility)
-    current_user.vision           = normalize(payload.vision)
-    current_user.hearing          = normalize(payload.hearing)
-    current_user.cognitive        = normalize(payload.cognitive)
+    current_user.phone_number     = encrypt_field(phone_number)
+    current_user.address          = encrypt_field(address)
+    current_user.mobility         = encrypt_field(normalize(payload.mobility))
+    current_user.vision           = encrypt_field(normalize(payload.vision))
+    current_user.hearing          = encrypt_field(normalize(payload.hearing))
+    current_user.cognitive        = encrypt_field(normalize(payload.cognitive))
     current_user.experience_level = experience_level
     current_user.skills           = cleaned_skills
 

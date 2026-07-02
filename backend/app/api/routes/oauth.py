@@ -21,9 +21,11 @@ from app.schemas.auth import Token
 
 router = APIRouter(prefix="/auth/oauth", tags=["oauth"])
 
-def _find_or_create_user(db: Session, email: str, full_name: str, role: str = "job_seeker") -> User:
+def _find_or_create_user(db: Session, email: str, full_name: str, role: str = "job_seeker") -> tuple[User, bool]:
     user = db.query(User).filter(User.email == email).first()
+    is_new_user = False
     if not user:
+        is_new_user = True
         user = User(
             full_name=full_name or email.split("@")[0],
             email=email,
@@ -49,7 +51,7 @@ def _find_or_create_user(db: Session, email: str, full_name: str, role: str = "j
                 organization_name=full_name or "N/A",
             ))
         db.commit()
-    return user
+    return user, is_new_user
 
 
 # ── Google ────────────────────────────────────────────────────────────────────
@@ -81,8 +83,8 @@ def google_login(payload: GooglePayload, db: Session = Depends(get_db)):
     if not email:
         raise HTTPException(status_code=400, detail="Google account has no email.")
 
-    user = _find_or_create_user(db, email, info.get("name", ""), role=payload.role or "job_seeker")
-    return Token(access_token=create_access_token(subject=user.email))
+    user, is_new_user = _find_or_create_user(db, email, info.get("name", ""), role=payload.role or "job_seeker")
+    return Token(access_token=create_access_token(subject=user.email), is_new_user=is_new_user)
 
 
 # ── LinkedIn ──────────────────────────────────────────────────────────────────
@@ -133,8 +135,8 @@ def linkedin_login(payload: LinkedInPayload, db: Session = Depends(get_db)):
     if not email:
         raise HTTPException(status_code=400, detail="LinkedIn account has no email. Enable the 'email' scope.")
 
-    user = _find_or_create_user(db, email, info.get("name", ""), role=payload.role or "job_seeker")
-    return Token(access_token=create_access_token(subject=user.email))
+    user, is_new_user = _find_or_create_user(db, email, info.get("name", ""), role=payload.role or "job_seeker")
+    return Token(access_token=create_access_token(subject=user.email), is_new_user=is_new_user)
 
 
 # ── Facebook ──────────────────────────────────────────────────────────────────
@@ -186,5 +188,5 @@ def facebook_login(payload: FacebookPayload, db: Session = Depends(get_db)):
             detail="Facebook account has no email. Ensure the 'email' permission is granted.",
         )
 
-    user = _find_or_create_user(db, email, profile.get("name", ""), role=payload.role or "job_seeker")
-    return Token(access_token=create_access_token(subject=user.email))
+    user, is_new_user = _find_or_create_user(db, email, profile.get("name", ""), role=payload.role or "job_seeker")
+    return Token(access_token=create_access_token(subject=user.email), is_new_user=is_new_user)

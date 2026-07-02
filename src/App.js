@@ -10,6 +10,7 @@ import HomePage from './pages/HomePage';
 import AuthPage from './pages/AuthPage';
 import AccessibilityFeaturesPage from './pages/AccessibilityFeaturesPage';
 import AccessibilityStatementPage from './pages/AccessibilityStatementPage';
+import PrivacyPage from './pages/PrivacyPage';
 import ProfilePage from './pages/ProfilePage';
 import JobDetailsPage from './pages/JobDetailsPage';
 import SkillDetailPage from './pages/SkillDetailPage';
@@ -66,6 +67,7 @@ export default function App() {
     'skill-detail': '/skill-detail',
     'accessibility-features': '/accessibility-features',
     'accessibility-statement': '/accessibility-statement',
+    privacy: '/privacy',
     'cv-generator': '/cv-generator',
     profile: '/profile',
     'post-job': '/post-job',
@@ -759,6 +761,9 @@ export default function App() {
           } />
           <Route path="/accessibility-statement" element={
             <AccessibilityStatementPage theme={theme} themeMode={themeMode} />
+          } />
+          <Route path="/privacy" element={
+            <PrivacyPage theme={theme} themeMode={themeMode} />
           } />
           <Route path="/cv-generator" element={
             currentUser ? (

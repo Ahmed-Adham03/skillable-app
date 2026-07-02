@@ -16,11 +16,27 @@ router = APIRouter(prefix="/chat", tags=["chat"])
 
 OPENROUTER_URL = os.getenv("OPENROUTER_URL", "https://openrouter.ai/api/v1/chat/completions")
 AGENTROUTER_URL = os.getenv("AGENTROUTER_URL", "https://agentrouter.org/v1/chat/completions")
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
+logger = logging.getLogger(__name__)
+
+
+def clean_secret(value: str | None) -> str:
+    value = (value or "").strip()
+    lowered = value.lower()
+    if not value or lowered.startswith("your_") or "your_" in lowered or lowered in {"changeme", "change-me"}:
+        return ""
+    return value
+
+
+GEMINI_API_KEY = clean_secret(os.getenv("GEMINI_API_KEY"))
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-1.5-flash").strip()
+GEMINI_FALLBACK_MODELS = [
+    model.strip()
+    for model in os.getenv("GEMINI_FALLBACK_MODELS", "gemini-1.5-flash,gemini-1.5-flash-latest").split(",")
+    if model.strip()
+]
 CHAT_PROVIDER = os.getenv("CHAT_PROVIDER", "").strip().lower()
 if not CHAT_PROVIDER:
-    CHAT_PROVIDER = "gemini" if GEMINI_API_KEY else ("openrouter" if os.getenv("OPENROUTER_API_KEY") else "agentrouter")
+    CHAT_PROVIDER = "gemini" if GEMINI_API_KEY else ("openrouter" if clean_secret(os.getenv("OPENROUTER_API_KEY")) else "agentrouter")
 DEFAULT_MODEL = os.getenv(
     "CHAT_MODEL",
     "deepseek/deepseek-chat-v3.1:free" if CHAT_PROVIDER == "openrouter" else "deepseek-v4-flash",
@@ -77,9 +93,9 @@ def provider_has_key(provider: str) -> bool:
     if provider == "gemini":
         return bool(GEMINI_API_KEY)
     if provider == "openrouter":
-        return bool(os.getenv("OPENROUTER_API_KEY"))
+        return bool(clean_secret(os.getenv("OPENROUTER_API_KEY")))
     if provider == "agentrouter":
-        return bool(os.getenv("AGENTROUTER_API_KEY"))
+        return bool(clean_secret(os.getenv("AGENTROUTER_API_KEY")))
     return False
 
 
@@ -98,7 +114,7 @@ async def call_openai_compatible_provider(
     max_tokens: int,
     temperature: float,
 ) -> dict | None:
-    api_key = os.getenv("OPENROUTER_API_KEY") if provider == "openrouter" else os.getenv("AGENTROUTER_API_KEY")
+    api_key = clean_secret(os.getenv("OPENROUTER_API_KEY")) if provider == "openrouter" else clean_secret(os.getenv("AGENTROUTER_API_KEY"))
     if not api_key:
         return None
 
@@ -128,7 +144,7 @@ async def call_openai_compatible_provider(
     }
     response = await post_chat_request(url, headers, body)
     if response.status_code != 200:
-        logging.error(f"Provider {provider} failed with status {response.status_code}: {response.text}")
+        logger.warning("Provider %s failed with status %s: %s", provider, response.status_code, response.text[:500])
         return None
     return response.json()
 
@@ -159,18 +175,27 @@ async def call_gemini_provider(
             "temperature": temperature,
         },
     }
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent?key={GEMINI_API_KEY}"
-    async with httpx.AsyncClient(timeout=CHAT_TIMEOUT_SECONDS) as client:
-        response = await client.post(url, headers={"Content-Type": "application/json"}, json=body)
-    if response.status_code != 200:
-        logging.error(f"Gemini failed with status {response.status_code}: {response.text}")
-        return None
+    model_candidates = []
+    for model in [GEMINI_MODEL, *GEMINI_FALLBACK_MODELS]:
+        if model and model not in model_candidates:
+            model_candidates.append(model)
 
-    data = response.json()
-    content = data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
-    if not content:
-        return None
-    return {"choices": [{"message": {"role": "assistant", "content": content}}]}
+    async with httpx.AsyncClient(timeout=CHAT_TIMEOUT_SECONDS) as client:
+        for model in model_candidates:
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={GEMINI_API_KEY}"
+            response = await client.post(url, headers={"Content-Type": "application/json"}, json=body)
+            if response.status_code != 200:
+                logger.warning("Gemini model %s failed with status %s: %s", model, response.status_code, response.text[:500])
+                continue
+
+            data = response.json()
+            content = data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
+            if content:
+                return {
+                    "choices": [{"message": {"role": "assistant", "content": content}}],
+                    "model": model,
+                }
+    return None
 
 ACTION_PATTERNS = [
     ("navigate", "open-roles", ["open roles", "available jobs", "jobs page", "job opportunities", "الوظائف", "وظائف", "فرص العمل"]),
@@ -619,14 +644,14 @@ async def chat_completions(payload: ChatRequest):
     messages.extend({"role": msg.role, "content": msg.content} for msg in payload.messages)
     site_action = detect_site_action(messages)
 
-    logging.error(f"Starting chat completions. Providers: {provider_order()}")
+    logger.info("Starting chat completions. Providers: %s", provider_order())
 
     for provider in provider_order():
         if not provider_has_key(provider):
-            logging.error(f"Provider {provider} does not have a key.")
+            logger.info("Provider %s does not have a configured key.", provider)
             continue
         try:
-            logging.error(f"Trying provider {provider}...")
+            logger.info("Trying provider %s.", provider)
             if provider == "gemini":
                 data = await call_gemini_provider(messages, payload.max_tokens, payload.temperature)
             elif provider in {"openrouter", "agentrouter"}:
@@ -639,9 +664,9 @@ async def chat_completions(payload: ChatRequest):
                 )
             else:
                 data = None
-            logging.error(f"Provider {provider} returned data: {data}")
+            logger.info("Provider %s %s.", provider, "returned a response" if data else "returned no usable response")
         except Exception as e:
-            logging.error(f"Provider {provider} threw exception: {repr(e)}")
+            logger.warning("Provider %s threw exception: %r", provider, e)
             data = None
 
         if data:
@@ -650,5 +675,5 @@ async def chat_completions(payload: ChatRequest):
             data["provider"] = provider
             return data
 
-    logging.error("All providers failed. Falling back to local response.")
+    logger.warning("All providers failed. Falling back to local response.")
     return build_local_chat_response(messages, site_action)

@@ -99,7 +99,7 @@ export default function AuthPage({
             .then((plans) => setLearningPlans(Array.isArray(plans) ? plans : []))
             .catch(() => {});
         }
-        setActiveTab('home');
+        setActiveTab(data.is_new_user ? 'onboarding' : 'home');
       }
     } catch (err) {
       setSocialError(err.message || 'Social sign-in failed.');

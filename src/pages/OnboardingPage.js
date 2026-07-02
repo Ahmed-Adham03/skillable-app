@@ -209,6 +209,13 @@ export default function OnboardingPage({ theme, themeMode, setActiveTab, API_BAS
 
         {/* Progress bar + step pills */}
         <div className="mb-10">
+          {currentStep === 0 && (
+            <div
+              className={`mb-6 p-4 rounded-2xl border text-sm leading-relaxed ${isDark ? 'bg-white/5 border-white/10 text-slate-300' : 'bg-white/80 border-slate-200 text-slate-600'}`}
+            >
+              Your answers help Skillable personalize career recommendations. Accessibility-related answers are used for matching and guidance, and sensitive profile details are protected by the backend.
+            </div>
+          )}
           <div className="flex items-center gap-2 mb-3">
             {QUESTIONS.map((_, i) => {
               const done = i < currentStep;

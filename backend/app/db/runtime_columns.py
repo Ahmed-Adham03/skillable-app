@@ -1,6 +1,7 @@
 from sqlalchemy import inspect, text
 from sqlalchemy.orm import Session
 
+from app.core.field_encryption import ENCRYPTED_PREFIX, SENSITIVE_PROFILE_FIELDS, encrypt_field
 from app.models.user import User
 from app.models.user_role import UserRole
 from app.models.recruiter import RecruiterProfile
@@ -22,6 +23,12 @@ def ensure_runtime_records(db: Session):
         db.execute(text("ALTER TABLE users MODIFY COLUMN profile_image LONGTEXT NULL"))
         db.commit()
 
+    if User.__tablename__ in table_names and db.bind.dialect.name == "mysql":
+        for column_name in SENSITIVE_PROFILE_FIELDS:
+            if column_name in user_columns:
+                db.execute(text(f"ALTER TABLE users MODIFY COLUMN {column_name} TEXT NOT NULL"))
+        db.commit()
+
     if OpenJob.__tablename__ in table_names:
         open_job_columns = {column["name"] for column in inspector.get_columns(OpenJob.__tablename__)}
         if "contact_email" not in open_job_columns:
@@ -32,7 +39,14 @@ def ensure_runtime_records(db: Session):
             db.commit()
 
     users = db.query(User).all()
+    encrypted_any = False
     for user in users:
+        for field_name in SENSITIVE_PROFILE_FIELDS:
+            value = getattr(user, field_name, None)
+            if value and value != "N/A" and not str(value).startswith(ENCRYPTED_PREFIX):
+                setattr(user, field_name, encrypt_field(value))
+                encrypted_any = True
+
         existing = db.query(UserRole).filter(UserRole.user_id == user.id).first()
         if existing:
             continue
