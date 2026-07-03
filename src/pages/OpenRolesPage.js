@@ -1,9 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ArrowRight, BriefcaseBusiness, Building2, Clock, Layers, MapPin, Search } from 'lucide-react';
 import { getJobLogo } from '../data/jobLogos';
 import { canPostJobs } from '../auth/roles';
 
 export default function OpenRolesPage({ theme, themeMode, API_BASE, currentUser, onSelectRole, setActiveTab }) {
+  const { t } = useTranslation();
   const [roles, setRoles] = useState([]);
   const [query, setQuery] = useState('');
   const [levelFilter, setLevelFilter] = useState('All');
@@ -52,10 +54,10 @@ export default function OpenRolesPage({ theme, themeMode, API_BASE, currentUser,
     <div className="animate-fade-in py-12 px-6 max-w-7xl mx-auto">
       <div className="mb-10 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
         <div>
-          <p className={`text-xs font-black uppercase tracking-widest mb-2 ${theme.accent}`}>Live opportunities</p>
-          <h1 className="text-4xl lg:text-5xl font-black mb-3">Open roles</h1>
+          <p className={`text-xs font-black uppercase tracking-widest mb-2 ${theme.accent}`}>{t('openRolesPage.badge')}</p>
+          <h1 className="text-4xl lg:text-5xl font-black mb-3">{t('openRolesPage.title')}</h1>
           <p className={`max-w-3xl text-lg ${theme.textSecondary}`}>
-            Real jobs shared by employers and partners. These are separate from learning paths: browse the role, check the needed skills, then decide if it fits your accessibility needs.
+            {t('openRolesPage.subtitle')}
           </p>
         </div>
         {canShareRole && (
@@ -64,7 +66,7 @@ export default function OpenRolesPage({ theme, themeMode, API_BASE, currentUser,
             className={`px-5 py-3 rounded-xl font-black inline-flex items-center gap-2 ${theme.primaryBtn}`}
           >
             <BriefcaseBusiness size={17} />
-            Share a role
+            {t('openRolesPage.shareRole')}
           </button>
         )}
       </div>
@@ -76,7 +78,7 @@ export default function OpenRolesPage({ theme, themeMode, API_BASE, currentUser,
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             className={`w-full pl-12 pr-4 py-3 rounded-xl border outline-none ${theme.input}`}
-            placeholder="Search by role, place, skill, or location..."
+            placeholder={t('openRolesPage.searchPlaceholder')}
             aria-label="Search open roles"
           />
         </div>
@@ -94,8 +96,8 @@ export default function OpenRolesPage({ theme, themeMode, API_BASE, currentUser,
 
       {!status && filteredRoles.length === 0 && (
         <div className={`p-8 rounded-3xl text-center ${theme.card}`}>
-          <h2 className="text-2xl font-black mb-2">No open roles found</h2>
-          <p className={theme.textSecondary}>Try a different search or check again when partners share new roles.</p>
+          <h2 className="text-2xl font-black mb-2">{t('openRolesPage.noRolesTitle')}</h2>
+          <p className={theme.textSecondary}>{t('openRolesPage.noRolesSubtitle')}</p>
         </div>
       )}
 

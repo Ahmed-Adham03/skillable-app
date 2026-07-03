@@ -5,6 +5,7 @@ import {
   PersonStanding, Pencil, Lock, Heart, Sparkles, Globe, ShieldCheck,
   Camera, Trash2
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { getAuthToken } from '../auth/session';
 
 const GOVERNORATES = [
@@ -25,17 +26,17 @@ const NEED_LEVELS = [
 ];
 
 const NEED_DIMS = [
-  { key: 'mobility',  label: 'Mobility',      Icon: PersonStanding },
-  { key: 'vision',    label: 'Vision',         Icon: Eye },
-  { key: 'hearing',   label: 'Hearing',        Icon: Ear },
-  { key: 'cognitive', label: 'Cognitive',      Icon: Brain },
+  { key: 'mobility',  labelKey: 'mobility',    label: 'Mobility',      Icon: PersonStanding },
+  { key: 'vision',    labelKey: 'vision',      label: 'Vision',         Icon: Eye },
+  { key: 'hearing',   labelKey: 'hearing',     label: 'Hearing',        Icon: Ear },
+  { key: 'cognitive', labelKey: 'cognitive',   label: 'Cognitive',      Icon: Brain },
 ];
 
 const EXPERIENCE_OPTIONS = [
-  { value: 'N/A',    label: 'Not set' },
-  { value: 'Entry',  label: 'Entry' },
-  { value: 'Mid',    label: 'Mid' },
-  { value: 'Senior', label: 'Senior' },
+  { value: 'N/A',    labelKey: 'notSet', label: 'Not set' },
+  { value: 'Entry',  labelKey: 'entry',  label: 'Entry' },
+  { value: 'Mid',    labelKey: 'mid',    label: 'Mid' },
+  { value: 'Senior', labelKey: 'senior', label: 'Senior' },
 ];
 
 const SKILL_OPTIONS = [
@@ -93,15 +94,16 @@ const SKILL_OPTIONS = [
 const SKILL_OPTION_LOOKUP = new Map(SKILL_OPTIONS.map((skill) => [skill.toLowerCase(), skill]));
 
 function DimSelector({ dim, value, onChange, themeMode }) {
-  const { Icon, label, key } = dim;
+  const { t } = useTranslation();
+  const { Icon, label, labelKey, key } = dim;
   const active = NEED_LEVELS.find((l) => l.value === value) || NEED_LEVELS[0];
 
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2">
         <Icon size={14} style={{ color: active.color }} />
-        <span className="text-sm font-bold">{label}</span>
-        <span className="ml-auto text-xs font-bold" style={{ color: active.color }}>{active.short}</span>
+        <span className="text-sm font-bold">{t(`profile.${labelKey}`, label)}</span>
+        <span className="ml-auto text-xs font-bold" style={{ color: active.color }}>{t(`profile.${active.short.toLowerCase()}`, active.short)}</span>
       </div>
       <div className="flex gap-1.5 flex-wrap">
         {NEED_LEVELS.map((lvl) => {
@@ -119,7 +121,7 @@ function DimSelector({ dim, value, onChange, themeMode }) {
                 opacity: isActive ? 1 : 0.55,
               }}
             >
-              {lvl.short}
+              {t(`profile.${lvl.short.toLowerCase()}`, lvl.short)}
             </button>
           );
         })}
@@ -132,6 +134,7 @@ export default function ProfilePage({
   theme, themeMode, API_BASE, currentUser, setCurrentUser,
   speakOnFocus, speechEnabled, speakText,
 }) {
+  const { t } = useTranslation();
   const [fullName,        setFullName]        = useState('N/A');
   const [profileImage,    setProfileImage]    = useState(null);
   const [phoneNumber,     setPhoneNumber]     = useState('');
@@ -261,9 +264,11 @@ export default function ProfilePage({
 
   const initials = (fullName || '').split(' ').filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join('') || '?';
 
-  const cardClass = themeMode === 'dark'
-    ? 'bg-white/5 border border-white/10'
-    : 'bg-white border border-slate-100 shadow-sm';
+  const cardClass = themeMode === 'contrast'
+    ? 'bg-black border border-[#FFFF00] text-[#FFFF00]'
+    : themeMode === 'dark'
+      ? 'bg-white/5 border border-white/10'
+      : 'bg-white border border-slate-100 shadow-sm';
 
   return (
     <div className="py-14 px-6 max-w-6xl mx-auto">
@@ -288,10 +293,10 @@ export default function ProfilePage({
               <Sparkles size={22} className="text-white" />
             </div>
             <h2 className="text-xl font-black text-white leading-snug mb-3">
-              Every person deserves a fair shot at meaningful work.
+              {t('profile.bannerTitle', 'Every person deserves a fair shot at meaningful work.')}
             </h2>
             <p className="text-sm text-white/60 leading-relaxed">
-              Skillable was built on a single belief that disability should never be a barrier to a career. We match people to jobs based on what they can do, not what they can't.
+              {t('profile.bannerBody', 'Skillable was built on a single belief that disability should never be a barrier to a career. We match people to jobs based on what they can do, not what they can\'t.')}
             </p>
           </div>
 
@@ -300,9 +305,9 @@ export default function ProfilePage({
           {/* Values */}
           <div className="px-7 py-6 space-y-4">
             {[
-              { Icon: Heart,       text: 'Built with inclusion at the core' },
-              { Icon: ShieldCheck, text: 'Your data is yours — always private' },
-              { Icon: Globe,       text: 'Opportunities for every background' },
+              { Icon: Heart,       text: t('profile.valInclusion', 'Built with inclusion at the core') },
+              { Icon: ShieldCheck, text: t('profile.valPrivacy', 'Your data is yours — always private') },
+              { Icon: Globe,       text: t('profile.valOpportunities', 'Opportunities for every background') },
             ].map(({ Icon, text }) => (
               <div key={text} className="flex items-start gap-3">
                 <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5" style={{ background: 'rgba(99,102,241,0.25)' }}>
@@ -318,10 +323,10 @@ export default function ProfilePage({
           {/* Stats */}
           <div className="px-7 py-6 grid grid-cols-2 gap-4">
             {[
-              { num: '18+',  label: 'Career paths' },
-              { num: '100%', label: 'Free to use' },
-              { num: '4',    label: 'Need dimensions' },
-              { num: '∞',    label: 'Possibilities' },
+              { num: '18+',  label: t('profile.statPaths', 'Career paths') },
+              { num: '100%', label: t('profile.statFree', 'Free to use') },
+              { num: '4',    label: t('profile.statDims', 'Need dimensions') },
+              { num: '∞',    label: t('profile.statPossibilities', 'Possibilities') },
             ].map(({ num, label }) => (
               <div key={label}>
                 <p className="text-2xl font-black text-white">{num}</p>
@@ -333,7 +338,7 @@ export default function ProfilePage({
           {/* Bottom quote */}
           <div className="px-7 pb-8">
             <p className="text-xs text-white/30 italic leading-relaxed">
-              "The more complete your profile, the more accurate your matches become."
+              "{t('profile.quote', 'The more complete your profile, the more accurate your matches become.')}"
             </p>
           </div>
         </div>
@@ -370,13 +375,13 @@ export default function ProfilePage({
               className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black border ${themeMode === 'dark' ? 'border-white/15 hover:border-indigo-300' : 'border-slate-200 hover:border-indigo-300'}`}
             >
               <Camera size={12} />
-              Change pic
+              {t('profile.changePic', 'Change pic')}
             </button>
             {profileImage && (
               <button
                 type="button"
                 onClick={() => setProfileImage(null)}
-                aria-label="Remove profile picture"
+                aria-label={t('profile.removePic', 'Remove profile picture')}
                 className={`w-8 h-8 rounded-lg flex items-center justify-center border text-red-500 ${themeMode === 'dark' ? 'border-white/15 hover:border-red-300' : 'border-slate-200 hover:border-red-300'}`}
               >
                 <Trash2 size={13} />
@@ -387,7 +392,7 @@ export default function ProfilePage({
 
         {/* Name + email */}
         <div className="flex-1 text-center sm:text-left">
-          <h1 className="text-2xl font-black leading-tight">{fullName === 'N/A' ? 'Your Profile' : fullName}</h1>
+          <h1 className="text-2xl font-black leading-tight">{fullName === 'N/A' ? t('profile.yourProfile', 'Your Profile') : fullName}</h1>
           <p className={`text-sm mt-0.5 ${theme.textSecondary}`}>{currentUser?.email || ''}</p>
 
           {/* Completion */}
@@ -402,7 +407,7 @@ export default function ProfilePage({
               />
             </div>
             <span className="text-xs font-bold" style={{ color: completionPct === 100 ? '#22c55e' : '#6366f1' }}>
-              {completionPct}% complete
+              {completionPct}% {t('profile.complete', 'complete')}
             </span>
           </div>
         </div>
@@ -414,7 +419,7 @@ export default function ProfilePage({
           disabled={isSaving}
           className={`hidden sm:flex items-center gap-2 px-6 py-3 rounded-xl font-black text-sm flex-shrink-0 transition-all disabled:opacity-60 ${theme.primaryBtn}`}
         >
-          {isSaving ? 'Saving…' : 'Save profile'}
+          {isSaving ? t('profile.saving', 'Saving…') : t('profile.saveProfile', 'Save profile')}
         </button>
       </div>
 
@@ -422,12 +427,12 @@ export default function ProfilePage({
 
         {/* ── Column 1: Personal ── */}
         <div className={`p-6 rounded-3xl space-y-5 lg:col-span-1 ${cardClass}`}>
-          <p className="text-xs font-black uppercase tracking-widest opacity-40">Personal</p>
+          <p className="text-xs font-black uppercase tracking-widest opacity-40">{t('profile.personal', 'Personal')}</p>
 
           {/* Full name */}
           <div className="space-y-1.5">
             <label className="text-xs font-bold flex items-center gap-1.5 opacity-60" htmlFor="pf-name">
-              <User size={12} /> Full name
+              <User size={12} /> {t('profile.fullName', 'Full name')}
             </label>
             <div className="flex gap-2">
               <input
@@ -452,7 +457,7 @@ export default function ProfilePage({
           {/* Phone */}
           <div className="space-y-1.5">
             <label className="text-xs font-bold flex items-center gap-1.5 opacity-60" htmlFor="pf-phone">
-              <Phone size={12} /> Phone
+              <Phone size={12} /> {t('profile.phone', 'Phone')}
             </label>
             <input
               id="pf-phone"
@@ -467,7 +472,7 @@ export default function ProfilePage({
           {/* Governorate */}
           <div className="space-y-1.5">
             <label className="text-xs font-bold flex items-center gap-1.5 opacity-60" htmlFor="pf-gov">
-              <MapPin size={12} /> Governorate
+              <MapPin size={12} /> {t('profile.governorate', 'Governorate')}
             </label>
             <select
               id="pf-gov"
@@ -475,7 +480,7 @@ export default function ProfilePage({
               value={address}
               onChange={(e) => setAddress(e.target.value)}
             >
-              {GOVERNORATES.map((g) => <option key={g} value={g}>{g}</option>)}
+              {GOVERNORATES.map((g) => <option key={g} value={g}>{t(`gov.${g}`, g)}</option>)}
             </select>
           </div>
         </div>
@@ -485,7 +490,7 @@ export default function ProfilePage({
 
           {/* Experience */}
           <div className={`p-6 rounded-3xl ${cardClass}`}>
-            <p className="text-xs font-black uppercase tracking-widest opacity-40 mb-4">Experience</p>
+            <p className="text-xs font-black uppercase tracking-widest opacity-40 mb-4">{t('profile.experience', 'Experience')}</p>
             <div className="flex gap-2 flex-wrap">
               {EXPERIENCE_OPTIONS.map((o) => {
                 const active = o.value === experienceLevel;
@@ -496,14 +501,14 @@ export default function ProfilePage({
                     onClick={() => setExperienceLevel(o.value)}
                     className="px-4 py-2 rounded-xl text-sm font-bold border transition-all duration-150"
                     style={{
-                      borderColor: active ? '#6366f1' : 'transparent',
+                      borderColor: active ? (themeMode === 'contrast' ? '#FFFF00' : '#6366f1') : 'transparent',
                       background: active
-                        ? '#6366f120'
-                        : themeMode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)',
-                      color: active ? '#6366f1' : undefined,
+                        ? (themeMode === 'contrast' ? 'rgba(255,255,0,0.1)' : '#6366f120')
+                        : themeMode === 'dark' ? 'rgba(255,255,255,0.05)' : themeMode === 'contrast' ? 'transparent' : 'rgba(0,0,0,0.04)',
+                      color: active ? (themeMode === 'contrast' ? '#FFFF00' : '#6366f1') : undefined,
                     }}
                   >
-                    {o.label}
+                    {t(`profile.${o.labelKey}`, o.label)}
                   </button>
                 );
               })}
@@ -513,7 +518,7 @@ export default function ProfilePage({
           {/* Skills */}
           <div className={`p-6 rounded-3xl ${cardClass}`}>
             <div className="flex items-center justify-between mb-4">
-              <p className="text-xs font-black uppercase tracking-widest opacity-40">Skills</p>
+              <p className="text-xs font-black uppercase tracking-widest opacity-40">{t('profile.skills', 'Skills')}</p>
               <span className="text-xs font-bold opacity-40">{skills.length}/30</span>
             </div>
 
@@ -544,7 +549,7 @@ export default function ProfilePage({
                 value={skillInput}
                 onChange={(e) => setSkillInput(e.target.value)}
                 onKeyDown={handleSkillKey}
-                placeholder="Choose a skill..."
+                placeholder={t('profile.chooseSkill', 'Choose a skill...')}
                 className={`flex-1 min-w-0 px-3 py-2.5 rounded-xl border text-sm font-semibold outline-none transition-all ${theme.input}`}
                 maxLength={60}
               />
@@ -568,20 +573,20 @@ export default function ProfilePage({
                 addSkillValue(e.target.value);
               }}
               className={`mt-2 w-full px-3 py-2.5 rounded-xl border text-sm font-semibold outline-none transition-all ${theme.input}`}
-              aria-label="Choose a skill from dropdown"
+              aria-label={t('profile.chooseSkill', 'Choose a skill from dropdown')}
             >
-              <option value="">Open full skill dropdown</option>
+              <option value="">{t('profile.openSkillDropdown', 'Open full skill dropdown')}</option>
               {SKILL_OPTIONS.map((skill) => (
                 <option key={skill} value={skill}>{skill}</option>
               ))}
             </select>
-            <p className="text-xs opacity-30 mt-2">Pick from the dropdown. Enter adds selected text. Backspace removes last.</p>
+            <p className="text-xs opacity-30 mt-2">{t('profile.skillHint', 'Pick from the dropdown. Enter adds selected text. Backspace removes last.')}</p>
           </div>
         </div>
 
         {/* ── Column 3: Accessibility needs ── */}
         <div className={`p-6 rounded-3xl lg:col-span-1 ${cardClass}`}>
-          <p className="text-xs font-black uppercase tracking-widest opacity-40 mb-5">Accessibility needs</p>
+          <p className="text-xs font-black uppercase tracking-widest opacity-40 mb-5">{t('profile.accessibilityNeeds', 'Accessibility needs')}</p>
           <div className="space-y-5">
             {NEED_DIMS.map((dim) => (
               <DimSelector
@@ -602,7 +607,7 @@ export default function ProfilePage({
             disabled={isSaving}
             className={`sm:hidden w-full px-8 py-3.5 rounded-xl font-black text-sm transition-all disabled:opacity-60 ${theme.primaryBtn}`}
           >
-            {isSaving ? 'Saving…' : 'Save profile'}
+            {isSaving ? t('profile.saving', 'Saving…') : t('profile.saveProfile', 'Save profile')}
           </button>
           {error  && <div role="alert"  className="flex items-center gap-2 text-sm font-semibold text-red-500"><AlertCircle size={14}/>{error}</div>}
           {status && <div role="status" className="flex items-center gap-2 text-sm font-semibold text-emerald-500"><CheckCircle size={14}/>{status}</div>}

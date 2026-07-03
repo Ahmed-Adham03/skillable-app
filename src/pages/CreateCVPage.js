@@ -3,6 +3,7 @@ import {
   Download, User, Mail, Phone, MapPin, Briefcase,
   GraduationCap, Star, Plus, Trash2, FileText
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 const DEFAULT_CV = {
   fullName: 'Alex Johnson',
@@ -172,21 +173,21 @@ function printCV(cv) {
   <div class="body">
     <div class="left">
       <div class="left-section">
-        <div class="section-title">Skills</div>
+        <div class="section-title">${t('cv.skills', 'Skills')}</div>
         <div>${skillsHTML}</div>
       </div>
       <div class="left-section">
-        <div class="section-title">Summary</div>
+        <div class="section-title">${t('cv.summary', 'Summary')}</div>
         <div class="summary-text">${cv.summary}</div>
       </div>
     </div>
     <div class="right">
       <div class="timeline-section">
-        <div class="section-title">Work Experience</div>
+        <div class="section-title">${t('cv.workExperience', 'Work Experience')}</div>
         ${expHTML}
       </div>
       <div class="timeline-section">
-        <div class="section-title">Education</div>
+        <div class="section-title">${t('cv.education', 'Education')}</div>
         ${eduHTML}
       </div>
     </div>
@@ -215,6 +216,7 @@ function printCV(cv) {
 }
 
 export default function CreateCVPage({ theme, themeMode, currentUser }) {
+  const { t } = useTranslation();
   const seed = {
     ...DEFAULT_CV,
     fullName: currentUser?.full_name || DEFAULT_CV.fullName,
@@ -236,7 +238,9 @@ export default function CreateCVPage({ theme, themeMode, currentUser }) {
   const addSkill = () => setCv((p) => ({ ...p, skills: [...p.skills, 'New Skill'] }));
   const removeSkill = (i) => setCv((p) => ({ ...p, skills: p.skills.filter((_, idx) => idx !== i) }));
 
-  const accent = themeMode === 'contrast' ? '#FFFF00' : '#4f46e5';
+  const isContrast = themeMode === 'contrast';
+  const isDark = themeMode === 'dark';
+  const accent = isContrast ? '#FFFF00' : '#4f46e5';
   const initials = cv.fullName.trim().split(/\s+/).map((w) => w[0]).slice(0, 2).join('').toUpperCase();
 
   return (
@@ -246,13 +250,13 @@ export default function CreateCVPage({ theme, themeMode, currentUser }) {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-10">
             <div>
               <div className="flex items-center gap-3 mb-2">
-                <div className={`p-2 rounded-xl text-white ${themeMode === 'contrast' ? 'bg-yellow-400' : 'bg-indigo-600'}`}>
+                <div className={`p-2 rounded-xl text-white ${isContrast ? 'bg-yellow-400 text-black' : 'bg-indigo-600'}`}>
                   <FileText size={22} aria-hidden="true" />
                 </div>
-                <h1 className={`text-3xl lg:text-4xl font-black ${theme.textPrimary}`}>CV Builder</h1>
+                <h1 className={`text-3xl lg:text-4xl font-black ${theme.textPrimary}`}>{t('cv.cvBuilder', 'CV Builder')}</h1>
               </div>
               <p className={`text-sm ${theme.textSecondary}`}>
-                Click any field to edit then hit <span className={`font-bold ${theme.accent}`}>Download PDF</span>
+                {t('cv.clickAnyField', 'Click any field to edit then hit')} <span className={`font-bold ${theme.accent}`}>{t('cv.downloadPdf', 'Download PDF')}</span>
               </p>
             </div>
             <button
@@ -261,62 +265,62 @@ export default function CreateCVPage({ theme, themeMode, currentUser }) {
                 transition-transform hover:scale-105 active:scale-95 ${theme.primaryBtn}`}
             >
               <Download size={18} aria-hidden="true" />
-              Download PDF
+              {t('cv.downloadPdf', 'Download PDF')}
             </button>
           </div>
 
-          <div className={`rounded-[2rem] shadow-2xl overflow-hidden ${themeMode === 'dark' ? 'bg-slate-900 text-white' : 'bg-white text-slate-900'}`}>
-            <div className="px-10 py-10" style={{ background: `linear-gradient(135deg, ${accent}dd, #7c3aed)` }}>
+          <div className={`rounded-[2rem] shadow-2xl overflow-hidden ${isContrast ? 'bg-black text-[#FFFF00] border-2 border-[#FFFF00]' : isDark ? 'bg-slate-900 text-white' : 'bg-white text-slate-900'}`}>
+            <div className={`px-10 py-10 ${isContrast ? 'bg-black border-b border-[#FFFF00]' : ''}`} style={!isContrast ? { background: `linear-gradient(135deg, ${accent}dd, #7c3aed)` } : {}}>
               <div className="flex flex-col md:flex-row gap-6 items-start md:items-center">
-                <div className="w-20 h-20 rounded-full bg-white/20 flex items-center justify-center text-white font-black text-2xl shrink-0">
+                <div className={`w-20 h-20 rounded-full flex items-center justify-center font-black text-2xl shrink-0 ${isContrast ? 'bg-black border border-[#FFFF00] text-[#FFFF00]' : 'bg-white/20 text-white'}`}>
                   {initials}
                 </div>
-                <div className="flex-1 text-white space-y-1">
-                  <EditField value={cv.fullName} onChange={update('fullName')} className="text-4xl font-black text-white" />
-                  <EditField value={cv.jobTitle} onChange={update('jobTitle')} className="text-lg text-white/80" />
-                  <div className="flex flex-wrap gap-x-6 gap-y-1 mt-2 text-sm text-white/80">
-                    <span className="flex items-center gap-1"><Mail size={13} /><EditField value={cv.email} onChange={update('email')} className="text-white/80 text-sm w-48" /></span>
-                    <span className="flex items-center gap-1"><Phone size={13} /><EditField value={cv.phone} onChange={update('phone')} className="text-white/80 text-sm w-36" /></span>
-                    <span className="flex items-center gap-1"><MapPin size={13} /><EditField value={cv.address} onChange={update('address')} className="text-white/80 text-sm w-36" /></span>
+                <div className={`flex-1 space-y-1 ${isContrast ? 'text-[#FFFF00]' : 'text-white'}`}>
+                  <EditField value={cv.fullName} onChange={update('fullName')} className={`text-4xl font-black ${isContrast ? 'text-[#FFFF00]' : 'text-white'}`} />
+                  <EditField value={cv.jobTitle} onChange={update('jobTitle')} className={`text-lg ${isContrast ? 'text-[#FFFF00]' : 'text-white/80'}`} />
+                  <div className={`flex flex-wrap gap-x-6 gap-y-1 mt-2 text-sm ${isContrast ? 'text-[#FFFF00]' : 'text-white/80'}`}>
+                    <span className="flex items-center gap-1"><Mail size={13} /><EditField value={cv.email} onChange={update('email')} className={`text-sm w-48 ${isContrast ? 'text-[#FFFF00]' : 'text-white/80'}`} /></span>
+                    <span className="flex items-center gap-1"><Phone size={13} /><EditField value={cv.phone} onChange={update('phone')} className={`text-sm w-36 ${isContrast ? 'text-[#FFFF00]' : 'text-white/80'}`} /></span>
+                    <span className="flex items-center gap-1"><MapPin size={13} /><EditField value={cv.address} onChange={update('address')} className={`text-sm w-36 ${isContrast ? 'text-[#FFFF00]' : 'text-white/80'}`} /></span>
                   </div>
                 </div>
               </div>
             </div>
 
             <div className="flex flex-col md:flex-row">
-              <div className={`md:w-1/3 p-8 space-y-8 border-r ${themeMode === 'dark' ? 'bg-slate-800/60 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
+              <div className={`md:w-1/3 p-8 space-y-8 border-r ${isContrast ? 'bg-black border-[#FFFF00]' : isDark ? 'bg-slate-800/60 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
                 <div>
                   <h2 className="flex items-center gap-2 text-xs font-black uppercase tracking-wider mb-4" style={{ color: accent }}>
-                    <Star size={13} /> Skills
+                    <Star size={13} /> {t('cv.skills', 'Skills')}
                   </h2>
                   <div className="space-y-2">
                     {cv.skills.map((sk, i) => (
                       <div key={i} className="flex items-center gap-2 group/sk">
                         <div className="w-2 h-2 rounded-full shrink-0" style={{ background: accent }} />
                         <EditField value={sk} onChange={updateSkill(i)} className="text-sm flex-1" />
-                        <button onClick={() => removeSkill(i)} className="opacity-0 group-hover/sk:opacity-100 text-red-400 hover:text-red-600 transition" aria-label="Remove skill">
+                        <button onClick={() => removeSkill(i)} className="opacity-0 group-hover/sk:opacity-100 text-red-400 hover:text-red-600 transition" aria-label={t('cv.removeSkill', 'Remove skill')}>
                           <Trash2 size={13} />
                         </button>
                       </div>
                     ))}
                   </div>
                   <button onClick={addSkill} className="mt-3 flex items-center gap-1 text-xs font-bold opacity-50 hover:opacity-100 transition" style={{ color: accent }}>
-                    <Plus size={13} /> Add Skill
+                    <Plus size={13} /> {t('cv.addSkill', 'Add Skill')}
                   </button>
                 </div>
 
                 <div>
                   <h2 className="flex items-center gap-2 text-xs font-black uppercase tracking-wider mb-4" style={{ color: accent }}>
-                    <User size={13} /> Summary
+                    <User size={13} /> {t('cv.summary', 'Summary')}
                   </h2>
                   <EditField value={cv.summary} onChange={update('summary')} multiline className="text-sm leading-relaxed opacity-80" />
                 </div>
               </div>
 
-              <div className={`flex-1 p-8 space-y-8 ${themeMode === 'dark' ? 'bg-slate-900' : 'bg-white'}`}>
+              <div className={`flex-1 p-8 space-y-8 ${isContrast ? 'bg-black' : isDark ? 'bg-slate-900' : 'bg-white'}`}>
                 <div>
                   <h2 className="flex items-center gap-2 text-xs font-black uppercase tracking-wider mb-6" style={{ color: accent }}>
-                    <Briefcase size={13} /> Work Experience
+                    <Briefcase size={13} /> {t('cv.workExperience', 'Work Experience')}
                   </h2>
                   <div className="space-y-6">
                     {cv.experience.map((exp) => (
@@ -332,7 +336,7 @@ export default function CreateCVPage({ theme, themeMode, currentUser }) {
                             </div>
                             <EditField value={exp.description} onChange={updateExp(exp.id, 'description')} multiline className="text-sm opacity-75 mt-1" />
                           </div>
-                          <button onClick={() => removeExp(exp.id)} className="opacity-0 group-hover/exp:opacity-100 text-red-400 hover:text-red-600 transition mt-1 shrink-0" aria-label="Remove experience">
+                          <button onClick={() => removeExp(exp.id)} className="opacity-0 group-hover/exp:opacity-100 text-red-400 hover:text-red-600 transition mt-1 shrink-0" aria-label={t('cv.removeExperience', 'Remove experience')}>
                             <Trash2 size={15} />
                           </button>
                         </div>
@@ -340,13 +344,13 @@ export default function CreateCVPage({ theme, themeMode, currentUser }) {
                     ))}
                   </div>
                   <button onClick={addExp} className="mt-4 flex items-center gap-1 text-xs font-bold opacity-50 hover:opacity-100 transition" style={{ color: accent }}>
-                    <Plus size={13} /> Add Experience
+                    <Plus size={13} /> {t('cv.addExperience', 'Add Experience')}
                   </button>
                 </div>
 
                 <div>
                   <h2 className="flex items-center gap-2 text-xs font-black uppercase tracking-wider mb-6" style={{ color: accent }}>
-                    <GraduationCap size={13} /> Education
+                    <GraduationCap size={13} /> {t('cv.education', 'Education')}
                   </h2>
                   <div className="space-y-4">
                     {cv.education.map((edu) => (
@@ -361,7 +365,7 @@ export default function CreateCVPage({ theme, themeMode, currentUser }) {
                               <EditField value={edu.period} onChange={updateEdu(edu.id, 'period')} className="opacity-60 text-xs w-28" />
                             </div>
                           </div>
-                          <button onClick={() => removeEdu(edu.id)} className="opacity-0 group-hover/edu:opacity-100 text-red-400 hover:text-red-600 transition mt-1 shrink-0" aria-label="Remove education">
+                          <button onClick={() => removeEdu(edu.id)} className="opacity-0 group-hover/edu:opacity-100 text-red-400 hover:text-red-600 transition mt-1 shrink-0" aria-label={t('cv.removeEducation', 'Remove education')}>
                             <Trash2 size={15} />
                           </button>
                         </div>
@@ -369,7 +373,7 @@ export default function CreateCVPage({ theme, themeMode, currentUser }) {
                     ))}
                   </div>
                   <button onClick={addEdu} className="mt-4 flex items-center gap-1 text-xs font-bold opacity-50 hover:opacity-100 transition" style={{ color: accent }}>
-                    <Plus size={13} /> Add Education
+                    <Plus size={13} /> {t('cv.addEducation', 'Add Education')}
                   </button>
                 </div>
               </div>

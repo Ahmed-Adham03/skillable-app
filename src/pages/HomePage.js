@@ -233,12 +233,12 @@ export default function HomePage({
             {/* Dim chips */}
             <div className="flex flex-wrap gap-2">
               {DIMS.map(({ Icon, label, color }) => (
-                <div key={label} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border ${themeMode === 'dark' ? 'bg-white/5 border-white/10' : 'bg-white border-slate-200 shadow-sm'}`}>
+                <div key={label} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border ${themeMode === 'dark' ? 'bg-white/5 border-white/10' : themeMode === 'contrast' ? 'bg-black border-[#FFFF00]' : 'bg-white border-slate-200 shadow-sm'}`}>
                   <Icon size={12} style={{ color }} />
                   {label}
                 </div>
               ))}
-              <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border ${themeMode === 'dark' ? 'bg-white/5 border-white/10' : 'bg-white border-slate-200 shadow-sm'}`}>
+              <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border ${themeMode === 'dark' ? 'bg-white/5 border-white/10' : themeMode === 'contrast' ? 'bg-black border-[#FFFF00]' : 'bg-white border-slate-200 shadow-sm'}`}>
                 <Briefcase size={12} style={{ color: '#6366f1' }} />
                 {t('home.dims.skillsExperience')}
               </div>
@@ -264,7 +264,7 @@ export default function HomePage({
             { n: '02', title: t('home.steps.02.title'), body: t('home.steps.02.body'), color: '#14b8a6' },
             { n: '03', title: t('home.steps.03.title'), body: t('home.steps.03.body'), color: '#f97316' },
           ].map(({ n, title, body, color }) => (
-            <div key={n} className={`p-7 rounded-3xl relative overflow-hidden ${themeMode === 'dark' ? 'bg-white/5 border border-white/10' : 'bg-white border border-slate-100 shadow-sm'}`}>
+            <div key={n} className={`p-7 rounded-3xl relative overflow-hidden ${themeMode === 'dark' ? 'bg-white/5 border border-white/10' : themeMode === 'contrast' ? 'bg-black border border-[#FFFF00]' : 'bg-white border border-slate-100 shadow-sm'}`}>
               <div className="absolute top-5 right-5 text-6xl font-black opacity-[0.06] leading-none select-none">{n}</div>
               <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-5" style={{ background: `${color}18` }}>
                 <span className="text-sm font-black" style={{ color }}>{n}</span>
@@ -277,7 +277,7 @@ export default function HomePage({
       </section>
 
       {/* ── Built for real journeys ── */}
-      <section className={`py-16 ${themeMode === 'dark' ? 'bg-slate-950/60' : 'bg-white/70'}`}>
+      <section className={`py-16 ${themeMode === 'dark' ? 'bg-slate-950/60' : themeMode === 'contrast' ? 'bg-transparent' : 'bg-white/70'}`}>
         <div className="container mx-auto px-6 grid lg:grid-cols-[1fr_0.9fr] gap-10 items-center">
           <div>
             <p className="text-xs font-black uppercase tracking-widest opacity-40 mb-3">{t('home.realWorld.badge')}</p>
@@ -287,7 +287,7 @@ export default function HomePage({
             </p>
             <div className="grid sm:grid-cols-3 gap-4">
               {IMPACT.map((item) => (
-                <div key={item.label} className={`p-5 rounded-2xl border ${themeMode === 'dark' ? 'bg-white/5 border-white/10' : 'bg-slate-50 border-slate-100'}`}>
+                <div key={item.label} className={`p-5 rounded-2xl border ${themeMode === 'dark' ? 'bg-white/5 border-white/10' : themeMode === 'contrast' ? 'bg-black border-[#FFFF00]' : 'bg-slate-50 border-slate-100'}`}>
                   <p className="text-2xl font-black mb-1">{item.value}</p>
                   <p className={`text-xs font-bold leading-snug ${theme.textSecondary}`}>{item.label}</p>
                 </div>
@@ -325,7 +325,7 @@ export default function HomePage({
               key={title}
               type="button"
               onClick={() => setActiveTab(tab)}
-              className={`text-left p-6 rounded-3xl border transition-all hover:-translate-y-1 ${themeMode === 'dark' ? 'bg-white/5 border-white/10 hover:bg-white/10' : 'bg-white border-slate-100 shadow-sm hover:shadow-xl'}`}
+              className={`text-left p-6 rounded-3xl border transition-all hover:-translate-y-1 ${themeMode === 'dark' ? 'bg-white/5 border-white/10 hover:bg-white/10' : themeMode === 'contrast' ? 'bg-black border-[#FFFF00] hover:bg-[#FFFF00]/10' : 'bg-white border-slate-100 shadow-sm hover:shadow-xl'}`}
             >
               <div
                 className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-5 ${themeMode === 'contrast' ? 'bg-[#FFFF00] text-black' : ''}`}
@@ -341,7 +341,7 @@ export default function HomePage({
       </section>
 
       {/* ── Inclusion layer ── */}
-      <section className={`py-16 ${themeMode === 'dark' ? 'bg-white/5' : 'bg-slate-900 text-white'}`}>
+      <section className={`py-16 ${themeMode === 'dark' ? 'bg-white/5' : themeMode === 'contrast' ? 'bg-transparent border-y border-[#FFFF00]' : 'bg-slate-900 text-white'}`}>
         <div className="container mx-auto px-6 grid lg:grid-cols-[0.9fr_1fr] gap-10 items-start">
           <div>
             <div
@@ -357,7 +357,7 @@ export default function HomePage({
           </div>
           <div className="grid sm:grid-cols-2 gap-4">
             {ACCESS_POINTS.map((point) => (
-              <div key={point} className={`p-5 rounded-2xl border flex gap-3 ${themeMode === 'dark' ? 'bg-slate-950/50 border-white/10' : 'bg-white/5 border-white/10'}`}>
+              <div key={point} className={`p-5 rounded-2xl border flex gap-3 ${themeMode === 'dark' ? 'bg-slate-950/50 border-white/10' : themeMode === 'contrast' ? 'bg-black border-[#FFFF00]' : 'bg-white/5 border-white/10'}`}>
                 <CheckCircle2 size={18} className="mt-0.5 flex-shrink-0 text-emerald-300" />
                 <p className="text-sm font-semibold leading-relaxed">{point}</p>
               </div>
@@ -368,7 +368,7 @@ export default function HomePage({
 
       {/* ── Vision ── */}
       <section className="py-16 container mx-auto px-6">
-        <div className={`relative overflow-hidden rounded-3xl border ${themeMode === 'dark' ? 'bg-slate-950 border-white/10' : 'bg-white border-slate-100 shadow-sm'}`}>
+        <div className={`relative overflow-hidden rounded-3xl border ${themeMode === 'dark' ? 'bg-slate-950 border-white/10' : themeMode === 'contrast' ? 'bg-black border-[#FFFF00]' : 'bg-white border-slate-100 shadow-sm'}`}>
           <div className="absolute inset-0 pointer-events-none" style={{ background: themeMode === 'dark' ? 'radial-gradient(circle at 15% 15%, rgba(99,102,241,0.22), transparent 38%), radial-gradient(circle at 90% 20%, rgba(20,184,166,0.18), transparent 34%)' : 'radial-gradient(circle at 15% 15%, rgba(99,102,241,0.12), transparent 38%), radial-gradient(circle at 90% 20%, rgba(20,184,166,0.12), transparent 34%)' }} />
           <div className="relative z-10 p-7 md:p-10 lg:p-12">
             <div className="grid lg:grid-cols-[0.95fr_1.15fr] gap-10 items-start">
@@ -381,7 +381,7 @@ export default function HomePage({
                 <p className={`text-base leading-relaxed mb-6 ${theme.textSecondary}`}>
                   {t('home.vision.body')}
                 </p>
-                <div className={`p-5 rounded-2xl border ${themeMode === 'dark' ? 'bg-white/5 border-white/10' : 'bg-slate-50 border-slate-100'}`}>
+                <div className={`p-5 rounded-2xl border ${themeMode === 'dark' ? 'bg-white/5 border-white/10' : themeMode === 'contrast' ? 'bg-black border-[#FFFF00]' : 'bg-slate-50 border-slate-100'}`}>
                   <p className="text-sm font-black mb-2">{t('home.vision.statementTitle')}</p>
                   <p className={`text-sm leading-relaxed ${theme.textSecondary}`}>{t('home.vision.statementBody')}</p>
                 </div>
@@ -389,7 +389,7 @@ export default function HomePage({
 
               <div className="grid gap-4">
                 {VISION_PILLARS.map(({ Icon, title, body }) => (
-                  <div key={title} className={`p-5 rounded-2xl border flex gap-4 ${themeMode === 'dark' ? 'bg-white/5 border-white/10' : 'bg-white/80 border-slate-100 shadow-sm'}`}>
+                  <div key={title} className={`p-5 rounded-2xl border flex gap-4 ${themeMode === 'dark' ? 'bg-white/5 border-white/10' : themeMode === 'contrast' ? 'bg-black border-[#FFFF00]' : 'bg-white/80 border-slate-100 shadow-sm'}`}>
                     <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 ${themeMode === 'contrast' ? 'bg-[#FFFF00] text-black' : 'bg-indigo-600/10 text-indigo-500'}`}>
                       <Icon size={22} />
                     </div>
@@ -412,7 +412,7 @@ export default function HomePage({
             { Icon: Users, title: t('home.audiences.seekers.title'), body: t('home.audiences.seekers.body'), cta: t('home.audiences.seekers.cta'), tab: 'careers' },
             { Icon: Building2, title: t('home.audiences.employers.title'), body: t('home.audiences.employers.body'), cta: t('home.audiences.employers.cta'), tab: 'open-roles' },
           ].map(({ Icon, title, body, cta, tab }) => (
-            <div key={title} className={`p-8 rounded-3xl border ${themeMode === 'dark' ? 'bg-white/5 border-white/10' : 'bg-white border-slate-100 shadow-sm'}`}>
+            <div key={title} className={`p-8 rounded-3xl border ${themeMode === 'dark' ? 'bg-white/5 border-white/10' : themeMode === 'contrast' ? 'bg-black border-[#FFFF00]' : 'bg-white border-slate-100 shadow-sm'}`}>
               <Icon size={28} className={themeMode === 'contrast' ? 'text-[#FFFF00]' : 'text-indigo-500'} />
               <h2 className="text-2xl font-black mt-5 mb-3">{title}</h2>
               <p className={`leading-relaxed mb-6 ${theme.textSecondary}`}>{body}</p>
@@ -429,8 +429,8 @@ export default function HomePage({
         <div className="max-w-5xl mx-auto">
 
           {/* Chat */}
-          <div className={`rounded-3xl flex flex-col overflow-hidden border ${themeMode === 'dark' ? 'bg-white/5 border-white/10' : 'bg-white border-slate-100 shadow-sm'}`} style={{ minHeight: 620 }}>
-            <div className={`px-7 py-5 flex items-center gap-4 border-b ${themeMode === 'dark' ? 'border-white/10' : 'border-slate-100'}`}>
+          <div className={`rounded-3xl flex flex-col overflow-hidden border ${themeMode === 'dark' ? 'bg-white/5 border-white/10' : themeMode === 'contrast' ? 'bg-black border-[#FFFF00]' : 'bg-white border-slate-100 shadow-sm'}`} style={{ minHeight: 620 }}>
+            <div className={`px-7 py-5 flex items-center gap-4 border-b ${themeMode === 'dark' ? 'border-white/10' : themeMode === 'contrast' ? 'border-[#FFFF00]' : 'border-slate-100'}`}>
               <div className="w-10 h-10 rounded-2xl flex items-center justify-center" style={{ background: '#6366f118' }}>
                 <Bot size={18} className="text-indigo-400" />
               </div>
@@ -457,8 +457,8 @@ export default function HomePage({
                     dir="auto"
                     className={`px-5 py-3.5 rounded-2xl max-w-[88%] md:max-w-[72%] text-sm leading-relaxed whitespace-pre-wrap
                       ${msg.role === 'bot'
-                        ? themeMode === 'dark' ? 'bg-white/10' : 'bg-slate-100'
-                        : 'bg-indigo-600 text-white'}`}
+                        ? themeMode === 'dark' ? 'bg-white/10' : themeMode === 'contrast' ? 'border border-[#FFFF00] bg-black text-[#FFFF00]' : 'bg-slate-100'
+                        : themeMode === 'contrast' ? 'border border-[#FFFF00] bg-black text-[#FFFF00]' : 'bg-indigo-600 text-white'}`}
                   >
                     {msg.text}
                   </div>
@@ -466,7 +466,7 @@ export default function HomePage({
               ))}
               {isChatLoading && (
                 <div className="flex justify-start">
-                  <div className={`px-5 py-3.5 rounded-2xl text-sm ${themeMode === 'dark' ? 'bg-white/10' : 'bg-slate-100'}`}>
+                  <div className={`px-5 py-3.5 rounded-2xl text-sm ${themeMode === 'dark' ? 'bg-white/10' : themeMode === 'contrast' ? 'bg-black border border-[#FFFF00]' : 'bg-slate-100'}`}>
                     <span className="inline-flex gap-1">
                       <span className="w-2 h-2 rounded-full bg-indigo-400 animate-bounce" style={{ animationDelay: '0ms' }} />
                       <span className="w-2 h-2 rounded-full bg-indigo-400 animate-bounce" style={{ animationDelay: '150ms' }} />
@@ -477,7 +477,7 @@ export default function HomePage({
               )}
               <div ref={chatEndRef} />
             </div>
-            <div className={`px-5 md:px-7 py-5 border-t flex gap-3 ${themeMode === 'dark' ? 'border-white/10' : 'border-slate-100'}`}>
+            <div className={`px-5 md:px-7 py-5 border-t flex gap-3 ${themeMode === 'dark' ? 'border-white/10' : themeMode === 'contrast' ? 'border-[#FFFF00]' : 'border-slate-100'}`}>
               <input
                 dir="auto"
                 className={`flex-1 px-5 py-3 rounded-2xl text-sm outline-none transition-all ${theme.input}`}
@@ -491,7 +491,7 @@ export default function HomePage({
                 type="button"
                 onClick={toggleVoiceInput}
                 disabled={!isVoiceSupported || isChatLoading}
-                className={`px-4 py-3 rounded-2xl flex items-center justify-center transition-all border ${isVoiceListening ? 'bg-red-500 text-white border-red-500 animate-pulse' : themeMode === 'dark' ? 'border-white/10 hover:bg-white/10' : 'border-slate-200 hover:bg-slate-50'} ${!isVoiceSupported || isChatLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                className={`px-4 py-3 rounded-2xl flex items-center justify-center transition-all border ${isVoiceListening ? 'bg-red-500 text-white border-red-500 animate-pulse' : themeMode === 'dark' ? 'border-white/10 hover:bg-white/10' : themeMode === 'contrast' ? 'border-[#FFFF00] hover:bg-[#FFFF00]/20' : 'border-slate-200 hover:bg-slate-50'} ${!isVoiceSupported || isChatLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                 aria-label={isVoiceListening ? 'Stop voice input' : 'Start voice input'}
                 title={isVoiceSupported ? (isVoiceListening ? 'Recording...' : 'Voice input') : 'Voice input is not supported in this browser'}
               >

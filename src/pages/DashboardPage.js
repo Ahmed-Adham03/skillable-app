@@ -145,13 +145,13 @@ export default function DashboardPage({ theme, themeMode, learningPlans, setSele
                 {/* Text */}
                 <div className="flex-1 min-w-0">
                   <div className="flex flex-wrap items-center gap-2 mb-1">
-                    <h3 className="text-xl font-black truncate">{plan.jobtitle}</h3>
+                    <h3 className="text-xl font-black truncate">{t(`jobs.${plan.jobtitle}`, plan.jobtitle)}</h3>
                     <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${statusColor}`}>
                       {statusLabel}
                     </span>
                   </div>
                   {plan.summary && (
-                    <p className={`text-sm line-clamp-1 mb-2 ${theme.textSecondary}`}>{plan.summary}</p>
+                    <p className={`text-sm line-clamp-1 mb-2 ${theme.textSecondary}`}>{t(`jobs.${plan.summary}`, plan.summary)}</p>
                   )}
                   {/* Progress bar */}
                   <div className={`h-1.5 w-full max-w-xs rounded-full overflow-hidden ${isContrast ? 'border border-white' : isDark ? 'bg-white/10' : 'bg-slate-200'}`}>
@@ -162,7 +162,7 @@ export default function DashboardPage({ theme, themeMode, learningPlans, setSele
                   </div>
                   {nextStep && pct < 100 && (
                     <p className={`text-xs mt-2 ${theme.textSecondary}`}>
-                      {t('dashboard.next')} <span className="font-semibold">{nextStep}</span>
+                      {t('dashboard.next')} <span className="font-semibold">{t(`jobs.${nextStep}`, nextStep)}</span>
                     </p>
                   )}
                 </div>

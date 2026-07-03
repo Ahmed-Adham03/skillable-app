@@ -1,7 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Briefcase, ArrowRight, Map, Search, MapPin, Banknote, Layers, ShieldCheck, Sparkles, UserPlus } from 'lucide-react';
 
 export default function CareerPage({ theme, themeMode, currentUser, onSelectJob, setActiveTab }) {
+  const { t } = useTranslation();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
   const [status, setStatus] = useState('');
@@ -73,12 +75,12 @@ export default function CareerPage({ theme, themeMode, currentUser, onSelectJob,
   return (
     <div className={`py-12 px-6 max-w-7xl mx-auto`}>
       {/* Header Section */}
-      <div className="mb-12 text-center lg:text-left">
+      <div className="mb-12 text-center lg:text-start">
         <h2 className="text-4xl lg:text-5xl font-black mb-4">
-          Tailored <span className={`text-transparent bg-clip-text bg-gradient-to-r ${themeMode === 'contrast' ? 'from-[#FFFF00] to-white' : 'from-indigo-600 to-purple-600'}`}>Career Maps</span>
+          {t('careers.titlePrefix')} <span className={`text-transparent bg-clip-text bg-gradient-to-r ${themeMode === 'contrast' ? 'from-[#FFFF00] to-white' : 'from-indigo-600 to-purple-600'}`}>{t('careers.titleHighlight')}</span>
         </h2>
         <p className={`${theme.textSecondary} text-lg max-w-2xl`}>
-          Based on your profile, we rank opportunities that align with your needs and strengths.
+          {t('careers.subtitle')}
         </p>
       </div>
 
@@ -88,18 +90,18 @@ export default function CareerPage({ theme, themeMode, currentUser, onSelectJob,
             <ShieldCheck size={34} />
           </div>
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest mb-4 border border-indigo-500/20 text-indigo-500">
-            <Sparkles size={13} /> Personalized matching
+            <Sparkles size={13} /> {t('careers.personalizedMatching')}
           </div>
-          <h3 className="text-3xl md:text-4xl font-black mb-3">Sign in or create an account to unlock career paths</h3>
+          <h3 className="text-3xl md:text-4xl font-black mb-3">{t('careers.signInTitle')}</h3>
           <p className={`max-w-2xl mx-auto leading-relaxed mb-7 ${theme.textSecondary}`}>
-            Skillable builds matches from your accessibility needs, strengths, skills, and experience level, then explains which roles fit you best.
+            {t('careers.signInBody')}
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <button onClick={() => setActiveTab?.('register')} className={`px-7 py-3 rounded-2xl font-black inline-flex items-center gap-2 ${theme.primaryBtn}`}>
-              <UserPlus size={17} /> Sign up
+              <UserPlus size={17} /> {t('careers.signUpBtn')}
             </button>
             <button onClick={() => setActiveTab?.('login')} className={`px-7 py-3 rounded-2xl font-black border ${themeMode === 'contrast' ? 'border-white' : themeMode === 'dark' ? 'border-white/20' : 'border-slate-300'}`}>
-              Sign in
+              {t('careers.signInBtn')}
             </button>
           </div>
         </div>
@@ -112,17 +114,13 @@ export default function CareerPage({ theme, themeMode, currentUser, onSelectJob,
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 opacity-40" size={20} aria-hidden="true" />
           <input 
             type="text" 
-            placeholder="Search by skill or industry..." 
+            placeholder={t('careers.searchPlaceholder')} 
             className={`w-full pl-12 pr-4 py-3 rounded-xl outline-none border transition-all ${theme.input}`}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             aria-label="Search careers"
           />
         </div>
-        <button className={`px-8 py-3 rounded-xl font-bold flex items-center gap-2 ${theme.primaryBtn}`}>
-          <Map size={18} aria-hidden="true" />
-          Generate New Path
-        </button>
       </div>
       )}
 
@@ -131,10 +129,9 @@ export default function CareerPage({ theme, themeMode, currentUser, onSelectJob,
       )}
       {currentUser && isProfileIncomplete && (
         <div className={`mb-8 p-4 rounded-2xl ${theme.glass}`}>
-          <h3 className="text-lg font-black mb-2">Complete your profile first</h3>
+          <h3 className="text-lg font-black mb-2">{t('careers.completeProfileTitle')}</h3>
           <p className={theme.textSecondary}>
-            We cannot show matching jobs yet because some personalization fields are still set to N/A.
-            Please complete your profile to unlock accurate career matches.
+            {t('careers.completeProfileBody')}
           </p>
         </div>
       )}
@@ -151,9 +148,9 @@ export default function CareerPage({ theme, themeMode, currentUser, onSelectJob,
                 --% Match
               </div>
             </div>
-            <h3 className="text-2xl font-bold mb-2">Career Path Preview</h3>
+            <h3 className="text-2xl font-bold mb-2">{t('careers.previewTitle')}</h3>
             <p className="text-sm font-semibold mb-6 opacity-60">
-              {!currentUser ? 'Sign in to see full details' : 'Complete your profile to unlock matches'}
+              {!currentUser ? t('careers.signInToSee') : t('careers.completeToSee')}
             </p>
             <div className="flex flex-wrap gap-2 mb-6">
               {['Skill A', 'Skill B', 'Skill C'].map((skill, i) => (
@@ -164,7 +161,7 @@ export default function CareerPage({ theme, themeMode, currentUser, onSelectJob,
             </div>
             <div className="mt-auto pt-6 border-t border-dashed border-slate-200 dark:border-slate-700">
               <button className="flex items-center gap-2 font-bold text-sm group/btn">
-                {!currentUser ? 'Explore this path' : 'Complete profile first'}
+                {!currentUser ? t('careers.explorePath') : t('careers.completeFirst')}
               </button>
             </div>
           </div>
@@ -194,11 +191,11 @@ export default function CareerPage({ theme, themeMode, currentUser, onSelectJob,
               </div>
               <div className="flex flex-col items-end gap-1">
                 <span className={`px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest ${tierColor}`}>
-                  {path.match_percentage}% · {path.compatibility_tier}
+                  {path.match_percentage}% · {t(`jobs.${path.compatibility_tier}`, { defaultValue: path.compatibility_tier })}
                 </span>
                 {path.category && (
                   <span className={`text-[10px] font-semibold uppercase tracking-widest opacity-50`}>
-                    {path.category}
+                    {t(`jobs.${path.category}`, { defaultValue: path.category })}
                   </span>
                 )}
               </div>
@@ -206,33 +203,33 @@ export default function CareerPage({ theme, themeMode, currentUser, onSelectJob,
 
             {/* Title */}
             <h3 className="text-xl font-black mb-1 group-hover:text-indigo-500 transition-colors leading-tight">
-              {path.jobtitle}
+              {t(`jobs.${path.jobtitle}`, { defaultValue: path.jobtitle })}
             </h3>
 
             {/* Meta row */}
             <div className={`flex flex-wrap items-center gap-3 text-xs font-semibold mb-3 ${themeMode === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
               {path.job_type && (
-                <span className="flex items-center gap-1"><MapPin size={11} />{path.job_type}</span>
+                <span className="flex items-center gap-1"><MapPin size={11} />{t(`jobs.${path.job_type}`, { defaultValue: path.job_type })}</span>
               )}
               {path.salary_range && (
                 <span className="flex items-center gap-1"><Banknote size={11} />{path.salary_range}</span>
               )}
               {path.experience_level && (
-                <span className="flex items-center gap-1"><Layers size={11} />{path.experience_level}</span>
+                <span className="flex items-center gap-1"><Layers size={11} />{t(`jobs.${path.experience_level}`, { defaultValue: path.experience_level })}</span>
               )}
             </div>
 
             <p className={`text-sm mb-5 leading-relaxed line-clamp-2 ${themeMode === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
-              {path.summary}
+              {t(`jobs.${path.summary}`, { defaultValue: path.summary })}
             </p>
 
             {/* Skill overlap */}
             {directOverlap.length > 0 && (
               <div className="mb-4">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-500 mb-1.5">Skills you have</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-500 mb-1.5">{t('careers.skillsYouHave')}</p>
                 <div className="flex flex-wrap gap-1.5">
                   {directOverlap.slice(0, 4).map((s, i) => (
-                    <span key={i} className={`text-xs px-2.5 py-1 rounded-lg font-semibold ${themeMode === 'dark' ? 'bg-emerald-500/15 text-emerald-400' : 'bg-emerald-50 text-emerald-700'}`}>{s}</span>
+                    <span key={i} className={`text-xs px-2.5 py-1 rounded-lg font-semibold ${themeMode === 'dark' ? 'bg-emerald-500/15 text-emerald-400' : 'bg-emerald-50 text-emerald-700'}`}>{t(`jobs.${s}`, { defaultValue: s })}</span>
                   ))}
                   {directOverlap.length > 4 && (
                     <span className={`text-xs px-2.5 py-1 rounded-lg font-semibold opacity-50 ${themeMode === 'dark' ? 'bg-white/5' : 'bg-slate-100'}`}>+{directOverlap.length - 4}</span>
@@ -243,10 +240,10 @@ export default function CareerPage({ theme, themeMode, currentUser, onSelectJob,
 
             {inferredOverlap.length > 0 && (
               <div className="mb-4">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-sky-500 mb-1.5">Inferred from your skills</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-sky-500 mb-1.5">{t('careers.inferredSkills')}</p>
                 <div className="flex flex-wrap gap-1.5">
                   {inferredOverlap.slice(0, 4).map((s, i) => (
-                    <span key={i} className={`text-xs px-2.5 py-1 rounded-lg font-semibold ${themeMode === 'dark' ? 'bg-sky-500/15 text-sky-300' : 'bg-sky-50 text-sky-700'}`}>{s}</span>
+                    <span key={i} className={`text-xs px-2.5 py-1 rounded-lg font-semibold ${themeMode === 'dark' ? 'bg-sky-500/15 text-sky-300' : 'bg-sky-50 text-sky-700'}`}>{t(`jobs.${s}`, { defaultValue: s })}</span>
                   ))}
                   {inferredOverlap.length > 4 && (
                     <span className={`text-xs px-2.5 py-1 rounded-lg font-semibold opacity-50 ${themeMode === 'dark' ? 'bg-white/5' : 'bg-slate-100'}`}>+{inferredOverlap.length - 4}</span>
@@ -258,10 +255,10 @@ export default function CareerPage({ theme, themeMode, currentUser, onSelectJob,
             {/* Skill gaps */}
             {path.missing_skills && path.missing_skills.length > 0 && (
               <div className="mb-4">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-amber-500 mb-1.5">Skills to build</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-amber-500 mb-1.5">{t('careers.skillsToBuild')}</p>
                 <div className="flex flex-wrap gap-1.5">
                   {path.missing_skills.slice(0, 3).map((s, i) => (
-                    <span key={i} className={`text-xs px-2.5 py-1 rounded-lg font-semibold ${themeMode === 'dark' ? 'bg-amber-500/10 text-amber-400' : 'bg-amber-50 text-amber-700'}`}>{s}</span>
+                    <span key={i} className={`text-xs px-2.5 py-1 rounded-lg font-semibold ${themeMode === 'dark' ? 'bg-amber-500/10 text-amber-400' : 'bg-amber-50 text-amber-700'}`}>{t(`jobs.${s}`, { defaultValue: s })}</span>
                   ))}
                   {path.missing_skills.length > 3 && (
                     <span className={`text-xs px-2.5 py-1 rounded-lg font-semibold opacity-50 ${themeMode === 'dark' ? 'bg-white/5' : 'bg-slate-100'}`}>+{path.missing_skills.length - 3}</span>
@@ -272,7 +269,7 @@ export default function CareerPage({ theme, themeMode, currentUser, onSelectJob,
 
             <div className={`mt-auto pt-5 border-t ${themeMode === 'contrast' ? 'border-white/30' : 'border-dashed border-slate-200 dark:border-slate-700'}`}>
               <button className={`flex items-center gap-2 font-bold text-sm group/btn ${themeMode === 'contrast' ? 'text-[#FFFF00]' : 'text-indigo-500'}`} onClick={() => onSelectJob(path)}>
-                Explore this path
+                {t('careers.explorePath')}
                 <ArrowRight size={16} className="group-hover/btn:translate-x-2 transition-transform" />
               </button>
             </div>

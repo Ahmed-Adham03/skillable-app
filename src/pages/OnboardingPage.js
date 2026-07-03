@@ -4,6 +4,7 @@ import {
   Briefcase, Compass, GraduationCap, HeartHandshake, Rocket,
   Check, ArrowRight, ArrowLeft, ChevronRight,
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { getAuthToken } from '../auth/session';
 
 const QUESTIONS = [
@@ -97,7 +98,8 @@ export default function OnboardingPage({ theme, themeMode, setActiveTab, API_BAS
   const token = getAuthToken();
   const current = QUESTIONS[currentStep];
   const colors = STEP_COLORS[currentStep];
-  const isDark = themeMode === 'dark';
+  const isDark = themeMode === 'dark' || themeMode === 'contrast';
+  const { t } = useTranslation();
   const totalSteps = QUESTIONS.length;
 
   useEffect(() => { setSelected(answers[currentStep]); }, [currentStep, answers]);
@@ -210,11 +212,11 @@ export default function OnboardingPage({ theme, themeMode, setActiveTab, API_BAS
         {/* Progress bar + step pills */}
         <div className="mb-10">
           {currentStep === 0 && (
-            <div
-              className={`mb-6 p-4 rounded-2xl border text-sm leading-relaxed ${isDark ? 'bg-white/5 border-white/10 text-slate-300' : 'bg-white/80 border-slate-200 text-slate-600'}`}
-            >
-              Your answers help Skillable personalize career recommendations. Accessibility-related answers are used for matching and guidance, and sensitive profile details are protected by the backend.
-            </div>
+            <p className={`text-sm text-center mx-auto max-w-2xl px-4 py-3 rounded-xl border font-medium
+              ${isDark ? 'border-slate-700 text-slate-300 bg-slate-800/50' : 'border-slate-200 text-slate-600 bg-white/50'}
+            `}>
+              {t('onboarding.description')}
+            </p>
           )}
           <div className="flex items-center gap-2 mb-3">
             {QUESTIONS.map((_, i) => {
@@ -269,7 +271,7 @@ export default function OnboardingPage({ theme, themeMode, setActiveTab, API_BAS
                   <current.Icon size={18} className="text-white" strokeWidth={2} />
                 </div>
                 <span className="text-xs font-black tracking-widest uppercase" style={{ color: colors.from }}>
-                  {current.label}
+                  {t(`onboarding.${current.label}`)}
                 </span>
               </motion.div>
 
@@ -279,7 +281,7 @@ export default function OnboardingPage({ theme, themeMode, setActiveTab, API_BAS
                 transition={{ delay: 0.1 }}
                 className="text-3xl lg:text-4xl font-black leading-tight"
               >
-                {current.question}
+                {t(`onboarding.${current.question}`)}
               </motion.h1>
             </div>
 
@@ -336,7 +338,7 @@ export default function OnboardingPage({ theme, themeMode, setActiveTab, API_BAS
                         )}
                       </AnimatePresence>
                     </motion.span>
-                    <span className="relative z-10 leading-snug">{opt}</span>
+                    <span className="relative z-10 leading-snug">{t(`onboarding.${opt}`)}</span>
                     <ChevronRight
                       size={14}
                       className="relative z-10 ml-auto opacity-0 group-hover:opacity-40 transition-opacity flex-shrink-0"
@@ -362,7 +364,7 @@ export default function OnboardingPage({ theme, themeMode, setActiveTab, API_BAS
                       ${isDark ? 'border-slate-700 text-slate-300 hover:border-slate-500' : 'border-slate-200 text-slate-600 hover:border-slate-400'}`}
                   >
                     <ArrowLeft size={14} />
-                    Previous
+                    {t('onboarding.previous')}
                   </motion.button>
                 )}
                 <button
@@ -370,7 +372,7 @@ export default function OnboardingPage({ theme, themeMode, setActiveTab, API_BAS
                   onClick={currentStep === totalSteps - 1 ? skipAll : () => advance(null)}
                   className={`text-sm font-semibold transition-colors ${isDark ? 'text-slate-500 hover:text-slate-300' : 'text-slate-400 hover:text-slate-600'}`}
                 >
-                  {currentStep < totalSteps - 1 ? 'Skip' : 'Skip & finish'}
+                  {currentStep < totalSteps - 1 ? t('onboarding.skip') : t('onboarding.skip_finish')}
                 </button>
               </div>
 
@@ -389,7 +391,7 @@ export default function OnboardingPage({ theme, themeMode, setActiveTab, API_BAS
                     className="flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-sm text-white shadow-lg"
                     style={{ background: `linear-gradient(135deg, ${colors.from}, ${colors.to})` }}
                   >
-                    {currentStep < totalSteps - 1 ? 'Next' : 'Finish'}
+                    {completing ? t('onboarding.submitting') : (currentStep < totalSteps - 1 ? t('onboarding.next') : t('onboarding.finish'))}
                     <ArrowRight size={15} />
                   </motion.button>
                 )}

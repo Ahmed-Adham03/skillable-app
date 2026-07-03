@@ -104,7 +104,24 @@ export default function PostJobPage({ theme, themeMode, API_BASE, currentUser, s
         body: JSON.stringify({ ...form, skills }),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.detail || t(editingJobId ? 'postJob.errors.updateFail' : 'postJob.errors.shareFail'));
+      if (!res.ok) {
+        let msg = t(editingJobId ? 'postJob.errors.updateFail' : 'postJob.errors.shareFail');
+        if (data.detail) {
+          msg = typeof data.detail === 'string' ? data.detail : Array.isArray(data.detail) ? data.detail.map(d => {
+            const fieldKey = d.loc && d.loc.length > 1 ? d.loc[1] : '';
+            const field = fieldKey ? t(`postJob.fields.${fieldKey}`, { defaultValue: fieldKey }) : '';
+            if (d.msg?.includes('characters') || d.type === 'string_too_short' || d.type === 'string_too_long') {
+              const num = d.ctx?.min_length || d.ctx?.max_length || d.msg?.match(/\d+/)?.[0] || '2';
+              return t('postJob.errors.minLength', { field, min: num, defaultValue: `${field} must be at least ${num} characters.` });
+            }
+            if (d.type === 'string_pattern_mismatch') {
+              return t('postJob.errors.invalidFormat', { field, defaultValue: `Invalid format for ${field}.` });
+            }
+            return field ? `${field}: ${t('postJob.errors.invalidFormat', { field })}` : t('postJob.errors.validationFail');
+          }).filter((v, i, a) => a.indexOf(v) === i).join('، ') : JSON.stringify(data.detail);
+        }
+        throw new Error(msg);
+      }
       setStatus(t(editingJobId ? 'postJob.updateSuccess' : 'postJob.success'));
       resetForm();
       refreshPostedJobs();

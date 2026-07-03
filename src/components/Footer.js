@@ -16,7 +16,7 @@ export default function Footer({ theme, themeMode, setActiveTab }) {
           <button onClick={() => setActiveTab('accessibility-statement')} className={theme.textSecondary}>{t('footer.accessibilityStatement')}</button>
           <button className={theme.textSecondary}>{t('footer.faqs')}</button>
           <button className={theme.textSecondary}>{t('footer.terms')}</button>
-          <button onClick={() => setActiveTab('privacy')} className={theme.textSecondary}>{t('footer.privacy')}</button>
+          <button className={theme.textSecondary}>{t('footer.privacy')}</button>
         </div>
       </div>
       <div className="container mx-auto px-6 mt-8 text-center opacity-60 text-sm">

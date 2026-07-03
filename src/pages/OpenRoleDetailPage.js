@@ -4,8 +4,10 @@ import { ArrowLeft, Building2, CheckCircle2, Clock, Layers, LockKeyhole, Mail, M
 import { getJobLogo } from '../data/jobLogos';
 import { canPostJobs } from '../auth/roles';
 import { getAuthToken } from '../auth/session';
+import { useTranslation } from 'react-i18next';
 
 export default function OpenRoleDetailPage({ theme, themeMode, role, API_BASE, currentUser }) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const isDark = themeMode === 'dark';
   const isContrast = themeMode === 'contrast';
@@ -17,7 +19,7 @@ export default function OpenRoleDetailPage({ theme, themeMode, role, API_BASE, c
 
   useEffect(() => {
     if (!canViewApplicants || !token) return;
-    setApplicantsStatus('Loading applicants...');
+    setApplicantsStatus(t('openRoleDetails.loadingApplicants'));
     fetch(`${API_BASE}/open-jobs/${role.id}/applications`, {
       headers: { Authorization: `Bearer ${token}` },
     })
@@ -28,7 +30,7 @@ export default function OpenRoleDetailPage({ theme, themeMode, role, API_BASE, c
       })
       .catch(() => {
         setApplicants([]);
-        setApplicantsStatus('Unable to load applicants.');
+        setApplicantsStatus(t('openRoleDetails.unableToLoadApplicants'));
       });
   }, [API_BASE, canViewApplicants, role, token]);
 
@@ -36,7 +38,7 @@ export default function OpenRoleDetailPage({ theme, themeMode, role, API_BASE, c
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4 px-6 text-center">
         <BriefcaseFallback themeMode={themeMode} />
-        <p className={`text-lg font-semibold ${theme.textSecondary}`}>Select an open role to see the application pipeline.</p>
+        <p className={`text-lg font-semibold ${theme.textSecondary}`}>{t('openRoleDetails.selectRole')}</p>
         <button onClick={() => navigate('/open-roles')} className={`px-6 py-2.5 rounded-xl font-bold ${theme.primaryBtn}`}>
           Browse open roles
         </button>
@@ -80,12 +82,12 @@ export default function OpenRoleDetailPage({ theme, themeMode, role, API_BASE, c
         <div className="grid lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
             <section className={`rounded-3xl p-6 ${theme.card}`}>
-              <h2 className="text-lg font-black mb-4">Role details</h2>
+              <h2 className="text-lg font-black mb-4">{t('openRoleDetails.roleDetails')}</h2>
               <div className={`grid sm:grid-cols-2 gap-3 text-sm font-bold ${theme.textSecondary}`}>
-                <Info icon={MapPin} label="Location" value={role.location || 'Egypt'} />
-                <Info icon={Clock} label="Duration" value={role.duration || 'Not specified'} />
-                <Info icon={Layers} label="Level" value={role.level || 'Open level'} />
-                <Info icon={Building2} label="Work type" value={role.job_type || 'Open role'} />
+                <Info icon={MapPin} label={t('openRoleDetails.location')} value={role.location || t('openRoleDetails.location')} />
+                <Info icon={Clock} label={t('openRoleDetails.duration')} value={role.duration || t('openRoleDetails.notSpecified')} />
+                <Info icon={Layers} label={t('openRoleDetails.level')} value={role.level || t('openRoleDetails.openLevel')} />
+                <Info icon={Building2} label={t('openRoleDetails.workType')} value={role.job_type || t('openRoleDetails.openRole')} />
               </div>
               {role.salary_range && (
                 <div className={`mt-4 p-4 rounded-2xl text-sm font-bold ${isContrast ? 'border border-white' : isDark ? 'bg-white/5' : 'bg-slate-50 text-slate-700'}`}>
@@ -95,36 +97,36 @@ export default function OpenRoleDetailPage({ theme, themeMode, role, API_BASE, c
             </section>
 
             <section className={`rounded-3xl p-6 ${theme.card}`}>
-              <h2 className="text-lg font-black mb-4">Skills requested</h2>
+              <h2 className="text-lg font-black mb-4">{t('openRoleDetails.skillsRequested')}</h2>
               <div className="flex flex-wrap gap-2">
                 {skills.length > 0 ? skills.map((skill) => (
                   <span key={skill} className={`px-3 py-1.5 rounded-xl text-xs font-black ${isContrast ? 'border border-white' : isDark ? 'bg-indigo-500/15 text-indigo-300' : 'bg-indigo-50 text-indigo-700 border border-indigo-100'}`}>
                     {skill}
                   </span>
                 )) : (
-                  <p className={`text-sm ${theme.textSecondary}`}>No skills were listed by the poster.</p>
+                  <p className={`text-sm ${theme.textSecondary}`}>{t('openRoleDetails.noSkills')}</p>
                 )}
               </div>
             </section>
 
             <section className={`rounded-3xl p-6 ${theme.card}`}>
-              <h2 className="text-lg font-black mb-5">Application pipeline</h2>
+              <h2 className="text-lg font-black mb-5">{t('openRoleDetails.pipeline')}</h2>
               <div className="space-y-4">
-                <PipelineStep title="Review the role" body="Read the role details and compare the work setup with your accessibility needs." />
-                <PipelineStep title="Prepare your CV" body="Use Skillable CV Generator or your existing CV, focusing on skills that match this role." />
-                <PipelineStep title="Contact the employer" body="Send your CV and ask clear questions about location, schedule, accessibility, and onboarding." />
-                <PipelineStep title="Interview and accommodations" body="Discuss what helps you work well, such as flexible hours, accessible transport, screen reader support, or quieter work areas." />
+                <PipelineStep title={t('openRoleDetails.reviewRole')} body={t('openRoleDetails.reviewRoleBody')} />
+                <PipelineStep title={t('openRoleDetails.prepareCV')} body={t('openRoleDetails.prepareCVBody')} />
+                <PipelineStep title={t('openRoleDetails.contactEmployer')} body={t('openRoleDetails.contactEmployerBody')} />
+                <PipelineStep title={t('openRoleDetails.interview')} body={t('openRoleDetails.interviewBody')} />
               </div>
             </section>
           </div>
 
           <aside className="space-y-6">
             <div className={`rounded-3xl p-6 ${isContrast ? 'border-2 border-[#FFFF00]' : isDark ? 'bg-indigo-600/20 border border-indigo-500/30' : 'bg-indigo-600 text-white'}`}>
-              <h2 className="text-lg font-black mb-2">Ready to apply?</h2>
+              <h2 className="text-lg font-black mb-2">{t('openRoleDetails.readyToApply')}</h2>
               <p className={`text-sm mb-5 ${isContrast ? 'text-white' : isDark ? 'text-indigo-100' : 'text-white/80'}`}>
                 {currentUser
-                  ? 'This is a live open role, not a learning path. Send your info so the recruiter can contact you if there is a fit.'
-                  : 'You can browse this role now. Sign in or create an account to apply and share your contact information with the recruiter.'}
+                  ? t('openRoleDetails.applyLive')
+                  : t('openRoleDetails.applyLocked')}
               </p>
               {currentUser ? (
                 <button
@@ -161,10 +163,10 @@ export default function OpenRoleDetailPage({ theme, themeMode, role, API_BASE, c
 
             {canViewApplicants && (
               <div className={`rounded-3xl p-6 ${theme.card}`}>
-                <h3 className="font-black mb-2">Applicants</h3>
-                <p className={`text-xs mb-4 ${theme.textSecondary}`}>Visible only to the recruiter who posted this role.</p>
+                <h3 className="font-black mb-2">{t('openRoleDetails.applicants')}</h3>
+                <p className={`text-xs mb-4 ${theme.textSecondary}`}>{t('openRoleDetails.visibleToRecruiter')}</p>
                 {applicantsStatus && <p className={`text-sm font-bold ${theme.textSecondary}`}>{applicantsStatus}</p>}
-                {!applicantsStatus && applicants.length === 0 && <p className={`text-sm ${theme.textSecondary}`}>No applications yet.</p>}
+                {!applicantsStatus && applicants.length === 0 && <p className={`text-sm ${theme.textSecondary}`}>{t('openRoleDetails.noApplications')}</p>}
                 <div className="space-y-3">
                   {applicants.map((applicant) => (
                     <div key={applicant.id} className={`p-4 rounded-2xl ${isContrast ? 'border border-white' : isDark ? 'bg-white/5' : 'bg-slate-50'}`}>
@@ -178,7 +180,7 @@ export default function OpenRoleDetailPage({ theme, themeMode, role, API_BASE, c
                         ))}
                       </div>
                       {applicant.accessibility_notes && applicant.accessibility_notes !== 'N/A' && (
-                        <p className={`text-xs mt-3 ${theme.textSecondary}`}>Access: {applicant.accessibility_notes}</p>
+                        <p className={`text-xs mt-3 ${theme.textSecondary}`}>{t('openRoleDetails.access')}: {applicant.accessibility_notes}</p>
                       )}
                       {applicant.cv_link && applicant.cv_link !== 'N/A' && (
                         <p className={`text-xs mt-2 ${theme.textSecondary}`}>CV: {applicant.cv_link}</p>
@@ -195,9 +197,9 @@ export default function OpenRoleDetailPage({ theme, themeMode, role, API_BASE, c
                 Before applying
               </h3>
               <ul className={`space-y-3 text-sm ${theme.textSecondary}`}>
-                <ChecklistItem>Check that the role is still open.</ChecklistItem>
-                <ChecklistItem>Ask about accessibility and transport before committing.</ChecklistItem>
-                <ChecklistItem>Do not share payment or private documents unless you trust the employer.</ChecklistItem>
+                <ChecklistItem>{t('openRoleDetails.checkOpen')}</ChecklistItem>
+                <ChecklistItem>{t('openRoleDetails.askAccess')}</ChecklistItem>
+                <ChecklistItem>{t('openRoleDetails.noPayment')}</ChecklistItem>
               </ul>
             </div>
 

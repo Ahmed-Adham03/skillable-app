@@ -1,7 +1,9 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Accessibility } from 'lucide-react';
 
 export default function AccessibilityFeaturesPage({ theme, themeMode }) {
+  const { t } = useTranslation();
   return (
     <div className="animate-fade-in">
       <section className="relative py-20 lg:py-28 overflow-hidden">
@@ -9,38 +11,38 @@ export default function AccessibilityFeaturesPage({ theme, themeMode }) {
           <div className={`p-10 lg:p-12 rounded-[2.5rem] ${theme.glass}`}>
             <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold mb-6 border ${themeMode === 'contrast' ? 'border-[#FFFF00]' : 'bg-indigo-500/10 text-indigo-300'}`}>
               <Accessibility size={14} aria-hidden="true" />
-              <span>Accessibility Features</span>
+              <span>{t('nav.accessibilityFeatures')}</span>
             </div>
-            <h1 className="text-4xl lg:text-5xl font-black mb-4">Built for every ability</h1>
+            <h1 className="text-4xl lg:text-5xl font-black mb-4">{t('accessFeatures.title')}</h1>
             <p className={`mb-10 max-w-3xl ${theme.textSecondary}`}>
-              Skillable is designed to be operable, perceivable, and comfortable for people with diverse needs. These features are available today.
+              {t('accessFeatures.subtitle')}
             </p>
 
             <div className="grid md:grid-cols-2 gap-6">
               {[
                 {
-                  title: 'Keyboard-first navigation',
-                  body: 'Everything is reachable with Tab and usable with Enter/Space.'
+                  title: t('accessFeatures.keyboardTitle'),
+                  body: t('accessFeatures.keyboardBody')
                 },
                 {
-                  title: 'Contrast controls',
-                  body: 'High-contrast mode for improved readability in bright or low-vision settings.'
+                  title: t('accessFeatures.contrastTitle'),
+                  body: t('accessFeatures.contrastBody')
                 },
                 {
-                  title: 'Text scaling',
-                  body: 'Adjust text size from the accessibility bar without breaking layouts.'
+                  title: t('accessFeatures.textTitle'),
+                  body: t('accessFeatures.textBody')
                 },
                 {
-                  title: 'Reduced motion support',
-                  body: 'Respects system preferences to reduce animation and motion.'
+                  title: t('accessFeatures.motionTitle'),
+                  body: t('accessFeatures.motionBody')
                 },
                 {
-                  title: 'Screen reader readiness',
-                  body: 'Landmarks, labels, and ARIA attributes for consistent narration.'
+                  title: t('accessFeatures.screenReaderTitle'),
+                  body: t('accessFeatures.screenReaderBody')
                 },
                 {
-                  title: 'Speech guidance (optional)',
-                  body: 'Speak focused elements and important feedback when enabled.'
+                  title: t('accessFeatures.speechTitle'),
+                  body: t('accessFeatures.speechBody')
                 }
               ].map((item, idx) => (
                 <div key={idx} className={`p-6 rounded-2xl ${theme.card}`}>
