@@ -6,6 +6,7 @@ import CareersPage from './careers';
 import TopNav from './components/TopNav';
 import Footer from './components/Footer';
 import FloatingChat from './components/FloatingChat';
+import OnboardingBubble from './components/OnboardingBubble';
 import HomePage from './pages/HomePage';
 import AuthPage from './pages/AuthPage';
 import AccessibilityFeaturesPage from './pages/AccessibilityFeaturesPage';
@@ -438,6 +439,7 @@ export default function App() {
   const [authLoading, setAuthLoading] = useState(true);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [showPersonalizeHint, setShowPersonalizeHint] = useState(false);
+  const [onboardingStatus, setOnboardingStatus] = useState(null);
   const profileRef = useRef(null);
   const signOutButtonRef = useRef(null);
   const profileButtonRef = useRef(null);
@@ -473,6 +475,41 @@ export default function App() {
       })
       .catch(() => { setAuthLoading(false); });
   }, [API_BASE]);
+
+  const refreshOnboardingStatus = () => {
+    const token = getAuthToken();
+    if (!token || !currentUser || canPostJobs(currentUser)) {
+      setOnboardingStatus(null);
+      return;
+    }
+    fetch(`${API_BASE}/info/status`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => setOnboardingStatus(data))
+      .catch(() => {});
+  };
+
+  useEffect(() => {
+    refreshOnboardingStatus();
+  }, [API_BASE, currentUser]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const saveOnboardingAnswer = async (questionIndex, answer) => {
+    const token = getAuthToken();
+    if (!token) return;
+    const res = await fetch(`${API_BASE}/info/save`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ question_index: questionIndex, answer }),
+    });
+    if (!res.ok) throw new Error('Could not save setup answer.');
+    setOnboardingStatus((prev) => {
+      const total = prev?.total || 5;
+      const answers = { ...(prev?.answers || {}), [String(questionIndex)]: answer };
+      const completed = Object.keys(answers).filter((key) => answers[key]).length;
+      return { total, completed, complete: completed >= total, answers };
+    });
+  };
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -515,6 +552,7 @@ export default function App() {
   const handleSignOut = () => {
     clearAuthToken();
     setCurrentUser(null);
+    setOnboardingStatus(null);
     setIsProfileOpen(false);
     setShowPersonalizeHint(false);
     setActiveTab('home');
@@ -749,7 +787,15 @@ export default function App() {
             />
           } />
           <Route path="/onboarding" element={
-            <OnboardingPage theme={theme} themeMode={themeMode} setActiveTab={setActiveTab} API_BASE={API_BASE} currentUser={currentUser} />
+            <OnboardingPage
+              theme={theme}
+              themeMode={themeMode}
+              setActiveTab={setActiveTab}
+              API_BASE={API_BASE}
+              currentUser={currentUser}
+              onboardingStatus={onboardingStatus}
+              onAnswerSaved={saveOnboardingAnswer}
+            />
           } />
           <Route path="/tracks" element={
             <TracksPage theme={theme} themeMode={themeMode} API_BASE={API_BASE} />
@@ -865,6 +911,17 @@ export default function App() {
           isVoiceSupported={isVoiceSupported}
           voiceError={voiceError}
           toggleVoiceInput={toggleVoiceInput}
+        />
+      )}
+
+      {currentUser && !canPostJobs(currentUser) && location.pathname !== '/onboarding' && onboardingStatus && !onboardingStatus.complete && (
+        <OnboardingBubble
+          theme={theme}
+          themeMode={themeMode}
+          lang={lang}
+          status={onboardingStatus}
+          onAnswer={saveOnboardingAnswer}
+          onOpenFull={() => setActiveTab('onboarding')}
         />
       )}
 

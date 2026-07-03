@@ -89,7 +89,7 @@ const STEP_COLORS = [
   { from: '#f59e0b', to: '#ef4444' },
 ];
 
-export default function OnboardingPage({ theme, themeMode, setActiveTab, API_BASE, currentUser }) {
+export default function OnboardingPage({ theme, themeMode, setActiveTab, API_BASE, currentUser, onboardingStatus, onAnswerSaved }) {
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState(Array(QUESTIONS.length).fill(null));
   const [direction, setDirection] = useState(1);
@@ -109,23 +109,37 @@ export default function OnboardingPage({ theme, themeMode, setActiveTab, API_BAS
     }
   }, [currentUser, setActiveTab]);
 
+  useEffect(() => {
+    if (!onboardingStatus?.answers) return;
+    const nextAnswers = QUESTIONS.map((question) => onboardingStatus.answers[String(question.index)] || null);
+    setAnswers(nextAnswers);
+    const firstOpen = nextAnswers.findIndex((answer) => !answer);
+    if (firstOpen >= 0 && firstOpen !== currentStep) {
+      setCurrentStep(firstOpen);
+    }
+  }, [onboardingStatus]); // eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(() => { setSelected(answers[currentStep]); }, [currentStep, answers]);
 
-  const saveAnswer = (questionIndex, answer) => {
+  const saveAnswer = async (questionIndex, answer) => {
     if (!answer || !token) return;
-    fetch(`${API_BASE}/info/save`, {
+    if (onAnswerSaved) {
+      await onAnswerSaved(questionIndex, answer);
+      return;
+    }
+    await fetch(`${API_BASE}/info/save`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({ question_index: questionIndex, answer }),
-    }).catch(() => {});
+    });
   };
 
-  const advance = (chosenAnswer) => {
+  const advance = async (chosenAnswer) => {
     if (chosenAnswer) {
-      saveAnswer(current.index, chosenAnswer);
       const next = [...answers];
       next[currentStep] = chosenAnswer;
       setAnswers(next);
+      await saveAnswer(current.index, chosenAnswer).catch(() => {});
     }
     if (currentStep < totalSteps - 1) {
       setDirection(1);
