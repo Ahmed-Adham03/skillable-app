@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { getAuthToken } from '../auth/session';
+import { canPostJobs } from '../auth/roles';
 
 const QUESTIONS = [
   {
@@ -88,7 +89,7 @@ const STEP_COLORS = [
   { from: '#f59e0b', to: '#ef4444' },
 ];
 
-export default function OnboardingPage({ theme, themeMode, setActiveTab, API_BASE }) {
+export default function OnboardingPage({ theme, themeMode, setActiveTab, API_BASE, currentUser }) {
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState(Array(QUESTIONS.length).fill(null));
   const [direction, setDirection] = useState(1);
@@ -101,6 +102,12 @@ export default function OnboardingPage({ theme, themeMode, setActiveTab, API_BAS
   const isDark = themeMode === 'dark' || themeMode === 'contrast';
   const { t } = useTranslation();
   const totalSteps = QUESTIONS.length;
+
+  useEffect(() => {
+    if (canPostJobs(currentUser)) {
+      setActiveTab('post-job');
+    }
+  }, [currentUser, setActiveTab]);
 
   useEffect(() => { setSelected(answers[currentStep]); }, [currentStep, answers]);
 

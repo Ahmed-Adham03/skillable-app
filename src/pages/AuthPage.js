@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useGoogleLogin } from '@react-oauth/google';
 import { User, Sparkles, CheckCircle, Users, Award, Bot } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { normalizeRole } from '../auth/roles';
+import { ROLES, normalizeRole } from '../auth/roles';
 import { saveAuthToken } from '../auth/session';
 
 // Isolated component so useGoogleLogin only mounts when a clientId exists
@@ -71,6 +71,12 @@ export default function AuthPage({
     return data.detail || fallback;
   };
 
+  const tabAfterAuth = (user, newUser) => {
+    const role = normalizeRole(user?.role);
+    if (role === ROLES.JOB_POSTER) return newUser ? 'post-job' : 'home';
+    return newUser ? 'onboarding' : 'home';
+  };
+
   const handleSocialLogin = async (endpoint, body) => {
     setSocialError('');
     try {
@@ -99,7 +105,7 @@ export default function AuthPage({
             .then((plans) => setLearningPlans(Array.isArray(plans) ? plans : []))
             .catch(() => {});
         }
-        setActiveTab(data.is_new_user ? 'onboarding' : 'home');
+        setActiveTab(tabAfterAuth(me, data.is_new_user));
       }
     } catch (err) {
       setSocialError(err.message || 'Social sign-in failed.');
@@ -407,7 +413,7 @@ export default function AuthPage({
         }
         setFormSuccess(t('auth.signedIn'));
         if (speakOnFocus && speechEnabled) speakText(t('auth.signedIn'));
-        setActiveTab(isNewUser ? 'onboarding' : 'home');
+        setActiveTab(tabAfterAuth(me, isNewUser));
       }
     } catch (err) {
       setFormError(t('auth.codeValidateFail'));

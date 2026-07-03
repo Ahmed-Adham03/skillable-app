@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { getAuthToken } from '../auth/session';
+import { canPostJobs } from '../auth/roles';
 
 const GOVERNORATES = [
   'N/A','Cairo','Giza','Alexandria','Dakahlia','Red Sea','Beheira',
@@ -149,6 +150,7 @@ export default function ProfilePage({
   const [isEditingName,   setIsEditingName]   = useState(false);
   const skillInputRef = useRef(null);
   const fileInputRef = useRef(null);
+  const isPoster = canPostJobs(currentUser);
 
   useEffect(() => {
     if (!currentUser) return;
@@ -232,13 +234,32 @@ export default function ProfilePage({
     if (!token) { setError('Sign in to save your profile.'); setIsSaving(false); return; }
     if (phoneNumber && phoneNumber.length !== 11) { setError('Phone number must be exactly 11 digits.'); setIsSaving(false); return; }
     try {
+      const profilePayload = isPoster
+        ? {
+            full_name: fullName,
+            phone_number: phoneNumber || 'N/A',
+            address,
+            profile_image: profileImage,
+            mobility: 'N/A',
+            vision: 'N/A',
+            hearing: 'N/A',
+            cognitive: 'N/A',
+            experience_level: 'N/A',
+            skills: [],
+          }
+        : {
+            full_name: fullName,
+            phone_number: phoneNumber || 'N/A',
+            address,
+            profile_image: profileImage,
+            ...needsMap,
+            experience_level: experienceLevel,
+            skills,
+          };
       const res = await fetch(`${API_BASE}/auth/profile`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({
-          full_name: fullName, phone_number: phoneNumber || 'N/A', address,
-          profile_image: profileImage, ...needsMap, experience_level: experienceLevel, skills,
-        }),
+        body: JSON.stringify(profilePayload),
       });
       if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.detail || 'Update failed.'); }
       const data = await res.json();
@@ -254,13 +275,16 @@ export default function ProfilePage({
     }
   };
 
-  const filledCount = [
-    needsMap.mobility !== 'N/A', needsMap.vision !== 'N/A',
-    needsMap.hearing !== 'N/A', needsMap.cognitive !== 'N/A',
-    experienceLevel !== 'N/A', skills.length > 0,
-    phoneNumber.length === 11, address !== 'N/A',
-  ].filter(Boolean).length;
-  const completionPct = Math.round((filledCount / 8) * 100);
+  const completionItems = isPoster
+    ? [phoneNumber.length === 11, address !== 'N/A']
+    : [
+        needsMap.mobility !== 'N/A', needsMap.vision !== 'N/A',
+        needsMap.hearing !== 'N/A', needsMap.cognitive !== 'N/A',
+        experienceLevel !== 'N/A', skills.length > 0,
+        phoneNumber.length === 11, address !== 'N/A',
+      ];
+  const filledCount = completionItems.filter(Boolean).length;
+  const completionPct = Math.round((filledCount / completionItems.length) * 100);
 
   const initials = (fullName || '').split(' ').filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join('') || '?';
 
@@ -293,10 +317,14 @@ export default function ProfilePage({
               <Sparkles size={22} className="text-white" />
             </div>
             <h2 className="text-xl font-black text-white leading-snug mb-3">
-              {t('profile.bannerTitle', 'Every person deserves a fair shot at meaningful work.')}
+              {isPoster
+                ? t('profile.posterBannerTitle', 'Post roles that open doors to meaningful work.')
+                : t('profile.bannerTitle', 'Every person deserves a fair shot at meaningful work.')}
             </h2>
             <p className="text-sm text-white/60 leading-relaxed">
-              {t('profile.bannerBody', 'Skillable was built on a single belief that disability should never be a barrier to a career. We match people to jobs based on what they can do, not what they can\'t.')}
+              {isPoster
+                ? t('profile.posterBannerBody', 'Skillable helps job posters share clear, inclusive opportunities for candidates who deserve fair access to the job market.')
+                : t('profile.bannerBody', 'Skillable was built on a single belief that disability should never be a barrier to a career. We match people to jobs based on what they can do, not what they can\'t.')}
             </p>
           </div>
 
@@ -307,7 +335,7 @@ export default function ProfilePage({
             {[
               { Icon: Heart,       text: t('profile.valInclusion', 'Built with inclusion at the core') },
               { Icon: ShieldCheck, text: t('profile.valPrivacy', 'Your data is yours — always private') },
-              { Icon: Globe,       text: t('profile.valOpportunities', 'Opportunities for every background') },
+              { Icon: Globe,       text: isPoster ? t('profile.posterValOpportunities', 'Inclusive hiring for every background') : t('profile.valOpportunities', 'Opportunities for every background') },
             ].map(({ Icon, text }) => (
               <div key={text} className="flex items-start gap-3">
                 <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5" style={{ background: 'rgba(99,102,241,0.25)' }}>
@@ -323,9 +351,9 @@ export default function ProfilePage({
           {/* Stats */}
           <div className="px-7 py-6 grid grid-cols-2 gap-4">
             {[
-              { num: '18+',  label: t('profile.statPaths', 'Career paths') },
+              { num: isPoster ? '1' : '18+',  label: isPoster ? t('profile.statPostingFlow', 'Posting flow') : t('profile.statPaths', 'Career paths') },
               { num: '100%', label: t('profile.statFree', 'Free to use') },
-              { num: '4',    label: t('profile.statDims', 'Need dimensions') },
+              { num: isPoster ? '0' : '4',    label: isPoster ? t('profile.statSeekerFields', 'Seeker-only fields') : t('profile.statDims', 'Need dimensions') },
               { num: '∞',    label: t('profile.statPossibilities', 'Possibilities') },
             ].map(({ num, label }) => (
               <div key={label}>
@@ -338,7 +366,9 @@ export default function ProfilePage({
           {/* Bottom quote */}
           <div className="px-7 pb-8">
             <p className="text-xs text-white/30 italic leading-relaxed">
-              "{t('profile.quote', 'The more complete your profile, the more accurate your matches become.')}"
+              {isPoster
+                ? `"${t('profile.posterQuote', 'A clear post helps the right candidates understand the opportunity faster.')}"`
+                : `"${t('profile.quote', 'The more complete your profile, the more accurate your matches become.')}"`}
             </p>
           </div>
         </div>
@@ -423,7 +453,7 @@ export default function ProfilePage({
         </button>
       </div>
 
-      <form onSubmit={handleSubmit} className="grid lg:grid-cols-3 gap-6">
+      <form onSubmit={handleSubmit} className={`grid gap-6 ${isPoster ? 'lg:grid-cols-1' : 'lg:grid-cols-3'}`}>
 
         {/* ── Column 1: Personal ── */}
         <div className={`p-6 rounded-3xl space-y-5 lg:col-span-1 ${cardClass}`}>
@@ -485,6 +515,8 @@ export default function ProfilePage({
           </div>
         </div>
 
+        {!isPoster && (
+        <>
         {/* ── Column 2: Career + Skills ── */}
         <div className="space-y-6 lg:col-span-1">
 
@@ -599,9 +631,11 @@ export default function ProfilePage({
             ))}
           </div>
         </div>
+        </>
+        )}
 
         {/* ── Feedback + mobile save ── */}
-        <div className="lg:col-span-3 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+        <div className={`${isPoster ? 'lg:col-span-1' : 'lg:col-span-3'} flex flex-col sm:flex-row items-start sm:items-center gap-4`}>
           <button
             type="submit"
             disabled={isSaving}

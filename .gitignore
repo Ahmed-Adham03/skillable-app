@@ -4,6 +4,8 @@
 /node_modules
 /.pnp
 .pnp.js
+.venv/
+**/.venv/
 
 # testing
 /coverage
@@ -17,7 +19,9 @@ __pycache__/
 .DS_Store
 .skillable-run/
 skillable-app-main/
+.env
 backend/.env
+authenticatorApi/.env
 authenticatorApi/data/*.db
 .env.local
 .env.development.local

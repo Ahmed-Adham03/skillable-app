@@ -68,7 +68,7 @@ function EditField({ value, onChange, multiline = false, style = {}, className =
   );
 }
 
-function printCV(cv) {
+function printCV(cv, t) {
   const initials = cv.fullName.trim().split(/\s+/).map((w) => w[0]).slice(0, 2).join('').toUpperCase();
   const expHTML = cv.experience
     .map(
@@ -260,7 +260,7 @@ export default function CreateCVPage({ theme, themeMode, currentUser }) {
               </p>
             </div>
             <button
-              onClick={() => printCV(cv)}
+              onClick={() => printCV(cv, t)}
               className={`flex items-center gap-2 px-7 py-3.5 rounded-2xl font-bold text-sm shadow-lg
                 transition-transform hover:scale-105 active:scale-95 ${theme.primaryBtn}`}
             >

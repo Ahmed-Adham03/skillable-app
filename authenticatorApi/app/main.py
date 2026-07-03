@@ -26,6 +26,10 @@ BREVO_API_KEY = os.getenv("BREVO_API_KEY", "")
 BREVO_SENDER_EMAIL = os.getenv("BREVO_SENDER_EMAIL", "")
 BREVO_SENDER_NAME = os.getenv("BREVO_SENDER_NAME", "Skillable")
 
+
+class EmailDeliveryUncertain(RuntimeError):
+    pass
+
 app = FastAPI(title="Skillable Authenticator")
 
 app.add_middleware(
@@ -190,13 +194,16 @@ def send_email(to_email: str, code: str, purpose: str = "verification"):
             "https://api.brevo.com/v3/smtp/email",
             json=payload,
             headers=headers,
-            timeout=10,
+            timeout=25,
         )
         if response.status_code < 300:
             logger.info("Email sent to %s", to_email)
             return
         logger.error("Brevo rejected email: %s %s", response.status_code, response.text)
         raise RuntimeError(f"Brevo error {response.status_code}: {response.text}")
+    except requests.Timeout as e:
+        logger.error("Brevo request timed out for %s: %s", to_email, e)
+        raise EmailDeliveryUncertain(f"Brevo delivery status is uncertain: {e}")
     except requests.RequestException as e:
         logger.error("Brevo request failed: %s", e)
         raise RuntimeError(f"Could not reach email service: {e}")
@@ -210,6 +217,12 @@ def send_code(payload: SendRequest):
     insert_code(payload.email, code, purpose)
     try:
         send_email(payload.email, code, purpose)
+    except EmailDeliveryUncertain as e:
+        logger.warning("Email delivery status uncertain for %s: %s", payload.email, e)
+        if purpose == "password_reset":
+            return {"sent": True, "expires_in": CODE_TTL_SECONDS, "delivery_uncertain": True}
+        invalidate_codes(payload.email, purpose)
+        raise HTTPException(status_code=503, detail="Could not confirm verification email delivery. Please try again.")
     except RuntimeError as e:
         logger.error("Email delivery failed for %s: %s", payload.email, e)
         # Invalidate the code we just inserted so the DB stays clean

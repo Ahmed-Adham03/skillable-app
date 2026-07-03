@@ -85,7 +85,7 @@ def _validate_code(email: str, code: str, purpose: str = "verification") -> bool
         res = http_requests.post(
             f"{CODE_API_URL}/validate",
             json={"email": email, "code": code, "purpose": purpose},
-            timeout=10,
+            timeout=15,
         )
         if not res.ok:
             return False
@@ -99,9 +99,15 @@ def _send_password_reset_code(email: str) -> bool:
         res = http_requests.post(
             f"{CODE_API_URL}/send",
             json={"email": email, "purpose": "password_reset"},
-            timeout=10,
+            timeout=35,
         )
-        return res.ok
+        if not res.ok:
+            return False
+        try:
+            data = res.json() if res.content else {}
+        except ValueError:
+            data = {}
+        return data.get("sent", True)
     except http_requests.RequestException:
         return False
 

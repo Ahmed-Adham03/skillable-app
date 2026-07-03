@@ -53,6 +53,7 @@ export default function TopNav({
   const isRtl = i18n.dir() === 'rtl';
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const role = normalizeRole(currentUser?.role);
+  const isPoster = role === ROLES.JOB_POSTER;
   const roleLabel = role === ROLES.JOB_POSTER ? t('nav.roleJobPoster') : t('nav.roleJobSeeker');
   const roleShortLabel = role === ROLES.JOB_POSTER ? t('nav.roleJobPosterShort') : t('nav.roleJobSeekerShort');
   const avatarTone = role === ROLES.JOB_POSTER
@@ -193,7 +194,7 @@ export default function TopNav({
                       </div>
                     </div>
                     <div className="mt-4 space-y-2">
-                      {hasProfileAlert && (
+                      {hasProfileAlert && !isPoster && (
                         <div className={`rounded-xl p-3 text-xs font-semibold ${themeMode === 'contrast' ? 'border border-white' : 'border border-red-300 bg-red-50 text-red-700'}`}>
                           {t('nav.profileIncompleteMsg')}
                         </div>
@@ -206,7 +207,7 @@ export default function TopNav({
                         role="menuitem"
                         className={`w-full py-2.5 rounded-xl font-bold text-sm ${theme.primaryBtn}`}
                       >
-                        {t('nav.personalizeExperience')}
+                        {isPoster ? t('nav.accountProfile') : t('nav.personalizeExperience')}
                       </button>
                       <button
                         onClick={handleSignOut}

@@ -444,6 +444,7 @@ export default function App() {
 
   const isProfileIncomplete = (user) => {
     if (!user) return false;
+    if (canPostJobs(user)) return false;
     const fields = [
       user.mobility,
       user.vision,
@@ -748,7 +749,7 @@ export default function App() {
             />
           } />
           <Route path="/onboarding" element={
-            <OnboardingPage theme={theme} themeMode={themeMode} setActiveTab={setActiveTab} API_BASE={API_BASE} />
+            <OnboardingPage theme={theme} themeMode={themeMode} setActiveTab={setActiveTab} API_BASE={API_BASE} currentUser={currentUser} />
           } />
           <Route path="/tracks" element={
             <TracksPage theme={theme} themeMode={themeMode} API_BASE={API_BASE} />
